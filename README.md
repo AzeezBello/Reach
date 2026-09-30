@@ -843,6 +843,59 @@ This deployment serves as the initial implementation of the broader REACH platfo
 
 ---
 
+# Next Steps
+
+Work that is ready in the codebase but still needs an action on the Supabase project or from the team.
+
+## 1. Apply the database migrations and seed data
+
+The `events`, `event_rsvps`, `leaders` and `content_leaders` tables and the row-level security policies live in `supabase/migrations/` but have not been applied to the hosted project yet. Until they are, the site falls back to the built-in leadership profiles and shows no events.
+
+```bash
+supabase link --project-ref <project-ref>
+supabase db push
+supabase db execute --file supabase/seed.sql
+```
+
+The seed loads the four leadership profiles, their collaborations, and three published events (Acada Carnival 2026, FKL Sports Community Fitness Day, Constituency Town Hall). It is safe to run more than once.
+
+## 2. Create the first platform administrator
+
+The superadmin console at `/superadmin` is gated on `profiles.role`. Set the role for your own account in the Supabase table editor or with SQL:
+
+```sql
+update public.profiles set role = 'admin' where email = 'you@example.com';
+```
+
+Then sign in and open `/superadmin`. The resident dashboard at `/dashboard` works for any signed-in account.
+
+## 3. Add the remaining leader photos
+
+Portraits exist for Fuad Kayode Laguda and Femi Gbajabiamila in `public/images/leaders/`. Lanre Okunlola and Odunayo Oluwafemi Daniel show an initials avatar until a photo is added. Drop a portrait into `public/images/leaders/<slug>.jpg`, then set `image_url` on the leader from `/superadmin/leaders` (or in `supabase/seed.sql` and `lib/leadership.ts`).
+
+## 4. Supply the official logo
+
+The SVG logos in `public/brand/` were designed from the brand colours in the photos. If an official REACH or FKL Connect logo exists, replace `logo.svg`, `logo-white.svg`, `logo-mark.svg` and `app/icon.svg` with the same file names and sizes; nothing else needs to change.
+
+## 5. Check content that is not scoped to the tenant
+
+Two older programmes ("Summer with FKL" and "FKL Skills Development Programme") are published but do not appear on the site because their `organization_id` is not the FKL Connect organisation. Update them in Supabase or from the office's content tools.
+
+## 6. Set the production environment
+
+On Vercel, add `NEXT_PUBLIC_SITE_URL` alongside the two Supabase variables so canonical URLs, the sitemap and the share image use the real domain.
+
+## 7. Verify before each release
+
+```bash
+npm run typecheck
+npm run build
+```
+
+Both must pass. The build fails on any TypeScript error, and no browser source maps are emitted in production.
+
+---
+
 # Product Roadmap
 
 ## Phase 1 — Foundation
