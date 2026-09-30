@@ -1,173 +1,227 @@
-import type { Metadata } from "next";
+import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowUpRight, Building2, MapPin } from "lucide-react";
+import {
+  getLeadershipBySlug,
+  leadership,
+} from "@/lib/leadership";
 
-import { Breadcrumbs } from "@/components/breadcrumbs";
-import { JsonLd } from "@/components/json-ld";
-import { Photo } from "@/components/media";
-import { ButtonLink, Container, Eyebrow } from "@/components/ui";
-import { initials } from "@/lib/format";
-import { getLeader, leaders } from "@/lib/leadership";
-import { pageArt } from "@/lib/media";
-import { personSchema } from "@/lib/seo";
-
-type Params = { params: Promise<{ slug: string }> };
+type LeadershipProfilePageProps = {
+  params: Promise<{
+    slug: string;
+  }>;
+};
 
 export function generateStaticParams() {
-  return leaders.map((leader) => ({ slug: leader.slug }));
+  return leadership.map((person) => ({
+    slug: person.slug,
+  }));
 }
 
-export async function generateMetadata({ params }: Params): Promise<Metadata> {
-  const { slug } = await params;
-  const leader = getLeader(slug);
+export const dynamicParams = false;
 
-  if (!leader) return { title: "Profile not found" };
+export async function generateMetadata({
+  params,
+}: LeadershipProfilePageProps) {
+  const { slug } = await params;
+  const person = getLeadershipBySlug(slug);
+
+  if (!person) {
+    return {
+      title: "Public Official | REACH",
+    };
+  }
 
   return {
-    title: `${leader.name}, ${leader.role}`,
-    description: leader.summary,
-    alternates: { canonical: `/leadership/${leader.slug}` },
+    title: `${person.name} | REACH`,
+    description: `${person.office}, ${person.jurisdiction}.`,
   };
 }
 
-export default async function LeadershipProfilePage({ params }: Params) {
+export default async function LeadershipProfilePage({
+  params,
+}: LeadershipProfilePageProps) {
   const { slug } = await params;
-  const leader = getLeader(slug);
+  const person = getLeadershipBySlug(slug);
 
-  if (!leader) {
+  if (!person) {
     notFound();
   }
 
   return (
-    <>
-      <JsonLd data={personSchema(leader)} />
+    <main className="min-h-screen bg-slate-50">
+      {/* Header */}
+      <section className="border-b bg-white">
+        <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+          <Link
+            href="/leadership"
+            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-emerald-700"
+          >
+            <span aria-hidden="true">←</span>
+            Back to Public Leadership
+          </Link>
+        </div>
+      </section>
 
-      <section className="relative isolate overflow-hidden bg-ink text-white">
-        <Photo
-          src={pageArt.leadership.src}
-          alt=""
-          priority
-          sizes="100vw"
-          className="-z-20 opacity-20"
-        />
-        <div className="absolute inset-0 -z-10 bg-linear-to-r from-ink via-ink/90 to-ink/60" />
+      {/* Profile */}
+      <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+          {/* Profile header */}
+          <div className="border-b bg-slate-950 px-6 py-10 text-white sm:px-10 lg:px-12">
+            <div className="flex flex-col gap-7 sm:flex-row sm:items-center">
+              <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-3xl font-bold">
+                {person.initial}
+              </div>
 
-        <Container className="py-12 md:py-16">
-          <Breadcrumbs
-            tone="light"
-            items={[
-              { label: "Leadership", href: "/leadership" },
-              { label: leader.name, href: `/leadership/${leader.slug}` },
-            ]}
-          />
+              <div>
+                <div className="mb-3 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-emerald-300">
+                  {person.levelLabel}
+                </div>
 
-          <div className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-8">
-            <div className="flex size-24 shrink-0 items-center justify-center rounded-3xl bg-linear-to-br from-brand-400 to-brand-700 text-3xl font-extrabold text-ink sm:size-28">
-              {initials(leader.name)}
-            </div>
+                <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                  {person.name}
+                </h1>
 
-            <div>
-              <Eyebrow tone="light">{leader.role}</Eyebrow>
+                <p className="mt-2 text-lg font-semibold text-emerald-400">
+                  {person.office}
+                </p>
 
-              <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-balance sm:text-4xl md:text-5xl">
-                {leader.name}
-              </h1>
-
-              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-300">
-                <span className="inline-flex items-center gap-2">
-                  <Building2 size={16} className="text-brand-400" />
-                  {leader.office}
-                </span>
-                <span className="inline-flex items-center gap-2">
-                  <MapPin size={16} className="text-brand-400" />
-                  {leader.jurisdiction}
-                </span>
+                <p className="mt-1 text-slate-300">
+                  {person.jurisdiction}
+                </p>
               </div>
             </div>
           </div>
-        </Container>
-      </section>
 
-      <Container className="grid gap-8 py-12 lg:grid-cols-[1fr_320px] lg:gap-12 md:py-16">
-        <article className="space-y-6">
-          <ProfileSection title="Profile">
-            <div className="space-y-4 text-[15px] leading-7 text-slate-600">
-              {leader.biography.map((paragraph) => (
-                <p key={paragraph}>{paragraph}</p>
-              ))}
+          {/* Content */}
+          <div className="grid gap-10 p-6 sm:p-10 lg:grid-cols-[1fr_300px] lg:p-12">
+            <div className="space-y-10">
+              {/* Overview */}
+              <section>
+                <h2 className="text-xl font-bold text-slate-950">
+                  Overview
+                </h2>
+
+                <p className="mt-4 text-base leading-8 text-slate-600">
+                  {person.summary}
+                </p>
+              </section>
+
+              {/* Biography */}
+              <section>
+                <h2 className="text-xl font-bold text-slate-950">
+                  Biography
+                </h2>
+
+                <div className="mt-4 space-y-4">
+                  {person.biography.map((paragraph, index) => (
+                    <p
+                      key={`${person.slug}-bio-${index}`}
+                      className="leading-8 text-slate-600"
+                    >
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              </section>
+
+              {/* Public service */}
+              <section>
+                <h2 className="text-xl font-bold text-slate-950">
+                  Public Service
+                </h2>
+
+                <ul className="mt-4 space-y-3">
+                  {person.service.map((item) => (
+                    <li
+                      key={item}
+                      className="flex items-start gap-3 text-slate-600"
+                    >
+                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-emerald-600" />
+                      <span>{item}</span>
+                    </li>
+                  ))}
+                </ul>
+              </section>
+
+              {/* Sources */}
+              <section>
+                <h2 className="text-xl font-bold text-slate-950">
+                  Sources & References
+                </h2>
+
+                <div className="mt-4 space-y-3">
+                  {person.sources.map((source) => (
+                    <a
+                      key={source.url}
+                      href={source.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-4 text-sm font-semibold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
+                    >
+                      <span>{source.label}</span>
+
+                      <span aria-hidden="true">↗</span>
+                    </a>
+                  ))}
+                </div>
+              </section>
             </div>
-          </ProfileSection>
 
-          <ProfileSection title="Public service">
-            <ul className="space-y-3 text-[15px] leading-7 text-slate-600">
-              {leader.service.map((item) => (
-                <li key={item} className="border-l-2 border-brand-300 pl-4">
-                  {item}
-                </li>
-              ))}
-            </ul>
-          </ProfileSection>
+            {/* Sidebar */}
+            <aside className="space-y-5">
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                  Office
+                </p>
 
-          <ProfileSection
-            title="Official reference sources"
-            intro="These profiles use official public sources as references. External sources open in a new tab."
-          >
-            <div className="space-y-3">
-              {leader.sources.map((source) => (
-                <a
-                  key={source.url}
-                  href={source.url}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-brand-300 hover:text-brand-800"
+                <p className="mt-2 font-semibold text-slate-950">
+                  {person.office}
+                </p>
+              </div>
+
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                  Jurisdiction
+                </p>
+
+                <p className="mt-2 font-semibold text-slate-950">
+                  {person.jurisdiction}
+                </p>
+              </div>
+
+              {person.constituency && (
+                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                    Constituency
+                  </p>
+
+                  <p className="mt-2 font-semibold text-slate-950">
+                    {person.constituency}
+                  </p>
+                </div>
+              )}
+
+              <div className="rounded-2xl bg-emerald-50 p-5">
+                <p className="font-bold text-slate-950">
+                  Need civic assistance?
+                </p>
+
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Submit a request through REACH and track your request from
+                  submission to resolution.
+                </p>
+
+                <Link
+                  href="/requests/new"
+                  className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-800"
                 >
-                  {source.label}
-                  <ArrowUpRight size={16} className="shrink-0" />
-                </a>
-              ))}
-            </div>
-          </ProfileSection>
-        </article>
-
-        <aside className="h-fit rounded-3xl bg-brand-700 p-7 text-white shadow-sm lg:sticky lg:top-24">
-          <Eyebrow tone="light">Need help?</Eyebrow>
-
-          <h2 className="mt-3 text-2xl font-extrabold text-balance">
-            Need help with a public service?
-          </h2>
-
-          <p className="mt-3 text-sm leading-6 text-brand-100">
-            Submit a request and the office can help route it to the
-            appropriate service.
-          </p>
-
-          <ButtonLink href="/requests/new" variant="light" className="mt-6 w-full">
-            Submit a request
-          </ButtonLink>
-        </aside>
-      </Container>
-    </>
-  );
-}
-
-function ProfileSection({
-  title,
-  intro,
-  children,
-}: {
-  title: string;
-  intro?: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
-      <h2 className="text-xl font-extrabold text-ink">{title}</h2>
-
-      {intro && (
-        <p className="mt-2 text-sm leading-6 text-slate-500">{intro}</p>
-      )}
-
-      <div className="mt-4">{children}</div>
-    </section>
+                  Submit a Request
+                </Link>
+              </div>
+            </aside>
+          </div>
+        </div>
+      </section>
+    </main>
   );
 }
