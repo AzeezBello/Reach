@@ -1,149 +1,84 @@
-"use client";
+import type { Metadata } from "next";
+import { redirect } from "next/navigation";
+import { CheckCircle2 } from "lucide-react";
 
-import {
-  FormEvent,
-  useState,
-} from "react";
+import { AuthForm } from "@/components/auth-form";
+import { Photo } from "@/components/media";
+import { Eyebrow } from "@/components/ui";
+import { pageArt } from "@/lib/media";
+import { getCurrentUser, getTenant } from "@/lib/reach";
 
-import { createClient } from "@/lib/supabase/client";
+export const metadata: Metadata = {
+  title: "Sign in",
+  description: "Sign in or create a resident account to submit and track requests.",
+  alternates: { canonical: "/login" },
+  robots: { index: false, follow: true },
+};
 
-export default function LoginPage() {
-  const supabase = createClient();
+/** Only allow same-site redirect targets. */
+function safeNext(value: string | undefined) {
+  if (!value || !value.startsWith("/") || value.startsWith("//")) {
+    return "/dashboard";
+  }
+  return value;
+}
 
-  const [mode, setMode] =
-    useState<"signin" | "signup">("signin");
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ next?: string }>;
+}) {
+  const [{ next }, user, { tenant }] = await Promise.all([
+    searchParams,
+    getCurrentUser(),
+    getTenant(),
+  ]);
 
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [name, setName] = useState("");
+  const target = safeNext(next);
 
-  const [message, setMessage] = useState("");
-  const [loading, setLoading] = useState(false);
-
-  async function submit(event: FormEvent) {
-    event.preventDefault();
-
-    setLoading(true);
-    setMessage("");
-
-    const result =
-      mode === "signin"
-        ? await supabase.auth.signInWithPassword({
-            email,
-            password,
-          })
-        : await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              data: {
-                full_name: name,
-              },
-            },
-          });
-
-    setLoading(false);
-
-    if (result.error) {
-      setMessage(result.error.message);
-      return;
-    }
-
-    if (mode === "signin") {
-      window.location.href = "/requests";
-      return;
-    }
-
-    setMessage(
-      "Account created. Check your email if confirmation is enabled, then sign in."
-    );
+  if (user) {
+    redirect(target);
   }
 
   return (
-    <main className="mx-auto max-w-md px-5 py-16">
-      <h1 className="text-4xl font-black">
-        {mode === "signin"
-          ? "Sign in"
-          : "Create your account"}
-      </h1>
-
-      <p className="mt-3 text-slate-600">
-        Use your REACH account to submit and track
-        service requests.
-      </p>
-
-      <form
-        onSubmit={submit}
-        className="mt-8 grid gap-4 rounded-3xl border border-slate-200 bg-white p-7"
-      >
-        {mode === "signup" && (
-          <input
-            required
-            value={name}
-            onChange={(event) =>
-              setName(event.target.value)
-            }
-            placeholder="Full name"
-            className="rounded-xl border border-slate-300 px-4 py-3"
-          />
-        )}
-
-        <input
-          required
-          type="email"
-          value={email}
-          onChange={(event) =>
-            setEmail(event.target.value)
-          }
-          placeholder="Email address"
-          className="rounded-xl border border-slate-300 px-4 py-3"
+    <div className="grid min-h-[calc(100dvh-4rem)] lg:grid-cols-2">
+      <section className="relative isolate hidden overflow-hidden bg-ink text-white lg:block">
+        <Photo
+          src={pageArt.login.src}
+          alt={pageArt.login.alt}
+          priority
+          sizes="50vw"
+          className="-z-20 opacity-50"
         />
+        <div className="absolute inset-0 -z-10 bg-linear-to-t from-ink via-ink/60 to-ink/20" />
 
-        <input
-          required
-          minLength={8}
-          type="password"
-          value={password}
-          onChange={(event) =>
-            setPassword(event.target.value)
-          }
-          placeholder="Password"
-          className="rounded-xl border border-slate-300 px-4 py-3"
-        />
+        <div className="flex h-full flex-col justify-end p-12 xl:p-16">
+          <Eyebrow tone="light">{tenant.name}</Eyebrow>
 
-        <button
-          disabled={loading}
-          className="rounded-xl bg-teal-700 px-4 py-3 font-black text-white disabled:opacity-50"
-        >
-          {loading
-            ? "Please wait..."
-            : mode === "signin"
-              ? "Sign in"
-              : "Create account"}
-        </button>
+          <h2 className="mt-3 max-w-md text-4xl font-extrabold tracking-tight text-balance">
+            One account for every request, programme and update.
+          </h2>
 
-        {message && (
-          <p className="text-sm text-slate-600">
-            {message}
-          </p>
-        )}
-      </form>
+          <ul className="mt-6 space-y-3 text-sm text-slate-200">
+            {[
+              "Submit requests to the office",
+              "Track progress with a reference number",
+              "Apply for programmes and opportunities",
+            ].map((item) => (
+              <li key={item} className="inline-flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-brand-400" />
+                {item}
+              </li>
+            ))}
+          </ul>
+        </div>
+      </section>
 
-      <button
-        type="button"
-        onClick={() =>
-          setMode(
-            mode === "signin"
-              ? "signup"
-              : "signin"
-          )
-        }
-        className="mt-4 text-sm font-bold text-teal-700"
-      >
-        {mode === "signin"
-          ? "Create an account"
-          : "Already have an account? Sign in"}
-      </button>
-    </main>
+      <section className="flex items-center bg-slate-50 px-4 py-12 sm:px-6 md:py-16 lg:px-12">
+        <div className="mx-auto w-full max-w-md">
+          <AuthForm next={target} />
+        </div>
+      </section>
+    </div>
   );
 }

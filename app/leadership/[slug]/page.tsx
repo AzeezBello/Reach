@@ -1,24 +1,36 @@
-import Link from "next/link";
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import {
-  ArrowLeft,
-  ArrowUpRight,
-  Building2,
-  MapPin,
-} from "lucide-react";
+import { ArrowUpRight, Building2, MapPin } from "lucide-react";
+
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { JsonLd } from "@/components/json-ld";
+import { Photo } from "@/components/media";
+import { ButtonLink, Container, Eyebrow } from "@/components/ui";
+import { initials } from "@/lib/format";
 import { getLeader, leaders } from "@/lib/leadership";
+import { pageArt } from "@/lib/media";
+import { personSchema } from "@/lib/seo";
+
+type Params = { params: Promise<{ slug: string }> };
 
 export function generateStaticParams() {
-  return leaders.map((leader) => ({
-    slug: leader.slug,
-  }));
+  return leaders.map((leader) => ({ slug: leader.slug }));
 }
 
-export default async function LeadershipProfilePage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const { slug } = await params;
+  const leader = getLeader(slug);
+
+  if (!leader) return { title: "Profile not found" };
+
+  return {
+    title: `${leader.name}, ${leader.role}`,
+    description: leader.summary,
+    alternates: { canonical: `/leadership/${leader.slug}` },
+  };
+}
+
+export default async function LeadershipProfilePage({ params }: Params) {
   const { slug } = await params;
   const leader = getLeader(slug);
 
@@ -27,127 +39,135 @@ export default async function LeadershipProfilePage({
   }
 
   return (
-    <main className="min-h-screen bg-slate-50">
-      <section className="bg-slate-950 text-white">
-        <div className="mx-auto max-w-5xl px-4 py-14 sm:px-6 lg:px-8">
-          <Link
-            href="/leadership"
-            className="inline-flex items-center gap-2 text-sm font-medium text-slate-300 transition hover:text-white"
-          >
-            <ArrowLeft className="h-4 w-4" />
-            All leadership profiles
-          </Link>
+    <>
+      <JsonLd data={personSchema(leader)} />
 
-          <div className="mt-10 flex flex-col gap-7 sm:flex-row sm:items-center">
-            <div className="flex h-28 w-28 shrink-0 items-center justify-center rounded-3xl bg-emerald-600 text-3xl font-bold">
-              {leader.initial}
+      <section className="relative isolate overflow-hidden bg-ink text-white">
+        <Photo
+          src={pageArt.leadership.src}
+          alt=""
+          priority
+          sizes="100vw"
+          className="-z-20 opacity-20"
+        />
+        <div className="absolute inset-0 -z-10 bg-linear-to-r from-ink via-ink/90 to-ink/60" />
+
+        <Container className="py-12 md:py-16">
+          <Breadcrumbs
+            tone="light"
+            items={[
+              { label: "Leadership", href: "/leadership" },
+              { label: leader.name, href: `/leadership/${leader.slug}` },
+            ]}
+          />
+
+          <div className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-8">
+            <div className="flex size-24 shrink-0 items-center justify-center rounded-3xl bg-linear-to-br from-brand-400 to-brand-700 text-3xl font-extrabold text-ink sm:size-28">
+              {initials(leader.name)}
             </div>
 
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-300">
-                {leader.role}
-              </p>
+              <Eyebrow tone="light">{leader.role}</Eyebrow>
 
-              <h1 className="mt-2 text-4xl font-bold tracking-tight sm:text-5xl">
+              <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-balance sm:text-4xl md:text-5xl">
                 {leader.name}
               </h1>
 
-              <div className="mt-4 flex flex-wrap gap-4 text-sm text-slate-300">
+              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-300">
                 <span className="inline-flex items-center gap-2">
-                  <Building2 className="h-4 w-4" />
+                  <Building2 size={16} className="text-brand-400" />
                   {leader.office}
                 </span>
-
                 <span className="inline-flex items-center gap-2">
-                  <MapPin className="h-4 w-4" />
+                  <MapPin size={16} className="text-brand-400" />
                   {leader.jurisdiction}
                 </span>
               </div>
             </div>
           </div>
-        </div>
+        </Container>
       </section>
 
-      <section className="mx-auto grid max-w-5xl gap-8 px-4 py-12 sm:px-6 lg:grid-cols-[1fr_320px] lg:px-8">
-        <article className="space-y-8">
-          <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
-            <h2 className="text-xl font-bold text-slate-950">
-              Profile
-            </h2>
-
-            <div className="mt-4 space-y-4 text-[15px] leading-7 text-slate-600">
+      <Container className="grid gap-8 py-12 lg:grid-cols-[1fr_320px] lg:gap-12 md:py-16">
+        <article className="space-y-6">
+          <ProfileSection title="Profile">
+            <div className="space-y-4 text-[15px] leading-7 text-slate-600">
               {leader.biography.map((paragraph) => (
                 <p key={paragraph}>{paragraph}</p>
               ))}
             </div>
-          </div>
+          </ProfileSection>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
-            <h2 className="text-xl font-bold text-slate-950">
-              Public service
-            </h2>
-
-            <ul className="mt-4 space-y-3 text-[15px] leading-7 text-slate-600">
+          <ProfileSection title="Public service">
+            <ul className="space-y-3 text-[15px] leading-7 text-slate-600">
               {leader.service.map((item) => (
-                <li
-                  key={item}
-                  className="border-l-2 border-emerald-200 pl-4"
-                >
+                <li key={item} className="border-l-2 border-brand-300 pl-4">
                   {item}
                 </li>
               ))}
             </ul>
-          </div>
+          </ProfileSection>
 
-          <div className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
-            <h2 className="text-xl font-bold text-slate-950">
-              Official reference sources
-            </h2>
-
-            <p className="mt-2 text-sm leading-6 text-slate-500">
-              REACH uses official public sources as references. These external
-              sources open in a separate tab.
-            </p>
-
-            <div className="mt-4 space-y-3">
+          <ProfileSection
+            title="Official reference sources"
+            intro="These profiles use official public sources as references. External sources open in a new tab."
+          >
+            <div className="space-y-3">
               {leader.sources.map((source) => (
                 <a
                   key={source.url}
                   href={source.url}
                   target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center justify-between rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-emerald-200 hover:text-emerald-700"
+                  rel="noopener noreferrer"
+                  className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-brand-300 hover:text-brand-800"
                 >
                   {source.label}
-                  <ArrowUpRight className="h-4 w-4" />
+                  <ArrowUpRight size={16} className="shrink-0" />
                 </a>
               ))}
             </div>
-          </div>
+          </ProfileSection>
         </article>
 
-        <aside className="h-fit rounded-3xl bg-emerald-700 p-7 text-white shadow-sm">
-          <p className="text-sm font-semibold uppercase tracking-wider text-emerald-200">
-            REACH
-          </p>
+        <aside className="h-fit rounded-3xl bg-brand-700 p-7 text-white shadow-sm lg:sticky lg:top-24">
+          <Eyebrow tone="light">Need help?</Eyebrow>
 
-          <h2 className="mt-3 text-2xl font-bold">
+          <h2 className="mt-3 text-2xl font-extrabold text-balance">
             Need help with a public service?
           </h2>
 
-          <p className="mt-3 text-sm leading-6 text-emerald-50">
-            Submit a request and REACH can help route it to the appropriate
-            office or service.
+          <p className="mt-3 text-sm leading-6 text-brand-100">
+            Submit a request and the office can help route it to the
+            appropriate service.
           </p>
 
-          <Link
-            href="/requests/new"
-            className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-white px-4 py-3 text-sm font-bold text-emerald-800 transition hover:bg-emerald-50"
-          >
+          <ButtonLink href="/requests/new" variant="light" className="mt-6 w-full">
             Submit a request
-          </Link>
+          </ButtonLink>
         </aside>
-      </section>
-    </main>
+      </Container>
+    </>
+  );
+}
+
+function ProfileSection({
+  title,
+  intro,
+  children,
+}: {
+  title: string;
+  intro?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+      <h2 className="text-xl font-extrabold text-ink">{title}</h2>
+
+      {intro && (
+        <p className="mt-2 text-sm leading-6 text-slate-500">{intro}</p>
+      )}
+
+      <div className="mt-4">{children}</div>
+    </section>
   );
 }

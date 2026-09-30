@@ -1,109 +1,149 @@
+import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import Link from "next/link";
-import { ArrowLeft, CalendarDays, MapPin } from "lucide-react";
-import { createClient } from "@/lib/supabase/server";
-import { getPublicData } from "@/lib/reach";
+import {
+  CalendarDays,
+  ClipboardList,
+  MapPin,
+  Users,
+} from "lucide-react";
 
-export default async function ProgrammeDetailPage({
-  params,
-}: {
-  params: Promise<{ slug: string }>;
-}) {
+import { CtaBand, DetailBody, DetailHero } from "@/components/detail";
+import { JsonLd } from "@/components/json-ld";
+import { Badge, ButtonLink, FactRow } from "@/components/ui";
+import { formatDate, formatNumber, humanize, statusTone } from "@/lib/format";
+import { getProgramme, getTenant } from "@/lib/reach";
+import { programmeSchema } from "@/lib/seo";
+
+type Params = { params: Promise<{ slug: string }> };
+
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const { tenant } = await getPublicData();
+  const programme = await getProgramme(slug);
 
-  const supabase = await createClient();
+  if (!programme) return { title: "Programme not found" };
 
-  const { data: programme, error } = await supabase
-    .from("programmes")
-    .select(`
-      id,
-      title,
-      slug,
-      summary,
-      description,
-      category,
-      location,
-      start_date,
-      end_date,
-      registration_deadline,
-      status,
-      capacity,
-      image_url
-    `)
-    .eq("organization_id", tenant.id)
-    .eq("slug", slug)
-    .in("status", ["open", "ongoing"])
-    .maybeSingle();
+  return {
+    title: programme.title,
+    description:
+      programme.summary ??
+      `${programme.title}, a programme published by the digital constituency office.`,
+    alternates: { canonical: `/programmes/${programme.slug}` },
+    openGraph: programme.image_url
+      ? { images: [{ url: programme.image_url, alt: programme.title }] }
+      : undefined,
+  };
+}
 
-  if (error || !programme) {
+export default async function ProgrammeDetailPage({ params }: Params) {
+  const { slug } = await params;
+  const [programme, { tenant, jurisdiction }] = await Promise.all([
+    getProgramme(slug),
+    getTenant(),
+  ]);
+
+  if (!programme) {
     notFound();
   }
 
+  const eventSchema = programmeSchema(programme, tenant, jurisdiction);
+
+  const facts = [
+    programme.location && {
+      icon: <MapPin size={18} />,
+      label: "Location",
+      value: programme.location,
+    },
+    programme.start_date && {
+      icon: <CalendarDays size={18} />,
+      label: "Starts",
+      value: formatDate(programme.start_date, "long"),
+    },
+    programme.end_date && {
+      icon: <CalendarDays size={18} />,
+      label: "Ends",
+      value: formatDate(programme.end_date, "long"),
+    },
+    programme.registration_deadline && {
+      icon: <CalendarDays size={18} />,
+      label: "Registration closes",
+      value: formatDate(programme.registration_deadline, "long"),
+    },
+    programme.capacity && {
+      icon: <Users size={18} />,
+      label: "Capacity",
+      value: `${formatNumber(programme.capacity)} participants`,
+    },
+  ].filter(Boolean) as { icon: React.ReactNode; label: string; value: string }[];
+
   return (
-    <main className="bg-white">
-      <section className="mx-auto max-w-5xl px-5 py-14">
-        <Link
-          href="/programmes"
-          className="inline-flex items-center gap-2 text-sm font-bold text-teal-700"
-        >
-          <ArrowLeft size={16} />
-          Back to programmes
-        </Link>
+    <>
+      {eventSchema && <JsonLd data={eventSchema} />}
 
-        {programme.image_url && (
-          <img
-            src={programme.image_url}
-            alt={programme.title}
-            className="mt-8 h-[360px] w-full rounded-3xl object-cover"
-          />
-        )}
+      <DetailHero
+        breadcrumbs={[
+          { label: "Programmes", href: "/programmes" },
+          { label: programme.title, href: `/programmes/${programme.slug}` },
+        ]}
+        image={programme.image_url}
+        imageAlt={programme.title}
+        fallbackIcon={<ClipboardList size={34} />}
+        badges={
+          <>
+            <Badge>{programme.category || "Programme"}</Badge>
+            <Badge tone={statusTone(programme.status)}>
+              {humanize(programme.status, "Open")}
+            </Badge>
+          </>
+        }
+        title={programme.title}
+        summary={programme.summary}
+      />
 
-        <div className="mt-8">
-          <p className="text-sm font-black uppercase tracking-widest text-teal-700">
-            {programme.category}
-          </p>
-
-          <h1 className="mt-3 text-4xl font-black tracking-tight text-slate-950 md:text-5xl">
-            {programme.title}
-          </h1>
-
-          {programme.summary && (
-            <p className="mt-5 text-lg leading-8 text-slate-600">
-              {programme.summary}
+      <DetailBody
+        eyebrow="About this programme"
+        heading="Programme details"
+        description={programme.description}
+        emptyText="More information about this programme will be published soon."
+        aside={
+          <>
+            <p className="text-xs font-extrabold uppercase tracking-wider text-slate-500">
+              Programme information
             </p>
-          )}
 
-          <div className="mt-6 flex flex-wrap gap-5 text-sm text-slate-500">
-            {programme.location && (
-              <span className="inline-flex items-center gap-2">
-                <MapPin size={16} />
-                {programme.location}
-              </span>
+            {facts.length > 0 && (
+              <div className="mt-6 space-y-5">
+                {facts.map((fact) => (
+                  <FactRow key={fact.label} {...fact} />
+                ))}
+              </div>
             )}
 
-            {programme.registration_deadline && (
-              <span className="inline-flex items-center gap-2">
-                <CalendarDays size={16} />
-                Registration closes {programme.registration_deadline}
-              </span>
-            )}
-          </div>
+            <div className="mt-8 border-t border-slate-100 pt-6">
+              <ButtonLink href="/requests/new" className="w-full">
+                Register or ask a question
+              </ButtonLink>
 
-          {programme.description && (
-            <div className="mt-10 whitespace-pre-line text-base leading-8 text-slate-700">
-              {programme.description}
+              <p className="mt-3 text-center text-xs leading-5 text-slate-500">
+                Submit a request and the office will follow up with the next
+                steps for this programme.
+              </p>
             </div>
-          )}
+          </>
+        }
+      />
 
-          <Link
-            href="/requests/new"
-            className="mt-10 inline-flex rounded-xl bg-teal-700 px-6 py-3.5 font-black text-white hover:bg-teal-800"
-          >
-            Register / Request Assistance
-          </Link>
-        </div>
-      </section>
-    </main>
+      <CtaBand
+        eyebrow="Keep exploring"
+        title="See what else is available in your community."
+        text="Browse opportunities and community projects published through this office."
+      >
+        <ButtonLink href="/opportunities" variant="light">
+          View opportunities
+        </ButtonLink>
+        <ButtonLink href="/projects" variant="outlineLight">
+          View projects
+        </ButtonLink>
+      </CtaBand>
+    </>
   );
 }

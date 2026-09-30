@@ -1,721 +1,566 @@
+import type { Metadata } from "next";
 import Link from "next/link";
 import {
   ArrowRight,
+  CalendarDays,
   CheckCircle2,
   ClipboardList,
-  MapPinned,
+  FolderKanban,
+  MapPin,
   MessageCircle,
-  Search,
   ShieldCheck,
+  Smartphone,
   Sparkles,
 } from "lucide-react";
 
-import { getPublicData } from "@/lib/reach";
+import { ContentCard } from "@/components/content-card";
+import { Photo, PhotoFrame } from "@/components/media";
+import {
+  Badge,
+  ButtonLink,
+  Container,
+  EmptyState,
+  Eyebrow,
+  SectionHeader,
+  TextLink,
+} from "@/components/ui";
+import { VideoPlayer } from "@/components/video-player";
+import { formatDate, humanize, initials, statusTone } from "@/lib/format";
+import { leaders } from "@/lib/leadership";
+import { gallery, hero, photos, stories } from "@/lib/media";
+import { getPublicData, getTenant } from "@/lib/reach";
+import { siteDescription, siteTitle } from "@/lib/seo";
 
-/*
- * Media assets from /public
- *
- * If one of these filenames differs in your repository,
- * replace it with the matching filename from /public.
- */
+export async function generateMetadata(): Promise<Metadata> {
+  const { tenant, jurisdiction } = await getTenant();
 
-const HERO_VIDEO =
-  "/videos/AQNNDstOpwaP-cKvufFLnLhMAUO2G7PmGasn2UsXAfd7wagAquu5v1omCGTOp3u_Fapty28rHs9FUk6wQ0hJ4wY6FjrfBbddUtAAtDQ.mp4";
-
-const HERO_IMAGE =
-  "/images/731417453_18606717733056110_2647227045067538133_n.webp";
-
-const COMMUNITY_IMAGES = [
-  "/images/731442451_18606717919056110_3586473721461605243_n.webp",
-  "/images/731495724_18606717898056110_913623395751596990_n.webp",
-  "/images/731710329_18606717742056110_2518768386523954433_n.webp",
-  "/images/731834798_18606717799056110_909372548720658224_n.webp",
-  "/images/733882556_18606717838056110_5937837886466548213_n.webp",
-  "/images/734570199_18606717880056110_8467978152391883490_n.webp",
-];
+  return {
+    title: { absolute: siteTitle(tenant) },
+    description: siteDescription(tenant, jurisdiction),
+    alternates: { canonical: "/" },
+  };
+}
 
 export default async function Home() {
-  const {
-    tenant,
-    jurisdiction,
-    programmes,
-    opportunities,
-    projects,
-  } = await getPublicData();
+  const { tenant, jurisdiction, programmes, opportunities, projects } =
+    await getPublicData();
+
+  const quickLinks = [
+    {
+      href: "/programmes",
+      icon: <ClipboardList size={22} />,
+      title: "Programmes",
+      text: `${programmes.length} open now`,
+    },
+    {
+      href: "/opportunities",
+      icon: <Sparkles size={22} />,
+      title: "Opportunities",
+      text: `${opportunities.length} available`,
+    },
+    {
+      href: "/projects",
+      icon: <FolderKanban size={22} />,
+      title: "Projects",
+      text: `${projects.length} being tracked`,
+    },
+    {
+      href: "/requests/new",
+      icon: <MessageCircle size={22} />,
+      title: "Requests",
+      text: "Report an issue or ask for help",
+    },
+  ];
 
   return (
-    <main className="bg-white">
-      {/* =========================================================
-          HERO
-      ========================================================== */}
-      <section className="relative isolate min-h-[720px] overflow-hidden bg-slate-950 text-white">
-        {/* Background video */}
-        <video
-          autoPlay
-          muted
-          loop
-          playsInline
-          poster={HERO_IMAGE}
-          preload="metadata"
-          aria-hidden="true"
-          className="absolute inset-0 -z-20 h-full w-full object-cover opacity-45"
-        >
-          <source src={HERO_VIDEO} type="video/mp4" />
-        </video>
+    <>
+      {/* ------------------------------------------------------------ */}
+      {/* Hero                                                           */}
+      {/* ------------------------------------------------------------ */}
+      <section className="relative isolate overflow-hidden bg-ink text-white">
+        <Photo
+          src={hero.background.src}
+          alt=""
+          priority
+          sizes="100vw"
+          className="-z-20 opacity-25"
+        />
+        <div className="absolute inset-0 -z-10 bg-linear-to-r from-ink via-ink/90 to-ink/50" />
+        <div className="absolute inset-0 -z-10 bg-linear-to-t from-ink via-ink/20 to-transparent" />
 
-        {/* Dark overlays */}
-        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-slate-950 via-slate-950/90 to-slate-950/35" />
-
-        <div className="absolute inset-0 -z-10 bg-gradient-to-t from-slate-950 via-transparent to-slate-950/30" />
-
-        {/* Hero content */}
-        <div className="mx-auto grid max-w-7xl items-end gap-12 px-5 py-28 md:grid-cols-[1.15fr_.85fr] md:py-36">
+        <Container className="grid items-center gap-12 py-16 sm:py-20 lg:grid-cols-[1.15fr_0.85fr] lg:py-24">
           <div>
-            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-teal-300/30 bg-teal-300/10 px-4 py-2 text-sm font-bold text-teal-200 backdrop-blur">
-              <Sparkles size={15} />
-              REACH is live in your community
-            </div>
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/10 px-4 py-2 text-xs font-bold backdrop-blur">
+              <span className="size-2 rounded-full bg-gold-400" />
+              {jurisdiction
+                ? `${jurisdiction.name}${
+                    jurisdiction.state ? ` · ${jurisdiction.state}` : ""
+                  }`
+                : "Digital constituency office"}
+            </span>
 
-            <h1 className="max-w-4xl text-5xl font-black leading-[0.98] tracking-tight sm:text-6xl md:text-8xl">
+            <h1 className="mt-6 max-w-3xl text-4xl font-extrabold leading-[1.02] tracking-tight text-balance sm:text-6xl lg:text-7xl">
               Your community.
               <br />
-              <span className="text-teal-300">
-                One digital office.
-              </span>
+              <span className="text-brand-400">One digital office.</span>
             </h1>
 
-            <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-200 md:text-xl">
+            <p className="mt-6 max-w-xl text-base leading-7 text-slate-200 sm:text-lg sm:leading-8">
               {tenant.description ||
                 "Connect with public programmes, opportunities, service requests and community projects through one simple digital experience."}
             </p>
 
-            {jurisdiction && (
-              <div className="mt-5 flex items-center gap-2 text-sm font-semibold text-slate-300">
-                <MapPinned
-                  size={16}
-                  className="text-teal-300"
-                />
-
-                {jurisdiction.name}
-
-                {jurisdiction.state
-                  ? ` · ${jurisdiction.state}`
-                  : ""}
-              </div>
-            )}
-
-            <div className="mt-9 flex flex-wrap gap-3">
-              <Link
-                href="/requests/new"
-                className="inline-flex items-center gap-2 rounded-xl bg-teal-500 px-6 py-3.5 font-black text-slate-950 transition hover:bg-teal-300"
-              >
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+              <ButtonLink href="/requests/new" size="lg" arrow>
                 Request assistance
-                <ArrowRight size={18} />
-              </Link>
+              </ButtonLink>
 
-              <Link
-                href="/programmes"
-                className="rounded-xl border border-white/20 bg-white/10 px-6 py-3.5 font-bold backdrop-blur transition hover:bg-white/15"
-              >
-                Explore services
-              </Link>
+              <ButtonLink href="/programmes" variant="outlineLight" size="lg">
+                Explore programmes
+              </ButtonLink>
             </div>
 
-            <div className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm text-slate-300">
-              <span className="inline-flex items-center gap-2">
-                <CheckCircle2
-                  size={16}
-                  className="text-teal-300"
-                />
+            <ul className="mt-8 flex flex-wrap gap-x-6 gap-y-3 text-sm text-slate-300">
+              <li className="inline-flex items-center gap-2">
+                <CheckCircle2 size={16} className="text-brand-400" />
                 Public service access
-              </span>
-
-              <span className="inline-flex items-center gap-2">
-                <ShieldCheck
-                  size={16}
-                  className="text-teal-300"
-                />
+              </li>
+              <li className="inline-flex items-center gap-2">
+                <ShieldCheck size={16} className="text-brand-400" />
                 Secure resident accounts
-              </span>
-            </div>
+              </li>
+              <li className="inline-flex items-center gap-2">
+                <Smartphone size={16} className="text-brand-400" />
+                Works on any phone
+              </li>
+            </ul>
           </div>
 
-          {/* Hero service panel */}
-          <div className="rounded-3xl border border-white/15 bg-slate-950/60 p-5 shadow-2xl backdrop-blur-xl">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-black uppercase tracking-[0.2em] text-teal-300">
-                  Civic office
-                </p>
+          <div className="relative mx-auto w-full max-w-[260px] sm:max-w-[300px] lg:max-w-[320px]">
+            <div className="absolute -inset-8 -z-10 rounded-[3rem] bg-brand-500/25 blur-3xl" />
 
-                <p className="mt-1 text-lg font-black">
-                  What can we help with?
-                </p>
-              </div>
-
-              <MessageCircle className="text-teal-300" />
-            </div>
-
-            <div className="mt-6 grid gap-3 sm:grid-cols-2">
-              <Card
-                icon={<ClipboardList />}
-                title="Programmes"
-                text={`${programmes.length} active programmes`}
-              />
-
-              <Card
-                icon={<Search />}
-                title="Opportunities"
-                text={`${opportunities.length} open opportunities`}
-              />
-
-              <Card
-                icon={<MapPinned />}
-                title="Projects"
-                text={`${projects.length} tracked projects`}
-              />
-
-              <Card
-                icon={<MessageCircle />}
-                title="Requests"
-                text="Report an issue or request assistance."
-              />
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================
-          LIVE STATS
-      ========================================================== */}
-      <section className="border-b border-slate-100 bg-slate-50">
-        <div className="mx-auto grid max-w-7xl gap-4 px-5 py-7 sm:grid-cols-3">
-          <QuickStat
-            value={String(programmes.length)}
-            label="Active programmes"
-          />
-
-          <QuickStat
-            value={String(opportunities.length)}
-            label="Open opportunities"
-          />
-
-          <QuickStat
-            value={String(projects.length)}
-            label="Community projects"
-          />
-        </div>
-      </section>
-
-      {/* =========================================================
-          INTRO + COMMUNITY GALLERY
-      ========================================================== */}
-      <section className="mx-auto max-w-7xl px-5 py-20">
-        <div className="grid gap-12 md:grid-cols-[.8fr_1.2fr] md:items-center">
-          {/* Copy */}
-          <div>
-            <p className="text-sm font-black uppercase tracking-[0.2em] text-teal-700">
-              Built around residents
-            </p>
-
-            <h2 className="mt-3 text-4xl font-black tracking-tight text-slate-950 md:text-5xl">
-              Find help. Take part. Stay informed.
-            </h2>
-
-            <p className="mt-5 max-w-xl text-lg leading-8 text-slate-600">
-              REACH brings useful civic information and service
-              pathways together so residents can spend less time
-              figuring out where to go and more time getting things
-              done.
-            </p>
-
-            <div className="mt-8 space-y-5">
-              <JourneyItem
-                number="01"
-                title="Discover"
-                text="Find programmes, opportunities and community initiatives."
-              />
-
-              <JourneyItem
-                number="02"
-                title="Engage"
-                text="Submit requests and participate in available services."
-              />
-
-              <JourneyItem
-                number="03"
-                title="Track"
-                text="Follow requests and public projects as they progress."
-              />
-            </div>
-          </div>
-
-          {/* Image gallery */}
-          <div className="grid grid-cols-2 gap-3">
-            {COMMUNITY_IMAGES.map((src, index) => (
-              <div
-                key={src}
-                className={`relative overflow-hidden rounded-3xl bg-slate-100 ${
-                  index === 0
-                    ? "col-span-2 aspect-[2/1]"
-                    : "aspect-square"
-                }`}
-              >
-                <img
-                  src={src}
-                  alt="Community activity"
-                  loading={
-                    index === 0 ? "eager" : "lazy"
-                  }
-                  className="h-full w-full object-cover transition duration-500 hover:scale-105"
-                />
-
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent" />
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================
-          SERVICES
-      ========================================================== */}
-      <section className="bg-slate-950 text-white">
-        <div className="mx-auto max-w-7xl px-5 py-20">
-          <div className="max-w-2xl">
-            <p className="text-sm font-black uppercase tracking-[0.2em] text-teal-300">
-              The REACH experience
-            </p>
-
-            <h2 className="mt-3 text-4xl font-black tracking-tight md:text-5xl">
-              One place for civic services.
-            </h2>
-
-            <p className="mt-5 text-lg leading-8 text-slate-300">
-              From discovering an opportunity to reporting a
-              community issue, REACH gives residents a clear digital
-              path to engage with their civic office.
-            </p>
-          </div>
-
-          <div className="mt-10 grid gap-5 md:grid-cols-3">
-            <FeatureCard
-              number="01"
-              title="Discover"
-              text="Browse programmes, opportunities and initiatives available to your community."
+            <VideoPlayer
+              mode="ambient"
+              src={hero.video}
+              poster={hero.poster.src}
+              title={`${tenant.name} community highlights`}
+              className="aspect-[9/16] rounded-[2rem] shadow-2xl shadow-black/50 ring-1 ring-white/20"
             />
 
-            <FeatureCard
-              number="02"
-              title="Engage"
-              text="Create an account, submit a request and connect with the relevant office."
-            />
-
-            <FeatureCard
-              number="03"
-              title="Track"
-              text="Keep up with your requests and follow the progress of community projects."
-            />
+            <div className="absolute -left-4 bottom-8 hidden rounded-2xl bg-white p-4 text-ink shadow-xl sm:block lg:-left-10">
+              <p className="text-2xl font-extrabold">{programmes.length}</p>
+              <p className="text-xs font-bold uppercase tracking-wider text-slate-500">
+                Programmes open
+              </p>
+            </div>
           </div>
-        </div>
+        </Container>
       </section>
 
-      {/* =========================================================
-          PROGRAMMES / OPPORTUNITIES PREVIEW
-      ========================================================== */}
-      <section className="mx-auto max-w-7xl px-5 py-20">
-        <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
-          <div>
-            <p className="text-sm font-black uppercase tracking-[0.2em] text-teal-700">
-              Explore
-            </p>
-
-            <h2 className="mt-2 text-4xl font-black tracking-tight text-slate-950">
-              What is available?
-            </h2>
-
-            <p className="mt-3 max-w-2xl leading-7 text-slate-600">
-              Explore programmes, opportunities and projects currently
-              published through this civic office.
-            </p>
-          </div>
-
-          <Link
-            href="/programmes"
-            className="inline-flex items-center gap-2 font-black text-teal-700 transition hover:text-teal-800"
-          >
-            View programmes
-            <ArrowRight size={18} />
-          </Link>
-        </div>
-
-        {programmes.length > 0 ? (
-          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {programmes.slice(0, 3).map((programme) => (
-              <article
-                key={programme.id}
-                className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
-              >
-                {programme.image_url ? (
-                  <img
-                    src={programme.image_url}
-                    alt={programme.title}
-                    className="h-52 w-full object-cover"
-                    loading="lazy"
-                  />
-                ) : (
-                  <div className="flex h-52 items-center justify-center bg-gradient-to-br from-teal-100 to-slate-100">
-                    <ClipboardList
-                      size={48}
-                      className="text-teal-700"
-                    />
-                  </div>
-                )}
-
-                <div className="p-6">
-                  <span className="text-xs font-black uppercase tracking-wider text-teal-700">
-                    {programme.category || "Programme"}
+      {/* ------------------------------------------------------------ */}
+      {/* Quick links                                                    */}
+      {/* ------------------------------------------------------------ */}
+      <section className="bg-white">
+        <Container className="relative z-10 -mt-8">
+          <ul className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            {quickLinks.map((item) => (
+              <li key={item.href}>
+                <Link
+                  href={item.href}
+                  className="group flex items-center gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-lg shadow-slate-900/5 transition hover:-translate-y-0.5 hover:border-brand-300 hover:shadow-xl"
+                >
+                  <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700 transition group-hover:bg-brand-600 group-hover:text-white">
+                    {item.icon}
                   </span>
 
-                  <h3 className="mt-2 text-xl font-black text-slate-950">
-                    {programme.title}
-                  </h3>
+                  <span className="min-w-0">
+                    <span className="block font-extrabold text-ink">
+                      {item.title}
+                    </span>
+                    <span className="block truncate text-sm text-slate-500">
+                      {item.text}
+                    </span>
+                  </span>
 
-                  {programme.summary && (
-                    <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">
-                      {programme.summary}
-                    </p>
-                  )}
+                  <ArrowRight
+                    size={18}
+                    className="ml-auto shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-brand-700"
+                  />
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </Container>
+      </section>
 
-                  <Link
-                    href={`/programmes/${programme.slug}`}
-                    className="mt-5 inline-flex items-center gap-2 text-sm font-black text-teal-700 transition hover:text-teal-800"
-                  >
-                    Learn more
-                    <ArrowRight size={15} />
-                  </Link>
+      {/* ------------------------------------------------------------ */}
+      {/* How it works + gallery                                         */}
+      {/* ------------------------------------------------------------ */}
+      <section className="bg-white">
+        <Container className="py-16 md:py-24">
+          <div className="grid gap-12 lg:grid-cols-[0.85fr_1.15fr] lg:items-center lg:gap-16">
+            <div>
+              <Eyebrow>Built around residents</Eyebrow>
+
+              <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-ink text-balance sm:text-4xl md:text-5xl">
+                Find help. Take part. Stay informed.
+              </h2>
+
+              <p className="mt-5 max-w-xl text-base leading-7 text-slate-600 sm:text-lg sm:leading-8">
+                {tenant.name} brings civic information and service pathways
+                together, so residents spend less time working out where to
+                go and more time getting things done.
+              </p>
+
+              <ol className="mt-8 space-y-5">
+                {[
+                  {
+                    title: "Discover",
+                    text: "Find programmes, opportunities and community initiatives near you.",
+                  },
+                  {
+                    title: "Engage",
+                    text: "Create an account, submit a request and connect with the right office.",
+                  },
+                  {
+                    title: "Track",
+                    text: "Follow your requests and public projects as they progress.",
+                  },
+                ].map((step, index) => (
+                  <li key={step.title} className="flex gap-4">
+                    <span className="mt-0.5 flex size-9 shrink-0 items-center justify-center rounded-full bg-brand-600 text-xs font-extrabold text-white">
+                      0{index + 1}
+                    </span>
+
+                    <div>
+                      <h3 className="font-extrabold text-ink">{step.title}</h3>
+                      <p className="mt-1 text-sm leading-6 text-slate-600">
+                        {step.text}
+                      </p>
+                    </div>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              {gallery.map((photo, index) => (
+                <PhotoFrame
+                  key={photo.src}
+                  src={photo.src}
+                  alt={photo.alt}
+                  aspect={index === 0 ? "col-span-2 aspect-[2/1]" : "aspect-square"}
+                  sizes={
+                    index === 0
+                      ? "(min-width: 1024px) 640px, 100vw"
+                      : "(min-width: 1024px) 320px, 50vw"
+                  }
+                  className="rounded-3xl"
+                >
+                  <div className="absolute inset-0 bg-linear-to-t from-ink/30 to-transparent" />
+                </PhotoFrame>
+              ))}
+            </div>
+          </div>
+        </Container>
+      </section>
+
+      {/* ------------------------------------------------------------ */}
+      {/* Programmes                                                     */}
+      {/* ------------------------------------------------------------ */}
+      <section className="border-y border-slate-100 bg-slate-50">
+        <Container className="py-16 md:py-24">
+          <SectionHeader
+            eyebrow="Programmes"
+            title="What is available right now?"
+            text={`Programmes and initiatives currently published by ${tenant.name}.`}
+            action={<TextLink href="/programmes">View all programmes</TextLink>}
+          />
+
+          {programmes.length > 0 ? (
+            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {programmes.slice(0, 3).map((programme) => (
+                <ContentCard
+                  key={programme.id}
+                  href={`/programmes/${programme.slug}`}
+                  title={programme.title}
+                  summary={programme.summary}
+                  image={programme.image_url}
+                  fallbackIcon={<ClipboardList size={28} />}
+                  badges={[{ label: programme.category || "Programme" }]}
+                  meta={[
+                    programme.location && {
+                      icon: <MapPin size={14} />,
+                      text: programme.location,
+                    },
+                    programme.registration_deadline && {
+                      icon: <CalendarDays size={14} />,
+                      text: `Apply by ${formatDate(programme.registration_deadline)}`,
+                    },
+                  ].filter(Boolean) as { icon: React.ReactNode; text: string }[]}
+                  cta="View programme"
+                />
+              ))}
+            </div>
+          ) : (
+            <div className="mt-10">
+              <EmptyState
+                icon={<ClipboardList size={28} />}
+                title="New programmes will appear here"
+                text="There are no active programmes published for this office yet. Check back as new initiatives become available."
+                action={<ButtonLink href="/programmes">Browse programmes</ButtonLink>}
+              />
+            </div>
+          )}
+        </Container>
+      </section>
+
+      {/* ------------------------------------------------------------ */}
+      {/* Opportunities + projects                                       */}
+      {/* ------------------------------------------------------------ */}
+      <section className="bg-white">
+        <Container className="grid gap-12 py-16 md:py-24 lg:grid-cols-2 lg:gap-10">
+          <CompactList
+            eyebrow="Opportunities"
+            title="Scholarships, training and support"
+            href="/opportunities"
+            linkLabel="All opportunities"
+            emptyText="Opportunities will be listed here as they are published."
+            items={opportunities.slice(0, 3).map((opportunity) => ({
+              href: `/opportunities/${opportunity.slug}`,
+              title: opportunity.title,
+              badge: humanize(opportunity.type, "Opportunity"),
+              tone: "brand" as const,
+              meta: opportunity.deadline
+                ? `Deadline ${formatDate(opportunity.deadline)}`
+                : opportunity.location || "Open to residents",
+              icon: <Sparkles size={20} />,
+            }))}
+          />
+
+          <CompactList
+            eyebrow="Community projects"
+            title="Follow what is being delivered"
+            href="/projects"
+            linkLabel="All projects"
+            emptyText="Community projects will be listed here as they are published."
+            items={projects.slice(0, 3).map((project) => ({
+              href: `/projects/${project.slug}`,
+              title: project.title,
+              badge: humanize(project.status, "Project"),
+              tone: statusTone(project.status),
+              meta: project.location || project.category || "Community project",
+              icon: <FolderKanban size={20} />,
+            }))}
+          />
+        </Container>
+      </section>
+
+      {/* ------------------------------------------------------------ */}
+      {/* Stories                                                        */}
+      {/* ------------------------------------------------------------ */}
+      <section className="bg-ink">
+        <Container className="py-16 md:py-24">
+          <SectionHeader
+            tone="light"
+            eyebrow="From the community"
+            title="See the office in action"
+            text="Short videos from programmes and activities across the constituency. Tap a story to watch."
+          />
+
+          <div className="mt-10 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {stories.map((story) => (
+              <figure key={story.src}>
+                <VideoPlayer
+                  src={story.src}
+                  poster={story.poster}
+                  title={story.title}
+                  className="aspect-[4/5] rounded-3xl ring-1 ring-white/10"
+                />
+
+                <figcaption className="mt-4">
+                  <p className="font-extrabold text-white">{story.title}</p>
+                  <p className="mt-1 text-sm leading-6 text-slate-400">
+                    {story.caption}
+                  </p>
+                </figcaption>
+              </figure>
+            ))}
+          </div>
+        </Container>
+      </section>
+
+      {/* ------------------------------------------------------------ */}
+      {/* Leadership                                                     */}
+      {/* ------------------------------------------------------------ */}
+      <section className="bg-white">
+        <Container className="py-16 md:py-24">
+          <SectionHeader
+            eyebrow="Public leadership & offices"
+            title="Connect with the wider civic network"
+            text="Public profiles and official reference sources for the offices connected to this community."
+            action={<TextLink href="/leadership">All profiles</TextLink>}
+          />
+
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            {leaders.map((leader) => (
+              <article
+                key={leader.slug}
+                className="group relative rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-900/10"
+              >
+                <div className="flex size-14 items-center justify-center rounded-2xl bg-linear-to-br from-brand-500 to-brand-800 text-lg font-extrabold text-white">
+                  {initials(leader.name)}
                 </div>
+
+                <h3 className="mt-5 text-lg font-extrabold leading-tight text-ink">
+                  <Link
+                    href={`/leadership/${leader.slug}`}
+                    className="after:absolute after:inset-0 after:content-[''] group-hover:text-brand-800"
+                  >
+                    {leader.name}
+                  </Link>
+                </h3>
+
+                <p className="mt-1 text-sm font-bold text-brand-700">
+                  {leader.role}
+                </p>
+
+                <p className="mt-3 text-sm leading-6 text-slate-600">
+                  {leader.office}
+                </p>
+
+                <span className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-ink">
+                  View profile
+                  <ArrowRight
+                    size={15}
+                    className="transition group-hover:translate-x-0.5"
+                  />
+                </span>
               </article>
             ))}
           </div>
-        ) : (
-          <div className="mt-10 overflow-hidden rounded-3xl border border-slate-200 bg-slate-50">
-            <div className="grid min-h-[280px] items-center gap-8 px-6 py-10 sm:px-10 md:grid-cols-[auto_1fr_auto] md:px-12">
-              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-teal-100 text-teal-700">
-                <ClipboardList size={36} />
-              </div>
+        </Container>
+      </section>
 
+      {/* ------------------------------------------------------------ */}
+      {/* Request CTA                                                    */}
+      {/* ------------------------------------------------------------ */}
+      <section className="bg-white">
+        <Container className="pb-16 md:pb-24">
+          <div className="relative isolate overflow-hidden rounded-[2rem] bg-brand-900 text-white">
+            <Photo
+              src={photos.officeMeeting.src}
+              alt=""
+              sizes="(min-width: 1280px) 1152px, 100vw"
+              className="-z-20 opacity-40"
+            />
+            <div className="absolute inset-0 -z-10 bg-linear-to-r from-brand-950 via-brand-900/90 to-brand-800/60" />
+
+            <div className="grid gap-8 p-8 sm:p-12 lg:grid-cols-[1fr_auto] lg:items-center lg:p-16">
               <div>
-                <p className="text-xs font-black uppercase tracking-[0.18em] text-teal-700">
-                  Programmes
-                </p>
+                <Eyebrow tone="light">Need assistance?</Eyebrow>
 
-                <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
-                  New programmes will appear here.
-                </h3>
+                <h2 className="mt-3 text-3xl font-extrabold tracking-tight text-balance sm:text-4xl md:text-5xl">
+                  Tell the office what you need.
+                </h2>
 
-                <p className="mt-2 max-w-xl text-sm leading-7 text-slate-600">
-                  There are no active programmes published for this civic
-                  office yet. Check back here as new programmes and
-                  initiatives become available.
+                <p className="mt-4 max-w-2xl text-base leading-7 text-brand-100 sm:text-lg">
+                  Submit a service request through {tenant.name}. You will get
+                  a reference number so you can follow up on progress.
                 </p>
               </div>
 
-              <Link
-                href="/programmes"
-                className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-800"
-              >
-                Browse programmes
-                <ArrowRight size={16} />
-              </Link>
+              <div className="flex flex-col gap-3 sm:flex-row lg:flex-col">
+                <ButtonLink href="/requests/new" variant="light" size="lg" arrow>
+                  Start a request
+                </ButtonLink>
+                <ButtonLink href="/requests" variant="outlineLight" size="lg">
+                  Track my requests
+                </ButtonLink>
+              </div>
             </div>
           </div>
-        )}
+        </Container>
       </section>
-
-
-      {/* =========================================================
-          PUBLIC LEADERSHIP & COMMUNITY OFFICES
-      ========================================================== */}
-      <section className="border-y border-slate-100 bg-slate-50">
-        <div className="mx-auto max-w-7xl px-5 py-20">
-          <div className="max-w-2xl">
-            <p className="text-sm font-black uppercase tracking-[0.2em] text-teal-700">
-              Public leadership & offices
-            </p>
-
-            <h2 className="mt-3 text-4xl font-black tracking-tight text-slate-950 md:text-5xl">
-              Connect with the wider civic network.
-            </h2>
-
-            <p className="mt-5 text-lg leading-8 text-slate-600">
-              REACH provides a single digital layer for discovering civic
-              services, community initiatives and relevant public offices.
-            </p>
-          </div>
-
-          <div className="mt-10 grid gap-5 md:grid-cols-3">
-            <LeadershipCard
-              name="Femi Gbajabiamila"
-              role="Chief of Staff to the President"
-              description="Former representative for Surulere I and former Speaker of the House of Representatives."
-              href="/leadership/femi-gbajabiamila"
-              linkLabel="View profile"
-            />
-
-            <LeadershipCard
-              name="Fuad Kayode Laguda"
-              role="Surulere Constituency 1"
-              description="Public profile and background information."
-              href="/leadership/fuad-kayode-laguda"
-              linkLabel="View profile"
-            />
-
-            <LeadershipCard
-              name="Lanre Okunlola"
-              role="Member, House of Representatives"
-              description="Representative for Surulere II Federal Constituency."
-              href="/leadership/lanre-okunlola"
-              linkLabel="View profile"
-            />
-
-            <LeadershipCard
-              name="Odunayo Oluwafemi Daniel"
-              role="Executive Chairman, Itire-Ikate LCDA"
-              description="Public office profile and information from the Itire-Ikate LCDA."
-              href="/leadership/odunayo-oluwafemi-daniel"
-              linkLabel="View official profile"
-              secondaryHref="https://www.instagram.com/hon.femiodunayodaniel/"
-              secondaryLabel="Instagram"
-            />
-          </div>
-        </div>
-      </section>
-
-      {/* =========================================================
-          REQUEST CTA
-      ========================================================== */}
-      <section className="mx-auto max-w-7xl px-5 pb-20">
-        <div className="relative overflow-hidden rounded-[2rem] bg-teal-50 p-8 md:p-12">
-          <div className="absolute -right-20 -top-20 h-64 w-64 rounded-full bg-teal-200/50 blur-3xl" />
-
-          <div className="relative grid gap-8 md:grid-cols-[1fr_auto] md:items-center">
-            <div>
-              <p className="text-sm font-black uppercase tracking-[0.2em] text-teal-800">
-                Need assistance?
-              </p>
-
-              <h2 className="mt-3 text-3xl font-black text-slate-950 md:text-4xl">
-                Tell the office what you need.
-              </h2>
-
-              <p className="mt-3 max-w-2xl leading-7 text-slate-600">
-                Submit a service request through REACH and keep your
-                reference details for future follow-up.
-              </p>
-            </div>
-
-            <Link
-              href="/requests/new"
-              className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-6 py-3.5 font-black text-white transition hover:bg-slate-800"
-            >
-              Start a request
-              <ArrowRight size={18} />
-            </Link>
-          </div>
-        </div>
-      </section>
-    </main>
+    </>
   );
 }
 
-/* ===============================================================
-   COMPONENTS
-=============================================================== */
+/* ------------------------------------------------------------------ */
+/* Local pieces                                                        */
+/* ------------------------------------------------------------------ */
 
-function Card({
-  icon,
-  title,
-  text,
-}: {
+type CompactItem = {
+  href: string;
+  title: string;
+  badge: string;
+  tone: "brand" | "gold" | "slate" | "ink";
+  meta: string;
   icon: React.ReactNode;
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="rounded-2xl border border-white/10 bg-white/10 p-5 transition hover:bg-white/15">
-      <div className="mb-4 text-teal-300">
-        {icon}
-      </div>
+};
 
-      <div className="font-black">
-        {title}
-      </div>
-
-      <div className="mt-1 text-sm leading-6 text-slate-300">
-        {text}
-      </div>
-    </div>
-  );
-}
-
-function QuickStat({
-  value,
-  label,
-}: {
-  value: string;
-  label: string;
-}) {
-  return (
-    <div className="rounded-2xl bg-white px-5 py-4 shadow-sm ring-1 ring-slate-200">
-      <div className="text-2xl font-black text-slate-950">
-        {value}
-      </div>
-
-      <div className="mt-1 text-sm font-medium text-slate-500">
-        {label}
-      </div>
-    </div>
-  );
-}
-
-function JourneyItem({
-  number,
+function CompactList({
+  eyebrow,
   title,
-  text,
-}: {
-  number: string;
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="flex gap-4">
-      <div className="mt-1 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-teal-100 text-xs font-black text-teal-800">
-        {number}
-      </div>
-
-      <div>
-        <h3 className="font-black text-slate-950">
-          {title}
-        </h3>
-
-        <p className="mt-1 text-sm leading-6 text-slate-600">
-          {text}
-        </p>
-      </div>
-    </div>
-  );
-}
-
-function FeatureCard({
-  number,
-  title,
-  text,
-}: {
-  number: string;
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="rounded-3xl border border-white/10 bg-white/5 p-7 transition hover:bg-white/10">
-      <div className="text-sm font-black text-teal-300">
-        {number}
-      </div>
-
-      <h3 className="mt-5 text-2xl font-black">
-        {title}
-      </h3>
-
-      <p className="mt-3 leading-7 text-slate-300">
-        {text}
-      </p>
-    </div>
-  );
-}
-
-function EmptyCard({
-  title,
-  text,
-}: {
-  title: string;
-  text: string;
-}) {
-  return (
-    <div className="rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-8 md:col-span-3">
-      <h3 className="font-black text-slate-950">
-        {title}
-      </h3>
-
-      <p className="mt-2 text-sm leading-6 text-slate-600">
-        {text}
-      </p>
-    </div>
-  );
-}
-
-function LeadershipCard({
-  name,
-  role,
-  description,
   href,
   linkLabel,
-  secondaryHref,
-  secondaryLabel,
+  emptyText,
+  items,
 }: {
-  name: string;
-  role: string;
-  description: string;
+  eyebrow: string;
+  title: string;
   href: string;
   linkLabel: string;
-  secondaryHref?: string;
-  secondaryLabel?: string;
+  emptyText: string;
+  items: CompactItem[];
 }) {
   return (
-    <article className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg">
-      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-100 text-lg font-black text-teal-800">
-        {name
-          .split(" ")
-          .filter(Boolean)
-          .slice(0, 2)
-          .map((word) => word[0])
-          .join("")}
-      </div>
+    <div>
+      <Eyebrow>{eyebrow}</Eyebrow>
 
-      <h3 className="mt-6 text-xl font-black text-slate-950">
-        {name}
-      </h3>
+      <h2 className="mt-3 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">
+        {title}
+      </h2>
 
-      <p className="mt-1 text-sm font-bold text-teal-700">
-        {role}
-      </p>
+      {items.length > 0 ? (
+        <ul className="mt-6 divide-y divide-slate-100 rounded-3xl border border-slate-200 bg-white shadow-sm">
+          {items.map((item) => (
+            <li key={item.href}>
+              <Link
+                href={item.href}
+                className="group flex items-center gap-4 p-4 transition hover:bg-brand-50/60 sm:p-5"
+              >
+                <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700 transition group-hover:bg-brand-600 group-hover:text-white">
+                  {item.icon}
+                </span>
 
-      <p className="mt-4 text-sm leading-7 text-slate-600">
-        {description}
-      </p>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate font-extrabold text-ink group-hover:text-brand-800">
+                    {item.title}
+                  </span>
+                  <span className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                    <Badge tone={item.tone}>{item.badge}</Badge>
+                    <span>{item.meta}</span>
+                  </span>
+                </span>
 
-      <div className="mt-6 flex flex-wrap gap-4">
-        <a
-          href={href}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 text-sm font-black text-slate-950 transition hover:text-teal-700"
-        >
-          {linkLabel}
-          <ArrowRight size={15} />
-        </a>
+                <ArrowRight
+                  size={18}
+                  className="shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-brand-700"
+                />
+              </Link>
+            </li>
+          ))}
+        </ul>
+      ) : (
+        <p className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">
+          {emptyText}
+        </p>
+      )}
 
-        {secondaryHref && secondaryLabel && (
-          <a
-            href={secondaryHref}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 text-sm font-black text-teal-700 transition hover:text-teal-800"
-          >
-            {secondaryLabel}
-            <ArrowRight size={15} />
-          </a>
-        )}
-      </div>
-    </article>
+      <TextLink href={href} className="mt-5">
+        {linkLabel}
+      </TextLink>
+    </div>
   );
 }

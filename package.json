@@ -1,1 +1,28 @@
-{"name":"reach","version":"0.1.0","private":true,"scripts":{"dev":"next dev","build":"next build","start":"next start"},"dependencies":{"@supabase/ssr":"latest","@supabase/supabase-js":"latest","next":"latest","react":"latest","react-dom":"latest","lucide-react":"latest"},"devDependencies":{"typescript":"latest","@types/node":"latest","@types/react":"latest","@types/react-dom":"latest","tailwindcss":"latest","@tailwindcss/postcss":"latest","postcss":"latest"}}
+{
+  "name": "reach",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.12.7",
+    "@supabase/supabase-js": "^2.117.2",
+    "next": "^16.3.7",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "lucide-react": "^1.49.0"
+  },
+  "devDependencies": {
+    "typescript": "^7.0.2",
+    "@types/node": "^26.6.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "tailwindcss": "^4.3.3",
+    "@tailwindcss/postcss": "^4.3.3",
+    "postcss": "^8.5.28"
+  }
+}

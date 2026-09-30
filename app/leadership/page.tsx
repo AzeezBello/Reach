@@ -1,57 +1,59 @@
+import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, Building2 } from "lucide-react";
-import { leaders } from "@/lib/leadership";
+import { ArrowRight, Building2, MapPin } from "lucide-react";
 
-export const metadata = {
-  title: "Leadership | REACH",
+import { Container } from "@/components/ui";
+import { PageHero } from "@/components/page-hero";
+import { initials } from "@/lib/format";
+import { leaders } from "@/lib/leadership";
+import { pageArt } from "@/lib/media";
+
+export const metadata: Metadata = {
+  title: "Leadership",
   description:
-    "Public leadership profiles connected to the REACH civic service experience.",
+    "Public leadership profiles, offices and official reference sources connected to this community.",
+  alternates: { canonical: "/leadership" },
 };
 
 export default function LeadershipPage() {
   return (
-    <main className="min-h-screen bg-slate-50">
-      <section className="border-b bg-white">
-        <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
-          <p className="text-sm font-semibold uppercase tracking-[0.18em] text-emerald-700">
-            Public Leadership
-          </p>
+    <>
+      <PageHero
+        eyebrow="Public leadership"
+        title="Leadership profiles"
+        text="Public-service profiles, offices, jurisdictions and official reference sources connected to this community."
+        image={pageArt.leadership}
+        breadcrumbs={[{ label: "Leadership", href: "/leadership" }]}
+      />
 
-          <h1 className="mt-3 max-w-3xl text-4xl font-bold tracking-tight text-slate-950 sm:text-5xl">
-            Leadership profiles
-          </h1>
-
-          <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
-            Public-service profiles, offices, jurisdictions and official
-            reference sources connected to the REACH civic experience.
-          </p>
-        </div>
-      </section>
-
-      <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6 lg:px-8">
-        <div className="grid gap-6 md:grid-cols-2">
+      <Container className="py-12 md:py-16">
+        <div className="grid gap-5 md:grid-cols-2">
           {leaders.map((leader) => (
-            <Link
+            <article
               key={leader.slug}
-              href={`/leadership/${leader.slug}`}
-              className="group rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition hover:-translate-y-0.5 hover:border-emerald-200 hover:shadow-md"
+              className="group relative rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-900/10 sm:p-7"
             >
               <div className="flex items-start gap-5">
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-2xl bg-emerald-700 text-lg font-bold text-white">
-                  {leader.initial}
+                <div className="flex size-16 shrink-0 items-center justify-center rounded-2xl bg-linear-to-br from-brand-500 to-brand-800 text-lg font-extrabold text-white">
+                  {initials(leader.name)}
                 </div>
 
                 <div className="min-w-0">
-                  <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-emerald-700">
-                    <Building2 className="h-4 w-4" />
+                  <p className="inline-flex items-center gap-2 text-[11px] font-extrabold uppercase tracking-wider text-brand-700">
+                    <Building2 size={14} />
                     {leader.office}
-                  </div>
+                  </p>
 
-                  <h2 className="mt-2 text-xl font-bold text-slate-950">
-                    {leader.name}
+                  <h2 className="mt-2 text-xl font-extrabold text-ink">
+                    <Link
+                      href={`/leadership/${leader.slug}`}
+                      className="after:absolute after:inset-0 after:content-[''] group-hover:text-brand-800"
+                    >
+                      {leader.name}
+                    </Link>
                   </h2>
 
-                  <p className="mt-1 text-sm font-medium text-slate-500">
+                  <p className="mt-1 text-sm font-semibold text-slate-500">
                     {leader.role}
                   </p>
 
@@ -59,16 +61,26 @@ export default function LeadershipPage() {
                     {leader.summary}
                   </p>
 
-                  <span className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-emerald-700">
-                    View profile
-                    <ArrowRight className="h-4 w-4 transition group-hover:translate-x-1" />
-                  </span>
+                  <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 text-sm">
+                    <span className="inline-flex items-center gap-1.5 text-slate-500">
+                      <MapPin size={14} className="text-brand-700" />
+                      {leader.jurisdiction}
+                    </span>
+
+                    <span className="inline-flex items-center gap-2 font-bold text-brand-700">
+                      View profile
+                      <ArrowRight
+                        size={15}
+                        className="transition group-hover:translate-x-0.5"
+                      />
+                    </span>
+                  </div>
                 </div>
               </div>
-            </Link>
+            </article>
           ))}
         </div>
-      </section>
-    </main>
+      </Container>
+    </>
   );
 }
