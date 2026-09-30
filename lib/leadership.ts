@@ -12,6 +12,7 @@ export type LeadershipPerson = {
   slug: string;
   name: string;
   initial: string;
+  role: string;
   level: LeadershipLevel;
   levelLabel: string;
   officeType: LeadershipOfficeType;
@@ -27,6 +28,11 @@ export type LeadershipPerson = {
   }[];
 };
 
+/**
+ * Backward-compatible type used by existing REACH code.
+ */
+export type Leader = LeadershipPerson;
+
 export const leadership: LeadershipPerson[] = [
   /*
    * ============================================================
@@ -38,6 +44,7 @@ export const leadership: LeadershipPerson[] = [
     slug: "wasiu-sanni-eshilokun",
     name: "Senator Wasiu Sanni Eshilokun",
     initial: "W",
+    role: "Senator",
     level: "federal",
     levelLabel: "Federal Government",
     officeType: "senate",
@@ -66,6 +73,7 @@ export const leadership: LeadershipPerson[] = [
     slug: "fuad-kayode-laguda",
     name: "Hon. Fuad Kayode Laguda",
     initial: "F",
+    role: "Member, House of Representatives",
     level: "federal",
     levelLabel: "Federal Government",
     officeType: "house_of_representatives",
@@ -94,6 +102,7 @@ export const leadership: LeadershipPerson[] = [
     slug: "lanre-okunlola",
     name: "Hon. Lanre Okunlola",
     initial: "L",
+    role: "Member, House of Representatives",
     level: "federal",
     levelLabel: "Federal Government",
     officeType: "house_of_representatives",
@@ -132,6 +141,7 @@ export const leadership: LeadershipPerson[] = [
     slug: "desmond-olushola-elliot",
     name: "Hon. Desmond Olushola Elliot",
     initial: "D",
+    role: "Member, Lagos State House of Assembly",
     level: "state",
     levelLabel: "Lagos State Government",
     officeType: "house_of_assembly",
@@ -160,6 +170,7 @@ export const leadership: LeadershipPerson[] = [
     slug: "mosunmola-rotimi-sangodara",
     name: "Hon. Mosunmola Rotimi Sangodara",
     initial: "M",
+    role: "Member, Lagos State House of Assembly",
     level: "state",
     levelLabel: "Lagos State Government",
     officeType: "house_of_assembly",
@@ -194,13 +205,13 @@ export const leadership: LeadershipPerson[] = [
     slug: "sulaiman-bamidele-yusuf",
     name: "Hon. Sulaiman Bamidele Yusuf",
     initial: "S",
+    role: "Executive Chairman",
     level: "local",
     levelLabel: "Surulere Local Government",
     officeType: "lga_chairman",
     office: "Executive Chairman",
     jurisdiction: "Surulere Local Government",
-    summary:
-      "Executive Chairman of Surulere Local Government.",
+    summary: "Executive Chairman of Surulere Local Government.",
     biography: [
       "Hon. Sulaiman Bamidele Yusuf serves as Executive Chairman of Surulere Local Government in Lagos State.",
       "The office oversees the administration and local government functions of Surulere.",
@@ -222,13 +233,13 @@ export const leadership: LeadershipPerson[] = [
     slug: "muiz-dosunmu",
     name: "Hon. Prince Muiz Dosunmu",
     initial: "M",
+    role: "Vice Chairman",
     level: "local",
     levelLabel: "Surulere Local Government",
     officeType: "lga_vice_chairman",
     office: "Vice Chairman",
     jurisdiction: "Surulere Local Government",
-    summary:
-      "Vice Chairman of Surulere Local Government.",
+    summary: "Vice Chairman of Surulere Local Government.",
     biography: [
       "Hon. Prince Muiz Dosunmu serves as Vice Chairman of Surulere Local Government in Lagos State.",
       "The office supports the administration of the local government and its community-facing responsibilities.",
@@ -250,6 +261,7 @@ export const leadership: LeadershipPerson[] = [
     slug: "akeem-olayiwola-abdulrahman",
     name: "Hon. Akeem Olayiwola AbdulRahman",
     initial: "A",
+    role: "Legislative Assembly",
     level: "local",
     levelLabel: "Surulere Local Government",
     officeType: "legislative_assembly",
