@@ -34,7 +34,14 @@ const FALLBACK_TENANT: Tenant = {
   website: null,
 };
 
-/** The shell must render even when the database is unreachable. */
+/**
+ * REACH is the platform brand.
+ * The tenant name (e.g. FKL Connect) is the organization using REACH.
+ */
+const PLATFORM_TITLE = "REACH";
+const PLATFORM_DESCRIPTION =
+  "REACH — Residents Engagement, Access, Communication & Help.";
+
 async function safeTenant(): Promise<{
   tenant: Tenant;
   jurisdiction: Jurisdiction | null;
@@ -42,37 +49,62 @@ async function safeTenant(): Promise<{
   try {
     return await getTenant();
   } catch {
-    return { tenant: FALLBACK_TENANT, jurisdiction: null };
+    return {
+      tenant: FALLBACK_TENANT,
+      jurisdiction: null,
+    };
   }
 }
 
 export async function generateMetadata(): Promise<Metadata> {
   const { tenant, jurisdiction } = await safeTenant();
 
-  const title = siteTitle(tenant);
-  const description = siteDescription(tenant, jurisdiction);
+  const tenantDescription = siteDescription(tenant, jurisdiction);
 
   return {
     metadataBase: new URL(SITE_URL),
+
+    /*
+     * Browser tab:
+     * REACH
+     *
+     * Child pages:
+     * Programmes · REACH
+     * Opportunities · REACH
+     * Projects · REACH
+     */
     title: {
-      default: title,
-      template: `%s · ${tenant.name}`,
+      default: PLATFORM_TITLE,
+      template: `%s · ${PLATFORM_TITLE}`,
     },
-    description,
-    applicationName: tenant.name,
+
+    /*
+     * Keep tenant-specific description where available,
+     * while the platform remains REACH.
+     */
+    description: tenantDescription || PLATFORM_DESCRIPTION,
+
+    applicationName: PLATFORM_TITLE,
+
     generator: PLATFORM_NAME,
-    robots: { index: true, follow: true },
+
+    robots: {
+      index: true,
+      follow: true,
+    },
+
     openGraph: {
       type: "website",
       locale: "en_NG",
-      siteName: tenant.name,
-      title,
-      description,
+      siteName: PLATFORM_TITLE,
+      title: PLATFORM_TITLE,
+      description: tenantDescription || PLATFORM_DESCRIPTION,
     },
+
     twitter: {
       card: "summary_large_image",
-      title,
-      description,
+      title: PLATFORM_TITLE,
+      description: tenantDescription || PLATFORM_DESCRIPTION,
     },
   };
 }
