@@ -73,7 +73,7 @@ export default async function Home() {
           <div>
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-teal-300/30 bg-teal-300/10 px-4 py-2 text-sm font-bold text-teal-200 backdrop-blur">
               <Sparkles size={15} />
-              {tenant.name}
+              REACH is live in your community
             </div>
 
             <h1 className="max-w-4xl text-5xl font-black leading-[0.98] tracking-tight sm:text-6xl md:text-8xl">
@@ -321,117 +321,168 @@ export default async function Home() {
       </section>
 
       {/* =========================================================
-    PROGRAMMES / OPPORTUNITIES PREVIEW
-========================================================== */}
-<section className="mx-auto max-w-7xl px-5 py-20">
-  <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
-    <div>
-      <p className="text-sm font-black uppercase tracking-[0.2em] text-teal-700">
-        Explore
-      </p>
+          PROGRAMMES / OPPORTUNITIES PREVIEW
+      ========================================================== */}
+      <section className="mx-auto max-w-7xl px-5 py-20">
+        <div className="flex flex-col justify-between gap-5 md:flex-row md:items-end">
+          <div>
+            <p className="text-sm font-black uppercase tracking-[0.2em] text-teal-700">
+              Explore
+            </p>
 
-      <h2 className="mt-2 text-4xl font-black tracking-tight text-slate-950">
-        What is available?
-      </h2>
+            <h2 className="mt-2 text-4xl font-black tracking-tight text-slate-950">
+              What is available?
+            </h2>
 
-      <p className="mt-3 max-w-2xl leading-7 text-slate-600">
-        Explore programmes, opportunities and projects currently
-        published through this civic office.
-      </p>
-    </div>
-
-    <Link
-      href="/programmes"
-      className="inline-flex items-center gap-2 font-black text-teal-700 transition hover:text-teal-800"
-    >
-      View programmes
-      <ArrowRight size={18} />
-    </Link>
-  </div>
-
-  {programmes.length > 0 ? (
-    <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-      {programmes.slice(0, 3).map((programme) => (
-        <article
-          key={programme.id}
-          className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
-        >
-          {programme.image_url ? (
-            <img
-              src={programme.image_url}
-              alt={programme.title}
-              className="h-52 w-full object-cover"
-              loading="lazy"
-            />
-          ) : (
-            <div className="flex h-52 items-center justify-center bg-gradient-to-br from-teal-100 to-slate-100">
-              <ClipboardList
-                size={48}
-                className="text-teal-700"
-              />
-            </div>
-          )}
-
-          <div className="p-6">
-            <span className="text-xs font-black uppercase tracking-wider text-teal-700">
-              {programme.category || "Programme"}
-            </span>
-
-            <h3 className="mt-2 text-xl font-black text-slate-950">
-              {programme.title}
-            </h3>
-
-            {programme.summary && (
-              <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">
-                {programme.summary}
-              </p>
-            )}
-
-            <Link
-              href={`/programmes/${programme.slug}`}
-              className="mt-5 inline-flex items-center gap-2 text-sm font-black text-teal-700 transition hover:text-teal-800"
-            >
-              Learn more
-              <ArrowRight size={15} />
-            </Link>
+            <p className="mt-3 max-w-2xl leading-7 text-slate-600">
+              Explore programmes, opportunities and projects currently
+              published through this civic office.
+            </p>
           </div>
-        </article>
-      ))}
-    </div>
-  ) : (
-    <div className="mt-10 overflow-hidden rounded-3xl border border-slate-200 bg-slate-50">
-      <div className="grid min-h-[280px] items-center gap-8 px-6 py-10 sm:px-10 md:grid-cols-[auto_1fr_auto] md:px-12">
-        <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-teal-100 text-teal-700">
-          <ClipboardList size={36} />
+
+          <Link
+            href="/programmes"
+            className="inline-flex items-center gap-2 font-black text-teal-700 transition hover:text-teal-800"
+          >
+            View programmes
+            <ArrowRight size={18} />
+          </Link>
         </div>
 
-        <div>
-          <p className="text-xs font-black uppercase tracking-[0.18em] text-teal-700">
-            Programmes
-          </p>
+        {programmes.length > 0 ? (
+          <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {programmes.slice(0, 3).map((programme) => (
+              <article
+                key={programme.id}
+                className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg"
+              >
+                {programme.image_url ? (
+                  <img
+                    src={programme.image_url}
+                    alt={programme.title}
+                    className="h-52 w-full object-cover"
+                    loading="lazy"
+                  />
+                ) : (
+                  <div className="flex h-52 items-center justify-center bg-gradient-to-br from-teal-100 to-slate-100">
+                    <ClipboardList
+                      size={48}
+                      className="text-teal-700"
+                    />
+                  </div>
+                )}
 
-          <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
-            New programmes will appear here.
-          </h3>
+                <div className="p-6">
+                  <span className="text-xs font-black uppercase tracking-wider text-teal-700">
+                    {programme.category || "Programme"}
+                  </span>
 
-          <p className="mt-2 max-w-xl text-sm leading-7 text-slate-600">
-            There are no active programmes published for this civic
-            office yet. Check back here as new programmes and
-            initiatives become available.
-          </p>
+                  <h3 className="mt-2 text-xl font-black text-slate-950">
+                    {programme.title}
+                  </h3>
+
+                  {programme.summary && (
+                    <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">
+                      {programme.summary}
+                    </p>
+                  )}
+
+                  <Link
+                    href={`/programmes/${programme.slug}`}
+                    className="mt-5 inline-flex items-center gap-2 text-sm font-black text-teal-700 transition hover:text-teal-800"
+                  >
+                    Learn more
+                    <ArrowRight size={15} />
+                  </Link>
+                </div>
+              </article>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-10 overflow-hidden rounded-3xl border border-slate-200 bg-slate-50">
+            <div className="grid min-h-[280px] items-center gap-8 px-6 py-10 sm:px-10 md:grid-cols-[auto_1fr_auto] md:px-12">
+              <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-teal-100 text-teal-700">
+                <ClipboardList size={36} />
+              </div>
+
+              <div>
+                <p className="text-xs font-black uppercase tracking-[0.18em] text-teal-700">
+                  Programmes
+                </p>
+
+                <h3 className="mt-2 text-2xl font-black tracking-tight text-slate-950">
+                  New programmes will appear here.
+                </h3>
+
+                <p className="mt-2 max-w-xl text-sm leading-7 text-slate-600">
+                  There are no active programmes published for this civic
+                  office yet. Check back here as new programmes and
+                  initiatives become available.
+                </p>
+              </div>
+
+              <Link
+                href="/programmes"
+                className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-800"
+              >
+                Browse programmes
+                <ArrowRight size={16} />
+              </Link>
+            </div>
+          </div>
+        )}
+      </section>
+
+
+      {/* =========================================================
+          PUBLIC LEADERSHIP & COMMUNITY OFFICES
+      ========================================================== */}
+      <section className="border-y border-slate-100 bg-slate-50">
+        <div className="mx-auto max-w-7xl px-5 py-20">
+          <div className="max-w-2xl">
+            <p className="text-sm font-black uppercase tracking-[0.2em] text-teal-700">
+              Public leadership & offices
+            </p>
+
+            <h2 className="mt-3 text-4xl font-black tracking-tight text-slate-950 md:text-5xl">
+              Connect with the wider civic network.
+            </h2>
+
+            <p className="mt-5 text-lg leading-8 text-slate-600">
+              REACH provides a single digital layer for discovering civic
+              services, community initiatives and relevant public offices.
+            </p>
+          </div>
+
+          <div className="mt-10 grid gap-5 md:grid-cols-3">
+            <LeadershipCard
+              name="Femi Gbajabiamila"
+              role="Chief of Staff to the President"
+              description="Former representative for Surulere I and former Speaker of the House of Representatives."
+              href="https://en.wikipedia.org/wiki/Femi_Gbajabiamila"
+              linkLabel="View profile"
+            />
+
+            <LeadershipCard
+              name="Lanre Okunlola"
+              role="Member, House of Representatives"
+              description="Representative for Surulere II Federal Constituency."
+              href="https://en.wikipedia.org/wiki/Lanre_Okunlola"
+              linkLabel="View profile"
+            />
+
+            <LeadershipCard
+              name="Odunayo Oluwafemi Daniel"
+              role="Executive Chairman, Itire-Ikate LCDA"
+              description="Public office profile and information from the Itire-Ikate LCDA."
+              href="https://itireikatelcda.lg.gov.ng/team/hon-odunayo-oluwafemi-daniel/"
+              linkLabel="View official profile"
+              secondaryHref="https://www.instagram.com/hon.femiodunayodaniel/"
+              secondaryLabel="Instagram"
+            />
+          </div>
         </div>
-
-        <Link
-          href="/programmes"
-          className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-950 px-5 py-3 text-sm font-black text-white transition hover:bg-slate-800"
-        >
-          Browse programmes
-          <ArrowRight size={16} />
-        </Link>
-      </div>
-    </div>
-  )}
-</section>
+      </section>
 
       {/* =========================================================
           REQUEST CTA
@@ -594,3 +645,69 @@ function EmptyCard({
   );
 }
 
+function LeadershipCard({
+  name,
+  role,
+  description,
+  href,
+  linkLabel,
+  secondaryHref,
+  secondaryLabel,
+}: {
+  name: string;
+  role: string;
+  description: string;
+  href: string;
+  linkLabel: string;
+  secondaryHref?: string;
+  secondaryLabel?: string;
+}) {
+  return (
+    <article className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-lg">
+      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-teal-100 text-lg font-black text-teal-800">
+        {name
+          .split(" ")
+          .filter(Boolean)
+          .slice(0, 2)
+          .map((word) => word[0])
+          .join("")}
+      </div>
+
+      <h3 className="mt-6 text-xl font-black text-slate-950">
+        {name}
+      </h3>
+
+      <p className="mt-1 text-sm font-bold text-teal-700">
+        {role}
+      </p>
+
+      <p className="mt-4 text-sm leading-7 text-slate-600">
+        {description}
+      </p>
+
+      <div className="mt-6 flex flex-wrap gap-4">
+        <a
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-flex items-center gap-2 text-sm font-black text-slate-950 transition hover:text-teal-700"
+        >
+          {linkLabel}
+          <ArrowRight size={15} />
+        </a>
+
+        {secondaryHref && secondaryLabel && (
+          <a
+            href={secondaryHref}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 text-sm font-black text-teal-700 transition hover:text-teal-800"
+          >
+            {secondaryLabel}
+            <ArrowRight size={15} />
+          </a>
+        )}
+      </div>
+    </article>
+  );
+}
