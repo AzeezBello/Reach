@@ -74,7 +74,7 @@ export default async function LoginPage({
         </div>
       </section>
 
-      <section className="flex items-center bg-slate-50 px-4 py-12 sm:px-6 md:py-16 lg:px-12">
+      <section className="flex items-start bg-slate-50 px-4 py-10 sm:px-6 md:py-16 lg:items-center lg:px-12">
         <div className="mx-auto w-full max-w-md">
           <AuthForm next={target} />
         </div>

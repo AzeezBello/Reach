@@ -1,0 +1,13 @@
+# Supabase CLI project configuration.
+# Link to the hosted project with:  supabase link --project-ref <ref>
+# Apply migrations with:            supabase db push
+# Load seed data with:              supabase db execute --file supabase/seed.sql
+
+project_id = "reach"
+
+[db]
+major_version = 15
+
+[db.seed]
+enabled = true
+sql_paths = ["./seed.sql"]

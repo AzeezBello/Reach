@@ -22,6 +22,7 @@ Residents can:
 * View public/community projects
 * Access their digital civic office
 * Create an account and securely sign in
+* Use a personal dashboard to follow requests, applications and notifications
 * Receive future communications through WhatsApp and other channels
 
 Administrators and staff can manage:
@@ -152,6 +153,55 @@ The public-facing REACH application provides:
 * Project discovery
 * Service-request entry points
 * Resident authentication
+* Breadcrumbs, canonical URLs, Open Graph share images and JSON-LD structured data on every page
+* `sitemap.xml`, `robots.txt` and `llms.txt` generated from live content
+
+---
+
+## Brand & Media
+
+The FKL Connect identity uses a leaf-green primary, a gold accent and a deep green-black "ink" for dark sections. The palette lives in `app/globals.css` as Tailwind theme tokens (`brand-*`, `gold-*`, `ink`).
+
+Brand assets live in `public/brand/`:
+
+```text
+public/brand/logo.svg          Horizontal logo for light backgrounds
+public/brand/logo-white.svg    Horizontal logo for dark backgrounds
+public/brand/logo-mark.svg     Square mark (also used as the favicon via app/icon.svg)
+```
+
+Photos and videos in `public/images` and `public/videos` keep their original export names. `lib/media.ts` assigns each one a role and alt text, so pages never reference raw filenames. Videos only download when a resident taps play; the hero clip auto-plays muted on larger screens unless the visitor prefers reduced motion or reduced data.
+
+The social share image is generated at build time from `app/opengraph-image.tsx`.
+
+---
+
+## Resident Dashboard
+
+Signed-in residents have a dashboard at `/dashboard` showing:
+
+* Request statistics (submitted, open, resolved)
+* Recent requests with links to a per-request page (`/requests/[id]`) that shows the status timeline from `request_updates`
+* Programme applications
+* Notifications sent to the resident
+* An editable profile (full name and phone number)
+
+---
+
+## Superadmin Console
+
+Platform administrators manage every tenant from `/superadmin`:
+
+| Page | What it does |
+| --- | --- |
+| `/superadmin` | Platform-wide counts and the latest requests |
+| `/superadmin/organizations` | List, create, activate and deactivate organizations; edit branding and contact details |
+| `/superadmin/jurisdictions` | List and create jurisdictions, including parent/child nesting |
+| `/superadmin/offices` | List, create, activate and deactivate offices |
+| `/superadmin/staff` | Attach resident accounts to offices as staff or admin |
+| `/superadmin/requests` | Update request status, post a note to the resident's timeline and keep internal staff notes |
+
+Access is granted to accounts whose `profiles.role` is `admin` or `superadmin`. Every page and server action re-checks the role; row-level security must also allow these operations for the role.
 
 ---
 
@@ -405,42 +455,47 @@ https://github.com/AzeezBello/Reach
 reach/
 │
 ├── app/
-│   ├── api/
-│   │   └── tenant/
-│   │       └── route.ts
-│   │
-│   ├── login/
-│   │   └── page.tsx
-│   │
-│   ├── opportunities/
-│   │   └── page.tsx
-│   │
-│   ├── programmes/
-│   │   └── page.tsx
-│   │
-│   ├── projects/
-│   │   └── page.tsx
-│   │
-│   ├── requests/
-│   │   └── new/
-│   │       └── page.tsx
-│   │
-│   ├── layout.tsx
-│   └── page.tsx
+│   ├── api/tenant/route.ts          Public tenant JSON endpoint
+│   ├── auth/signout/route.ts        Sign-out handler
+│   ├── dashboard/                   Resident dashboard + profile action
+│   ├── leadership/                  Leadership index and profiles
+│   ├── llms.txt/route.ts            llms.txt for AI crawlers
+│   ├── login/                       Sign in / create account
+│   ├── opportunities/               Opportunities index and detail
+│   ├── programmes/                  Programmes index and detail
+│   ├── projects/                    Projects index and detail
+│   ├── requests/                    My requests, new request, request detail
+│   ├── superadmin/                  Platform console + server actions
+│   ├── error.tsx · not-found.tsx    Error and 404 pages
+│   ├── icon.svg                     Favicon
+│   ├── opengraph-image.tsx          Generated social share image
+│   ├── robots.ts · sitemap.ts       Crawler files
+│   ├── layout.tsx · page.tsx        Root layout and homepage
+│   └── globals.css                  Tailwind theme tokens
 │
 ├── components/
-│   └── header.tsx
+│   ├── header.tsx · nav.tsx · footer.tsx
+│   ├── page-hero.tsx · breadcrumbs.tsx · json-ld.tsx
+│   ├── content-card.tsx · detail.tsx · media.tsx · video-player.tsx
+│   ├── request-form.tsx · auth-form.tsx · action-form.tsx
+│   ├── admin.tsx · admin-nav.tsx    Dashboard and console building blocks
+│   └── ui.tsx                       Buttons, badges, section headers
 │
 ├── lib/
-│   ├── reach.ts
-│   └── supabase/
-│       ├── client.ts
-│       └── server.ts
+│   ├── reach.ts                     Public data access (tenant, content, session)
+│   ├── admin.ts                     Dashboard and superadmin data access + guards
+│   ├── seo.ts                       Canonical URLs and JSON-LD schemas
+│   ├── media.ts                     Curated photos, videos and alt text
+│   ├── format.ts · navigation.ts · config.ts · types.ts · leadership.ts
+│   └── supabase/                    Browser and server clients
 │
-├── proxy.ts
-│
+├── proxy.ts                         Session refresh on navigation
 ├── public/
+│   ├── brand/                       Logo files
+│   ├── images/                      Community photos
+│   └── videos/                      Community videos
 │
+├── next.config.ts
 ├── package.json
 ├── postcss.config.mjs
 ├── tsconfig.json
@@ -456,9 +511,10 @@ The application requires the following public Supabase configuration:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+NEXT_PUBLIC_SITE_URL=
 ```
 
-These values should be configured through the deployment environment.
+`NEXT_PUBLIC_SITE_URL` is the public origin (for example `https://reach-eta-two.vercel.app`) used for canonical URLs, the sitemap and share images. These values should be configured through the deployment environment.
 
 For Vercel:
 
@@ -533,6 +589,8 @@ resident
 staff
 admin
 ```
+
+Accounts with the `admin` (or `superadmin`) role in `profiles.role` can open the platform console at `/superadmin`.
 
 ### Resident
 
@@ -620,6 +678,7 @@ Add:
 ```env
 NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
 NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
+NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
 Start the development server:
@@ -638,9 +697,10 @@ http://localhost:3000
 
 # Production Build
 
-Run:
+Type-check, then build:
 
 ```bash
+npm run typecheck
 npm run build
 ```
 
@@ -738,13 +798,13 @@ This deployment serves as the initial implementation of the broader REACH platfo
 
 ## Phase 2 — Resident Experience
 
-* [ ] Resident dashboard
-* [ ] Request history
-* [ ] Request detail pages
-* [ ] Request status timeline
+* [x] Resident dashboard
+* [x] Request history
+* [x] Request detail pages
+* [x] Request status timeline
 * [ ] Programme application workflow
 * [ ] Opportunity application tracking
-* [ ] Resident profile
+* [x] Resident profile
 * [ ] Notifications
 * [ ] Email notifications
 * [ ] WhatsApp notifications
@@ -753,18 +813,18 @@ This deployment serves as the initial implementation of the broader REACH platfo
 
 ## Phase 3 — Civic Office Administration
 
-* [ ] Admin dashboard
+* [x] Platform (superadmin) console
 * [ ] Staff dashboard
-* [ ] Staff management
-* [ ] Request management
+* [x] Staff management
+* [x] Request status management
 * [ ] Request assignment
 * [ ] Internal notes
-* [ ] Request status workflow
+* [x] Request status workflow
 * [ ] Programme management
 * [ ] Opportunity management
 * [ ] Project management
 * [ ] Media uploads
-* [ ] Organization settings
+* [x] Organization settings
 
 ---
 
