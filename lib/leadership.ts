@@ -4,9 +4,11 @@ export type LeadershipOfficeType =
   | "senate"
   | "house_of_representatives"
   | "house_of_assembly"
+  | "chief_of_staff"
   | "lga_chairman"
   | "lga_vice_chairman"
-  | "legislative_assembly";
+  | "legislative_assembly"
+  | "lcda_chairman";
 
 export type LeadershipPerson = {
   slug: string;
@@ -28,9 +30,6 @@ export type LeadershipPerson = {
   }[];
 };
 
-/**
- * Backward-compatible type used by existing REACH code.
- */
 export type Leader = LeadershipPerson;
 
 export const leadership: LeadershipPerson[] = [
@@ -43,28 +42,32 @@ export const leadership: LeadershipPerson[] = [
   {
     slug: "wasiu-sanni-eshilokun",
     name: "Senator Wasiu Sanni Eshilokun",
-    initial: "W",
+    initial: "WE",
     role: "Senator",
     level: "federal",
     levelLabel: "Federal Government",
     officeType: "senate",
-    office: "Senator",
+    office: "Senator, Lagos Central Senatorial District",
     jurisdiction: "Lagos Central Senatorial District",
     constituency: "Lagos Central Senatorial District",
     summary:
-      "Member of the Senate representing the Lagos Central Senatorial District.",
+      "Senator Wasiu Sanni Eshilokun represents Lagos Central Senatorial District in the National Assembly.",
     biography: [
-      "Senator Wasiu Sanni Eshilokun is a Nigerian politician serving in the National Assembly.",
-      "He represents the Lagos Central Senatorial District in the Senate of the Federal Republic of Nigeria.",
+      "Wasiu Sanni Eshilokun is a Nigerian politician serving in the Senate representing Lagos Central Senatorial District.",
+      "His legislative role places him within the federal representation structure serving communities across Lagos Central.",
     ],
     service: [
-      "Senate of the Federal Republic of Nigeria",
-      "Lagos Central Senatorial District",
+      "Federal legislative representation for Lagos Central Senatorial District.",
+      "Participation in Senate legislative and committee processes.",
     ],
     sources: [
       {
-        label: "National Assembly Legislative Tracking Forum",
-        url: "https://naltf.gov.ng/",
+        label: "National Assembly / NALTF — Senate Directory",
+        url: "https://naltf.gov.ng/senate-page/",
+      },
+      {
+        label: "National Assembly — Senate Committees",
+        url: "https://naltf.gov.ng/senate-committees/",
       },
     ],
   },
@@ -72,28 +75,33 @@ export const leadership: LeadershipPerson[] = [
   {
     slug: "fuad-kayode-laguda",
     name: "Hon. Fuad Kayode Laguda",
-    initial: "F",
+    initial: "FL",
     role: "Member, House of Representatives",
     level: "federal",
     levelLabel: "Federal Government",
     officeType: "house_of_representatives",
-    office: "Member, House of Representatives",
+    office: "House of Representatives, Surulere I Federal Constituency",
     jurisdiction: "Surulere I Federal Constituency",
-    constituency: "Surulere I",
+    constituency: "Surulere I Federal Constituency",
     summary:
-      "Member of the House of Representatives representing Surulere I Federal Constituency.",
+      "Hon. Fuad Kayode Laguda represents the Surulere I Federal Constituency in the Federal House of Representatives.",
     biography: [
-      "Hon. Fuad Kayode Laguda is a member of the House of Representatives of the Federal Republic of Nigeria.",
-      "He represents the Surulere I Federal Constituency of Lagos State.",
+      "Fuad Kayode Laguda is a Nigerian public representative serving at the federal legislative level.",
+      "His constituency role connects residents of Surulere I with the National Assembly.",
     ],
     service: [
-      "House of Representatives",
-      "Surulere I Federal Constituency",
+      "Federal legislative representation for Surulere I.",
+      "Representation of constituency interests within the House of Representatives.",
+      "Participation in federal legislative proceedings and oversight.",
     ],
     sources: [
       {
-        label: "National Assembly Legislative Tracking Forum",
-        url: "https://naltf.gov.ng/honorable-members/",
+        label: "National Assembly of Nigeria",
+        url: "https://nass.gov.ng/",
+      },
+      {
+        label: "National Assembly — Members Directory",
+        url: "https://nass.gov.ng/mps/",
       },
     ],
   },
@@ -101,32 +109,69 @@ export const leadership: LeadershipPerson[] = [
   {
     slug: "lanre-okunlola",
     name: "Hon. Lanre Okunlola",
-    initial: "L",
+    initial: "LO",
     role: "Member, House of Representatives",
     level: "federal",
     levelLabel: "Federal Government",
     officeType: "house_of_representatives",
-    office: "Member, House of Representatives",
+    office: "House of Representatives, Surulere II Federal Constituency",
     jurisdiction: "Surulere II Federal Constituency",
-    constituency: "Surulere II",
+    constituency: "Surulere II Federal Constituency",
     summary:
-      "Member of the House of Representatives representing Surulere II Federal Constituency.",
+      "Hon. Lanre Okunlola represents the Surulere II Federal Constituency in the Federal House of Representatives.",
     biography: [
-      "Hon. Lanre Okunlola is a member of the House of Representatives of the Federal Republic of Nigeria.",
-      "He represents the Surulere II Federal Constituency of Lagos State.",
+      "Lanre Okunlola is a Nigerian legislator representing Surulere II Federal Constituency in the House of Representatives.",
+      "His National Assembly profile identifies him as a member of the House of Representatives for Surulere II.",
     ],
     service: [
-      "House of Representatives",
-      "Surulere II Federal Constituency",
+      "Federal legislative representation for Surulere II.",
+      "Participation in House of Representatives legislative proceedings.",
+      "Representation of constituency interests at the federal level.",
     ],
     sources: [
       {
-        label: "National Assembly Legislative Tracking Forum",
-        url: "https://naltf.gov.ng/honorable-members/",
+        label: "National Assembly — Legislator Profile",
+        url: "https://nass.gov.ng/mps/single/588",
       },
       {
         label: "National Assembly of Nigeria",
-        url: "https://nass.gov.ng/mps/single/588",
+        url: "https://nass.gov.ng/",
+      },
+    ],
+  },
+
+  {
+    slug: "femi-gbajabiamila",
+    name: "Rt. Hon. Femi Gbajabiamila",
+    initial: "FG",
+    role: "Chief of Staff to the President",
+    level: "federal",
+    levelLabel: "Federal Government",
+    officeType: "chief_of_staff",
+    office: "Office of the Chief of Staff to the President",
+    jurisdiction: "Federal Republic of Nigeria",
+    summary:
+      "Rt. Hon. Femi Gbajabiamila is the Chief of Staff to President Bola Ahmed Tinubu. He previously represented Surulere I Federal Constituency in the House of Representatives and served as Speaker of the 9th House of Representatives.",
+    biography: [
+      "Femi Gbajabiamila is a Nigerian lawyer and politician who currently serves as Chief of Staff to the President of Nigeria.",
+      "He previously represented Surulere I Federal Constituency in Lagos State in the House of Representatives.",
+      "The State House records that he assumed the role of Chief of Staff on June 14, 2023, after resigning his membership of the 10th House of Representatives.",
+      "He served as Speaker of Nigeria's 9th House of Representatives from June 11, 2019, to June 13, 2023.",
+    ],
+    service: [
+      "Chief of Staff to the President of the Federal Republic of Nigeria.",
+      "Former federal representative for Surulere I Federal Constituency.",
+      "Former Speaker of the 9th House of Representatives.",
+      "Participation in federal executive coordination and presidential engagements.",
+    ],
+    sources: [
+      {
+        label: "The State House — Office of the President",
+        url: "https://statehouse.gov.ng/presidency/office-of-the-president/",
+      },
+      {
+        label: "The State House — Presidency",
+        url: "https://statehouse.gov.ng/presidency/",
       },
     ],
   },
@@ -140,27 +185,32 @@ export const leadership: LeadershipPerson[] = [
   {
     slug: "desmond-olushola-elliot",
     name: "Hon. Desmond Olushola Elliot",
-    initial: "D",
+    initial: "DE",
     role: "Member, Lagos State House of Assembly",
     level: "state",
     levelLabel: "Lagos State Government",
     officeType: "house_of_assembly",
-    office: "Member, Lagos State House of Assembly",
+    office: "Lagos State House of Assembly, Surulere I",
     jurisdiction: "Surulere I State Constituency",
-    constituency: "Surulere I",
+    constituency: "Surulere I State Constituency",
     summary:
-      "Member of the Lagos State House of Assembly representing Surulere I State Constituency.",
+      "Hon. Desmond Olushola Elliot represents Surulere I State Constituency in the Lagos State House of Assembly.",
     biography: [
-      "Hon. Desmond Olushola Elliot is a member of the Lagos State House of Assembly.",
-      "He represents the Surulere I State Constituency.",
+      "Desmond Olushola Elliot is a Lagos State legislator representing Surulere I State Constituency.",
+      "He serves within the Lagos State House of Assembly and participates in state-level legislative responsibilities.",
     ],
     service: [
-      "Lagos State House of Assembly",
-      "Surulere I State Constituency",
+      "State legislative representation for Surulere I.",
+      "Participation in Lagos State House of Assembly proceedings.",
+      "Representation of constituency interests at the state level.",
     ],
     sources: [
       {
-        label: "Lagos State House of Assembly",
+        label: "Lagos State House of Assembly — 10th Assembly",
+        url: "https://lagoshouseofassembly.gov.ng/",
+      },
+      {
+        label: "Lagos State House of Assembly — Members",
         url: "https://lagoshouseofassembly.gov.ng/",
       },
     ],
@@ -169,25 +219,30 @@ export const leadership: LeadershipPerson[] = [
   {
     slug: "mosunmola-rotimi-sangodara",
     name: "Hon. Mosunmola Rotimi Sangodara",
-    initial: "M",
+    initial: "MS",
     role: "Member, Lagos State House of Assembly",
     level: "state",
     levelLabel: "Lagos State Government",
     officeType: "house_of_assembly",
-    office: "Member, Lagos State House of Assembly",
+    office: "Lagos State House of Assembly, Surulere II",
     jurisdiction: "Surulere II State Constituency",
-    constituency: "Surulere II",
+    constituency: "Surulere II State Constituency",
     summary:
-      "Member of the Lagos State House of Assembly representing Surulere II State Constituency.",
+      "Hon. Mosunmola Rotimi Sangodara represents Surulere II State Constituency in the Lagos State House of Assembly.",
     biography: [
-      "Hon. Mosunmola Rotimi Sangodara is a member of the Lagos State House of Assembly.",
-      "She represents the Surulere II State Constituency.",
+      "Mosunmola Rotimi Sangodara is a Lagos State legislator representing Surulere II State Constituency.",
+      "Her role is part of the legislative representation structure of Lagos State.",
     ],
     service: [
-      "Lagos State House of Assembly",
-      "Surulere II State Constituency",
+      "State legislative representation for Surulere II.",
+      "Participation in Lagos State House of Assembly proceedings.",
+      "Representation of constituency interests at the state level.",
     ],
     sources: [
+      {
+        label: "Lagos State House of Assembly — 10th Assembly",
+        url: "https://lagoshouseofassembly.gov.ng/",
+      },
       {
         label: "Lagos State House of Assembly",
         url: "https://lagoshouseofassembly.gov.ng/",
@@ -204,50 +259,56 @@ export const leadership: LeadershipPerson[] = [
   {
     slug: "sulaiman-bamidele-yusuf",
     name: "Hon. Sulaiman Bamidele Yusuf",
-    initial: "S",
+    initial: "SY",
     role: "Executive Chairman",
     level: "local",
     levelLabel: "Surulere Local Government",
     officeType: "lga_chairman",
-    office: "Executive Chairman",
-    jurisdiction: "Surulere Local Government",
-    summary: "Executive Chairman of Surulere Local Government.",
+    office: "Executive Chairman, Surulere Local Government",
+    jurisdiction: "Surulere Local Government Area",
+    summary:
+      "Hon. Sulaiman Bamidele Yusuf serves as the Executive Chairman of Surulere Local Government Area.",
     biography: [
-      "Hon. Sulaiman Bamidele Yusuf serves as Executive Chairman of Surulere Local Government in Lagos State.",
-      "The office oversees the administration and local government functions of Surulere.",
+      "Sulaiman Bamidele Yusuf serves in the executive leadership of Surulere Local Government Area.",
+      "His office is responsible for local government administration and service delivery within Surulere LGA.",
     ],
     service: [
-      "Surulere Local Government",
-      "Local government administration",
-      "Community development and public services",
+      "Local government executive administration.",
+      "Coordination of local government services and programmes.",
+      "Community-level administration and service delivery.",
     ],
     sources: [
       {
         label: "Surulere Local Government",
         url: "https://surulerelga.lg.gov.ng/",
       },
+      {
+        label: "Local Governance Accountability Portal — Surulere LGA",
+        url: "https://lgaportal.org/lgaDetails?lgaId=519",
+      },
     ],
   },
 
   {
-    slug: "muiz-dosunmu",
+    slug: "prince-muiz-dosunmu",
     name: "Hon. Prince Muiz Dosunmu",
-    initial: "M",
+    initial: "MD",
     role: "Vice Chairman",
     level: "local",
     levelLabel: "Surulere Local Government",
     officeType: "lga_vice_chairman",
-    office: "Vice Chairman",
-    jurisdiction: "Surulere Local Government",
-    summary: "Vice Chairman of Surulere Local Government.",
+    office: "Vice Chairman, Surulere Local Government",
+    jurisdiction: "Surulere Local Government Area",
+    summary:
+      "Hon. Prince Muiz Dosunmu serves as Vice Chairman of Surulere Local Government.",
     biography: [
-      "Hon. Prince Muiz Dosunmu serves as Vice Chairman of Surulere Local Government in Lagos State.",
-      "The office supports the administration of the local government and its community-facing responsibilities.",
+      "Prince Muiz Dosunmu serves in the executive leadership structure of Surulere Local Government.",
+      "The Vice Chairman's office supports the administration and delivery of local government responsibilities.",
     ],
     service: [
-      "Surulere Local Government",
-      "Local government administration",
-      "Community engagement",
+      "Support for Surulere Local Government administration.",
+      "Participation in local government programmes and community initiatives.",
+      "Support for grassroots service delivery.",
     ],
     sources: [
       {
@@ -260,55 +321,116 @@ export const leadership: LeadershipPerson[] = [
   {
     slug: "akeem-olayiwola-abdulrahman",
     name: "Hon. Akeem Olayiwola AbdulRahman",
-    initial: "A",
-    role: "Legislative Assembly",
+    initial: "AA",
+    role: "Legislative Assembly — Surulere LGA",
     level: "local",
     levelLabel: "Surulere Local Government",
     officeType: "legislative_assembly",
-    office: "Legislative Assembly",
-    jurisdiction: "Surulere Local Government",
+    office: "Surulere Local Government Legislative Assembly",
+    jurisdiction: "Surulere Local Government Area",
     summary:
-      "Member of the Surulere Local Government legislative structure.",
+      "Hon. Akeem Olayiwola AbdulRahman is listed among the candidates recorded for the Surulere Local Government legislative election.",
     biography: [
-      "Hon. Akeem Olayiwola AbdulRahman is associated with the legislative structure of Surulere Local Government.",
-      "REACH uses the neutral office designation 'Legislative Assembly' until the specific current leadership title is independently confirmed.",
+      "Akeem Olayiwola AbdulRahman is associated with the legislative representation structure of Surulere Local Government.",
+      "His profile is included in the REACH directory as a local legislative representative, with the title kept deliberately neutral to reflect the available official election record.",
     ],
     service: [
-      "Surulere Local Government Legislative Assembly",
-      "Local legislative representation",
+      "Local legislative representation.",
+      "Participation in grassroots legislative responsibilities.",
+      "Representation of community interests through the local government legislative structure.",
     ],
     sources: [
       {
-        label: "Lagos State Independent Electoral Commission",
+        label: "Lagos State Independent Electoral Commission — 2025 Election Results",
         url: "https://lasiec.gov.ng/2025_election_results/",
       },
     ],
   },
+
+  /*
+   * ============================================================
+   * ITIRE-IKATE LCDA
+   * ============================================================
+   */
+
+  {
+    slug: "odunayo-oluwafemi-daniel",
+    name: "Hon. Odunayo Oluwafemi Daniel",
+    initial: "OD",
+    role: "Executive Chairman",
+    level: "local",
+    levelLabel: "Local Government",
+    officeType: "lcda_chairman",
+    office: "Executive Chairman, Itire-Ikate LCDA",
+    jurisdiction: "Itire-Ikate Local Council Development Area",
+    constituency: "Itire-Ikate LCDA",
+    summary:
+      "Hon. Odunayo Oluwafemi Daniel serves as Executive Chairman of Itire-Ikate Local Council Development Area (LCDA), with a focus on local administration, community development and service delivery.",
+    biography: [
+      "Hon. Oluwafemi Daniel Odunayo, popularly known as FOD, serves as the Executive Chairman of Itire-Ikate Local Council Development Area.",
+      "According to the official LCDA profile, he attended Saint Thomas Aquinas Primary School in Surulere and Birch Freeman High School, also in Surulere.",
+      "He later studied at the University of Lagos, Akoka, where he earned an Advanced Diploma in Security Operations and Management between 2012 and 2014.",
+      "The official LCDA profile describes his professional background as including specialised security support and training.",
+    ],
+    service: [
+      "Executive leadership of Itire-Ikate LCDA.",
+      "Local administration and grassroots service delivery.",
+      "Community development and infrastructure initiatives.",
+      "Environmental, education, health and social-service initiatives within the LCDA.",
+      "Coordination of programmes intended to improve services and community conditions.",
+    ],
+    sources: [
+      {
+        label: "Itire-Ikate LCDA — Official Profile",
+        url: "https://www.itireikatelcda.lg.gov.ng/team/hon-odunayo-oluwafemi-daniel/",
+      },
+      {
+        label: "Itire-Ikate LCDA — Meet the Chairman",
+        url: "https://www.itireikatelcda.lg.gov.ng/meet-the-chairman/",
+      },
+      {
+        label: "Itire-Ikate LCDA — Official Website",
+        url: "https://www.itireikatelcda.lg.gov.ng/",
+      },
+    ],
+  },
 ];
+
+/*
+ * ============================================================
+ * GROUPED LEADERSHIP DIRECTORY
+ * ============================================================
+ */
 
 export const leadershipGroups = [
   {
     id: "federal",
     title: "Federal Government",
     description:
-      "Federal representatives serving the Surulere community through the National Assembly.",
+      "Federal representatives and national public-service leadership connected to Surulere and Nigeria's federal government.",
     members: leadership.filter((person) => person.level === "federal"),
   },
   {
     id: "state",
     title: "Lagos State Government",
     description:
-      "State legislators representing Surulere constituencies in the Lagos State House of Assembly.",
+      "Lagos State representatives serving Surulere through the Lagos State House of Assembly.",
     members: leadership.filter((person) => person.level === "state"),
   },
   {
     id: "local",
-    title: "Surulere Local Government",
+    title: "Local Government & LCDA",
     description:
-      "Local government officials and legislative representation serving residents of Surulere.",
+      "Local government and LCDA leadership responsible for grassroots administration and community service delivery.",
     members: leadership.filter((person) => person.level === "local"),
   },
 ];
+
+/*
+ * ============================================================
+ * HELPERS
+ * ============================================================
+ */
 
 export function getLeadershipBySlug(slug: string) {
   return leadership.find((person) => person.slug === slug);
@@ -317,7 +439,12 @@ export function getLeadershipBySlug(slug: string) {
 /**
  * Backward-compatible export.
  *
- * Existing REACH pages such as the homepage,
- * sitemap and llms.txt route use `leaders`.
+ * Existing REACH pages such as:
+ * - homepage
+ * - sitemap
+ * - llms.txt
+ * - SEO helpers
+ *
+ * already import `leaders`.
  */
 export const leaders = leadership;
