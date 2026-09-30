@@ -14,6 +14,7 @@ export type LeadershipPerson = {
   slug: string;
   name: string;
   initial: string;
+  image?: string;
   role: string;
   level: LeadershipLevel;
   levelLabel: string;
@@ -40,6 +41,7 @@ export const leadership: LeadershipPerson[] = [
    */
 
   {
+    image: "/leaders/Senator Wasiu Sanni Eshilokun.jpeg",
     slug: "wasiu-sanni-eshilokun",
     name: "Senator Wasiu Sanni Eshilokun",
     initial: "WE",
@@ -73,6 +75,7 @@ export const leadership: LeadershipPerson[] = [
   },
 
   {
+    image: "/leaders/Fuad_Kayode_Laguda.jpg",
     slug: "fuad-kayode-laguda",
     name: "Hon. Fuad Kayode Laguda",
     initial: "FL",
@@ -107,6 +110,7 @@ export const leadership: LeadershipPerson[] = [
   },
 
   {
+    image: "/leaders/Lanre_Okunlola.jpg",
     slug: "lanre-okunlola",
     name: "Hon. Lanre Okunlola",
     initial: "LO",
@@ -141,6 +145,7 @@ export const leadership: LeadershipPerson[] = [
   },
 
   {
+    image: "/leaders/Femi Gbajabiamila.webp",
     slug: "femi-gbajabiamila",
     name: "Rt. Hon. Femi Gbajabiamila",
     initial: "FG",
@@ -183,6 +188,7 @@ export const leadership: LeadershipPerson[] = [
    */
 
   {
+    image: "/leaders/Hon. Desmond Olushola Elliot.jpg",
     slug: "desmond-olushola-elliot",
     name: "Hon. Desmond Olushola Elliot",
     initial: "DE",
@@ -217,6 +223,7 @@ export const leadership: LeadershipPerson[] = [
   },
 
   {
+    image: "/leaders/Hon. Mosunmola Rotimi Sangodara.jpeg",
     slug: "mosunmola-rotimi-sangodara",
     name: "Hon. Mosunmola Rotimi Sangodara",
     initial: "MS",
@@ -257,6 +264,7 @@ export const leadership: LeadershipPerson[] = [
    */
 
   {
+    image: "/leaders/Hon. Sulaiman Bamidele Yusuf.jpeg",
     slug: "sulaiman-bamidele-yusuf",
     name: "Hon. Sulaiman Bamidele Yusuf",
     initial: "SY",
@@ -354,6 +362,7 @@ export const leadership: LeadershipPerson[] = [
    */
 
   {
+    image: "/leaders/Hon. Odunayo Oluwafemi Daniel.jpg",
     slug: "odunayo-oluwafemi-daniel",
     name: "Hon. Odunayo Oluwafemi Daniel",
     initial: "OD",

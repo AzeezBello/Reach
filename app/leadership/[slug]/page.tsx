@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
@@ -33,7 +34,7 @@ export async function generateMetadata({
 
   return {
     title: `${person.name} | REACH`,
-    description: `${person.office}, ${person.jurisdiction}.`,
+    description: `${person.role}. ${person.office}, ${person.jurisdiction}.`,
   };
 }
 
@@ -49,9 +50,9 @@ export default async function LeadershipProfilePage({
 
   return (
     <main className="min-h-screen bg-slate-50">
-      {/* Header */}
+      {/* Back navigation */}
       <section className="border-b bg-white">
-        <div className="mx-auto max-w-5xl px-4 py-8 sm:px-6 lg:px-8">
+        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
           <Link
             href="/leadership"
             className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-emerald-700"
@@ -63,36 +64,71 @@ export default async function LeadershipProfilePage({
       </section>
 
       {/* Profile */}
-      <section className="mx-auto max-w-5xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
+      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
         <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          {/* Profile header */}
-          <div className="border-b bg-slate-950 px-6 py-10 text-white sm:px-10 lg:px-12">
-            <div className="flex flex-col gap-7 sm:flex-row sm:items-center">
-              <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-full bg-emerald-600 text-3xl font-bold">
-                {person.initial}
+          {/* Profile hero */}
+          <div className="bg-slate-950 text-white">
+            <div className="grid lg:grid-cols-[320px_1fr]">
+              {/* Portrait */}
+              <div className="relative aspect-[4/5] min-h-[360px] overflow-hidden bg-slate-900 lg:min-h-[420px]">
+                {person.image ? (
+                  <Image
+                    src={person.image}
+                    alt={person.name}
+                    fill
+                    priority
+                    sizes="(max-width: 1024px) 100vw, 320px"
+                    className="object-cover object-top"
+                  />
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center bg-emerald-700">
+                    <span className="text-8xl font-bold">
+                      {person.initial}
+                    </span>
+                  </div>
+                )}
+
+                <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-slate-950/70 to-transparent lg:hidden" />
               </div>
 
-              <div>
-                <div className="mb-3 inline-flex rounded-full bg-white/10 px-3 py-1 text-xs font-semibold text-emerald-300">
+              {/* Identity */}
+              <div className="flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-12">
+                <span className="mb-4 inline-flex w-fit rounded-full bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300">
                   {person.levelLabel}
-                </div>
+                </span>
 
-                <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+                <p className="text-sm font-bold uppercase tracking-wider text-emerald-400">
+                  {person.role}
+                </p>
+
+                <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
                   {person.name}
                 </h1>
 
-                <p className="mt-2 text-lg font-semibold text-emerald-400">
+                <p className="mt-5 text-lg font-semibold text-slate-200">
                   {person.office}
                 </p>
 
-                <p className="mt-1 text-slate-300">
+                <p className="mt-2 text-slate-400">
                   {person.jurisdiction}
                 </p>
+
+                {person.constituency && (
+                  <div className="mt-7 border-t border-white/10 pt-6">
+                    <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
+                      Constituency
+                    </p>
+
+                    <p className="mt-2 font-semibold text-slate-200">
+                      {person.constituency}
+                    </p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
 
-          {/* Content */}
+          {/* Main content */}
           <div className="grid gap-10 p-6 sm:p-10 lg:grid-cols-[1fr_300px] lg:p-12">
             <div className="space-y-10">
               {/* Overview */}
@@ -155,11 +191,10 @@ export default async function LeadershipProfilePage({
                       key={source.url}
                       href={source.url}
                       target="_blank"
-                      rel="noreferrer"
+                      rel="noopener noreferrer"
                       className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-4 text-sm font-semibold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
                     >
                       <span>{source.label}</span>
-
                       <span aria-hidden="true">↗</span>
                     </a>
                   ))}
@@ -189,17 +224,15 @@ export default async function LeadershipProfilePage({
                 </p>
               </div>
 
-              {person.constituency && (
-                <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                  <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                    Constituency
-                  </p>
+              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
+                  Level
+                </p>
 
-                  <p className="mt-2 font-semibold text-slate-950">
-                    {person.constituency}
-                  </p>
-                </div>
-              )}
+                <p className="mt-2 font-semibold text-slate-950">
+                  {person.levelLabel}
+                </p>
+              </div>
 
               <div className="rounded-2xl bg-emerald-50 p-5">
                 <p className="font-bold text-slate-950">

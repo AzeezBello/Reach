@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { leadershipGroups } from "@/lib/leadership";
 
@@ -15,24 +16,44 @@ function LeadershipCard({
   return (
     <Link
       href={`/leadership/${person.slug}`}
-      className="group flex h-full flex-col rounded-2xl border border-slate-200 bg-white p-6 transition hover:-translate-y-1 hover:border-emerald-200 hover:shadow-lg"
+      className="group flex h-full flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white transition hover:-translate-y-1 hover:border-emerald-200 hover:shadow-xl"
     >
-      <div className="mb-5 flex items-start justify-between gap-4">
-        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-emerald-50 text-lg font-bold text-emerald-700">
-          {person.initial}
-        </div>
+      {/* Photo */}
+      <div className="relative aspect-[4/3] w-full overflow-hidden bg-slate-100">
+        {person.image ? (
+          <Image
+            src={person.image}
+            alt={person.name}
+            fill
+            sizes="(max-width: 768px) 100vw, (max-width: 1024px) 50vw, 33vw"
+            className="object-cover object-top transition duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-emerald-50">
+            <span className="text-5xl font-bold text-emerald-700">
+              {person.initial}
+            </span>
+          </div>
+        )}
 
-        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold text-slate-600">
-          {person.levelLabel}
-        </span>
+        <div className="absolute left-4 top-4">
+          <span className="rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm backdrop-blur">
+            {person.levelLabel}
+          </span>
+        </div>
       </div>
 
-      <div className="flex flex-1 flex-col">
-        <h3 className="text-lg font-bold text-slate-950 transition group-hover:text-emerald-700">
+      {/* Content */}
+      <div className="flex flex-1 flex-col p-6">
+        <p className="text-xs font-bold uppercase tracking-wider text-emerald-700">
+          {person.role}
+        </p>
+
+        <h3 className="mt-2 text-xl font-bold text-slate-950 transition group-hover:text-emerald-700">
           {person.name}
         </h3>
 
-        <p className="mt-2 text-sm font-semibold text-emerald-700">
+        <p className="mt-2 text-sm font-semibold text-slate-600">
           {person.office}
         </p>
 
@@ -44,13 +65,15 @@ function LeadershipCard({
           {person.summary}
         </p>
 
-        <div className="mt-6 flex items-center gap-2 text-sm font-semibold text-slate-900">
-          View profile
-          <span
-            aria-hidden="true"
-            className="transition-transform group-hover:translate-x-1"
-          >
-            →
+        <div className="mt-auto pt-6">
+          <span className="inline-flex items-center gap-2 text-sm font-bold text-slate-900">
+            View profile
+            <span
+              aria-hidden="true"
+              className="transition-transform group-hover:translate-x-1"
+            >
+              →
+            </span>
           </span>
         </div>
       </div>
@@ -75,7 +98,7 @@ export default function LeadershipPage() {
 
             <p className="mt-5 max-w-2xl text-lg leading-8 text-slate-600">
               Find representatives and public officials across federal, Lagos
-              State, and Surulere Local Government levels.
+              State, and local government levels.
             </p>
           </div>
         </div>
@@ -100,7 +123,7 @@ export default function LeadershipPage() {
                 </p>
               </div>
 
-              <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+              <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
                 {group.members.map((person) => (
                   <LeadershipCard
                     key={person.slug}
@@ -113,7 +136,7 @@ export default function LeadershipPage() {
         </div>
       </section>
 
-      {/* Help CTA */}
+      {/* CTA */}
       <section className="border-t bg-white">
         <div className="mx-auto max-w-7xl px-4 py-14 sm:px-6 lg:px-8">
           <div className="flex flex-col items-start justify-between gap-6 rounded-3xl bg-emerald-700 p-8 text-white md:flex-row md:items-center lg:p-10">
