@@ -1,2 +1,58 @@
-import {projects} from '@/lib/data';
-export default function Projects(){return <div className="mx-auto max-w-7xl px-5 py-14"><h1 className="text-4xl font-black">Project Tracker</h1><p className="mt-3 text-lg text-slate-600">A public view of community projects, locations and progress.</p><div className="mt-9 grid gap-5">{projects.map(p=><article className="rounded-2xl border border-slate-200 bg-white p-6" key={p.title}><div className="flex flex-wrap justify-between gap-3"><div><div className="text-xs font-black uppercase tracking-wider text-teal-700">{p.category}</div><h2 className="mt-2 text-2xl font-black">{p.title}</h2></div><span className="h-fit rounded-full bg-amber-50 px-3 py-1 text-xs font-black text-amber-700">{p.status}</span></div><p className="mt-3 max-w-3xl leading-7 text-slate-600">{p.description}</p><div className="mt-6 h-3 overflow-hidden rounded-full bg-slate-100"><div className="h-full rounded-full bg-teal-600" style={{width:`${p.progress}%`}}/></div><div className="mt-2 flex justify-between text-sm font-bold text-slate-500"><span>{p.location}</span><span>{p.progress}% reported progress</span></div></article>)}</div></div>}
+import { getPublicData } from "@/lib/reach";
+
+export default async function ProjectsPage() {
+  const { tenant, projects } = await getPublicData();
+
+  return (
+    <main className="mx-auto max-w-7xl px-5 py-14">
+      <p className="text-sm font-black uppercase tracking-widest text-teal-700">
+        {tenant.name}
+      </p>
+
+      <h1 className="mt-3 text-4xl font-black">
+        Community Projects
+      </h1>
+
+      <p className="mt-3 text-slate-600">
+        Track projects and see their current delivery status.
+      </p>
+
+      <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {projects.map((project) => (
+          <article
+            key={project.id}
+            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+          >
+            <span className="text-xs font-bold uppercase text-teal-700">
+              {project.status}
+            </span>
+
+            <h2 className="mt-2 text-xl font-black">
+              {project.title}
+            </h2>
+
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              {project.description}
+            </p>
+
+            <p className="mt-4 text-xs text-slate-500">
+              {project.location || "Community project"}
+            </p>
+
+            {project.beneficiary_count && (
+              <p className="mt-2 text-xs font-semibold text-slate-500">
+                Beneficiaries: {project.beneficiary_count}
+              </p>
+            )}
+          </article>
+        ))}
+      </div>
+
+      {projects.length === 0 && (
+        <p className="mt-10 rounded-2xl bg-slate-50 p-8 text-slate-600">
+          No projects have been published yet.
+        </p>
+      )}
+    </main>
+  );
+}

@@ -1,3 +1,65 @@
-import {programmes} from '@/lib/data';
-export default function Programmes(){return <Page title="Programmes" intro="Discover programmes and initiatives available through this digital civic office."><div className="grid gap-5 md:grid-cols-2">{programmes.map((p)=><article className="rounded-2xl border border-slate-200 bg-white p-6" key={p.title}><div className="text-xs font-black uppercase tracking-wider text-teal-700">{p.category}</div><h2 className="mt-2 text-2xl font-black">{p.title}</h2><p className="mt-3 leading-7 text-slate-600">{p.summary}</p><div className="mt-5 flex justify-between text-sm text-slate-500"><span>{p.location}</span><span className="font-bold text-teal-700">{p.status}</span></div></article>)}</div></Page>}
-function Page({title,intro,children}:{title:string,intro:string,children:React.ReactNode}){return <div className="mx-auto max-w-7xl px-5 py-14"><h1 className="text-4xl font-black">{title}</h1><p className="mt-3 max-w-2xl text-lg leading-8 text-slate-600">{intro}</p><div className="mt-9">{children}</div></div>}
+import Link from "next/link";
+import { getPublicData } from "@/lib/reach";
+
+export default async function ProgrammesPage() {
+  const { tenant, programmes } = await getPublicData();
+
+  return (
+    <main className="mx-auto max-w-7xl px-5 py-14">
+      <div className="max-w-3xl">
+        <p className="text-sm font-black uppercase tracking-widest text-teal-700">
+          {tenant.name}
+        </p>
+
+        <h1 className="mt-3 text-4xl font-black">
+          Programmes
+        </h1>
+
+        <p className="mt-3 text-slate-600">
+          Browse active programmes and initiatives available
+          through this civic office.
+        </p>
+      </div>
+
+      <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+        {programmes.map((programme) => (
+          <article
+            key={programme.id}
+            className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm"
+          >
+            <span className="text-xs font-bold uppercase text-teal-700">
+              {programme.category}
+            </span>
+
+            <h2 className="mt-2 text-xl font-black">
+              {programme.title}
+            </h2>
+
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              {programme.summary}
+            </p>
+
+            <div className="mt-5 flex items-center justify-between text-xs text-slate-500">
+              <span>
+                {programme.location || "Available locally"}
+              </span>
+
+              <Link
+                href={`/programmes/${programme.slug}`}
+                className="font-bold text-teal-700"
+              >
+                View
+              </Link>
+            </div>
+          </article>
+        ))}
+      </div>
+
+      {programmes.length === 0 && (
+        <p className="mt-10 rounded-2xl bg-slate-50 p-8 text-slate-600">
+          No active programmes are published yet.
+        </p>
+      )}
+    </main>
+  );
+}

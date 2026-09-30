@@ -1,5 +1,129 @@
-import Link from 'next/link';
-import {ArrowRight, ClipboardList, MapPinned, MessageCircle, Search, ShieldCheck, Users} from 'lucide-react';
-export default function Home(){return <div><section className="bg-slate-950 text-white"><div className="mx-auto grid max-w-7xl gap-12 px-5 py-20 md:grid-cols-2 md:py-28"><div><div className="mb-5 inline-flex rounded-full border border-teal-400/30 bg-teal-400/10 px-4 py-2 text-sm font-bold text-teal-300">Digital Civic Office Platform</div><h1 className="text-5xl font-black leading-tight md:text-7xl">Your community.<br/><span className="text-teal-400">One digital office.</span></h1><p className="mt-6 max-w-xl text-lg leading-8 text-slate-300">REACH connects residents with public programmes, opportunities, service requests and community projects through one simple digital experience.</p><div className="mt-8 flex flex-wrap gap-3"><Link href="/requests/new" className="inline-flex items-center gap-2 rounded-xl bg-teal-500 px-5 py-3 font-bold text-white">Request assistance <ArrowRight size={18}/></Link><Link href="/programmes" className="rounded-xl border border-slate-700 px-5 py-3 font-bold">Explore services</Link></div></div><div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl"><div className="text-sm font-semibold text-slate-400">WHAT'S HAPPENING</div><div className="mt-5 grid gap-3 sm:grid-cols-2"><Card icon={<ClipboardList/>} title="Requests" text="Submit and track community issues."/><Card icon={<Search/>} title="Opportunities" text="Find scholarships, jobs and training."/><Card icon={<MapPinned/>} title="Projects" text="See public projects and progress."/><Card icon={<MessageCircle/>} title="WhatsApp" text="Get updates where you already chat."/></div></div></div></section><section className="mx-auto max-w-7xl px-5 py-16"><div className="grid gap-5 md:grid-cols-3"><Stat n="01" t="Discover" d="Find programmes, opportunities and services available in your area."/><Stat n="02" t="Engage" d="Submit requests, apply for programmes and communicate with the responsible office."/><Stat n="03" t="Track" d="Follow requests and community projects from submission through resolution."/></div></section></div>}
-function Card({icon,title,text}:{icon:React.ReactNode,title:string,text:string}){return <div className="rounded-2xl bg-white/10 p-5"><div className="mb-3 text-teal-300">{icon}</div><div className="font-bold">{title}</div><div className="mt-1 text-sm leading-6 text-slate-400">{text}</div></div>}
-function Stat({n,t,d}:{n:string,t:string,d:string}){return <div className="rounded-2xl border border-slate-200 bg-white p-6"><div className="text-sm font-black text-teal-700">{n}</div><h2 className="mt-3 text-xl font-black">{t}</h2><p className="mt-2 leading-7 text-slate-600">{d}</p></div>}
+import Link from "next/link";
+import {
+  ArrowRight,
+  ClipboardList,
+  MapPinned,
+  MessageCircle,
+  Search,
+} from "lucide-react";
+
+import { getPublicData } from "@/lib/reach";
+
+export default async function Home() {
+  const {
+    tenant,
+    jurisdiction,
+    programmes,
+    opportunities,
+    projects,
+  } = await getPublicData();
+
+  return (
+    <main>
+      <section className="bg-slate-950 text-white">
+        <div className="mx-auto grid max-w-7xl gap-12 px-5 py-20 md:grid-cols-2 md:py-28">
+          <div>
+            <div className="mb-5 inline-flex rounded-full border border-teal-400/30 bg-teal-400/10 px-4 py-2 text-sm font-bold text-teal-300">
+              {tenant.name}
+            </div>
+
+            <h1 className="text-5xl font-black leading-tight md:text-7xl">
+              Your community.
+              <br />
+              <span className="text-teal-400">
+                One digital office.
+              </span>
+            </h1>
+
+            <p className="mt-6 max-w-xl text-lg leading-8 text-slate-300">
+              {tenant.description ||
+                "Connect with public programmes, opportunities, service requests and community projects through one digital experience."}
+            </p>
+
+            {jurisdiction && (
+              <p className="mt-4 text-sm font-semibold text-slate-400">
+                {jurisdiction.name}
+                {jurisdiction.state
+                  ? ` · ${jurisdiction.state}`
+                  : ""}
+              </p>
+            )}
+
+            <div className="mt-8 flex flex-wrap gap-3">
+              <Link
+                href="/requests/new"
+                className="inline-flex items-center gap-2 rounded-xl bg-teal-500 px-5 py-3 font-bold text-white"
+              >
+                Request assistance
+                <ArrowRight size={18} />
+              </Link>
+
+              <Link
+                href="/programmes"
+                className="rounded-xl border border-slate-700 px-5 py-3 font-bold"
+              >
+                Explore services
+              </Link>
+            </div>
+          </div>
+
+          <div className="rounded-3xl border border-white/10 bg-white/5 p-6 shadow-2xl">
+            <div className="text-sm font-semibold text-slate-400">
+              LIVE FROM REACH
+            </div>
+
+            <div className="mt-5 grid gap-3 sm:grid-cols-2">
+              <Card
+                icon={<ClipboardList />}
+                title="Programmes"
+                text={`${programmes.length} active programmes`}
+              />
+
+              <Card
+                icon={<Search />}
+                title="Opportunities"
+                text={`${opportunities.length} open opportunities`}
+              />
+
+              <Card
+                icon={<MapPinned />}
+                title="Projects"
+                text={`${projects.length} tracked projects`}
+              />
+
+              <Card
+                icon={<MessageCircle />}
+                title="Requests"
+                text="Submit and track community issues."
+              />
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  );
+}
+
+function Card({
+  icon,
+  title,
+  text,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  text: string;
+}) {
+  return (
+    <div className="rounded-2xl bg-white/10 p-5">
+      <div className="mb-3 text-teal-300">
+        {icon}
+      </div>
+
+      <div className="font-bold">{title}</div>
+
+      <div className="mt-1 text-sm leading-6 text-slate-400">
+        {text}
+      </div>
+    </div>
+  );
+}
