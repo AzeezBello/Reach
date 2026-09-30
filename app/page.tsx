@@ -459,7 +459,7 @@ export default async function Home() {
               name="Femi Gbajabiamila"
               role="Chief of Staff to the President"
               description="Former representative for Surulere I and former Speaker of the House of Representatives."
-              href="https://en.wikipedia.org/wiki/Femi_Gbajabiamila"
+              href="/leadership/femi-gbajabiamila"
               linkLabel="View profile"
             />
 
@@ -467,15 +467,15 @@ export default async function Home() {
               name="Fuad Kayode Laguda"
               role="Surulere Constituency 1"
               description="Public profile and background information."
-              href="https://en.wikipedia.org/wiki/Fuad_Kayode_Laguda"
+              href="/leadership/fuad-kayode-laguda"
               linkLabel="View profile"
             />
-            
+
             <LeadershipCard
               name="Lanre Okunlola"
               role="Member, House of Representatives"
               description="Representative for Surulere II Federal Constituency."
-              href="https://en.wikipedia.org/wiki/Lanre_Okunlola"
+              href="/leadership/lanre-okunlola"
               linkLabel="View profile"
             />
 
@@ -483,7 +483,7 @@ export default async function Home() {
               name="Odunayo Oluwafemi Daniel"
               role="Executive Chairman, Itire-Ikate LCDA"
               description="Public office profile and information from the Itire-Ikate LCDA."
-              href="https://itireikatelcda.lg.gov.ng/team/hon-odunayo-oluwafemi-daniel/"
+              href="/leadership/odunayo-oluwafemi-daniel"
               linkLabel="View official profile"
               secondaryHref="https://www.instagram.com/hon.femiodunayodaniel/"
               secondaryLabel="Instagram"

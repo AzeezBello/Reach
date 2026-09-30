@@ -108,25 +108,24 @@ export async function getPublicData(
   // --------------------------------------------------
 
   const opportunitiesQuery = supabase
-    .from("opportunities")
-    .select(`
-      id,
-      title,
-      slug,
-      organization,
-      type,
-      summary,
-      description,
-      application_url,
-      deadline,
-      location,
-      status
-    `)
-    .eq("organization_id", tenant.id)
-    .eq("status", "active")
-    .order("created_at", {
-      ascending: false,
-    });
+  .from("opportunities")
+  .select(`
+    id,
+    title,
+    slug,
+    organization,
+    type,
+    summary,
+    description,
+    application_url,
+    deadline,
+    location,
+    status,
+    image_url
+  `)
+  .eq("organization_id", tenant.id)
+  .eq("status", "active")
+  .order("created_at", { ascending: false });
 
   // --------------------------------------------------
   // Projects
@@ -175,7 +174,7 @@ export async function getPublicData(
   }
 
   return {
-    platform: PLATFORM_NAME,
+      platform: PLATFORM_NAME,
     tenant,
     jurisdiction,
     programmes: programmes ?? [],
