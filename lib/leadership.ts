@@ -301,3 +301,11 @@ export const leadershipGroups = [
 export function getLeadershipBySlug(slug: string) {
   return leadership.find((person) => person.slug === slug);
 }
+
+/**
+ * Backward-compatible export.
+ *
+ * Existing REACH pages such as the homepage,
+ * sitemap and llms.txt route use `leaders`.
+ */
+export const leaders = leadership;
