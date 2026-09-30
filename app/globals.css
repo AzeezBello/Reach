@@ -43,6 +43,13 @@
     @apply bg-white text-slate-900 antialiased;
   }
 
+  /* Media never overflows its container; next/image `fill` overrides via inline styles. */
+  img,
+  video {
+    max-width: 100%;
+    height: auto;
+  }
+
   ::selection {
     background: var(--color-brand-200);
     color: var(--color-brand-950);

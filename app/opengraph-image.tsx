@@ -2,7 +2,7 @@ import { ImageResponse } from "next/og";
 
 import { getTenant, PLATFORM_NAME } from "@/lib/reach";
 
-export const alt = "FKL Connect, digital constituency office";
+export const alt = "REACH, digital civic office";
 export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
@@ -66,8 +66,8 @@ export default async function OpenGraphImage() {
           </div>
 
           <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 44, fontWeight: 800, letterSpacing: -1 }}>
-              {tenant.name}
+            <div style={{ fontSize: 48, fontWeight: 800, letterSpacing: 3 }}>
+              {PLATFORM_NAME}
             </div>
             <div
               style={{
@@ -78,7 +78,7 @@ export default async function OpenGraphImage() {
                 textTransform: "uppercase",
               }}
             >
-              Digital constituency office
+              Digital civic office
             </div>
           </div>
         </div>
@@ -97,7 +97,7 @@ export default async function OpenGraphImage() {
           </div>
 
           <div style={{ fontSize: 30, color: "#cbd5e1" }}>
-            Programmes · Opportunities · Projects · Service requests
+            Programmes · Opportunities · Projects · Events · Requests
           </div>
         </div>
 
@@ -121,7 +121,7 @@ export default async function OpenGraphImage() {
             />
             {subtitle}
           </div>
-          <div>{`Powered by ${PLATFORM_NAME}`}</div>
+          <div>{`Serving ${tenant.name}`}</div>
         </div>
       </div>
     ),

@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   Bell,
+  CalendarDays,
   CheckCircle2,
   ClipboardList,
   FolderKanban,
@@ -29,7 +30,7 @@ import {
   getResidentDashboard,
   requireUser,
 } from "@/lib/admin";
-import { formatDate, initials } from "@/lib/format";
+import { formatDate, formatTime, initials } from "@/lib/format";
 
 import { updateProfile } from "./actions";
 
@@ -50,8 +51,12 @@ export default async function DashboardPage({
     searchParams,
   ]);
 
-  const { profile, requests, applications, notifications } =
+  const { profile, requests, applications, notifications, events } =
     await getResidentDashboard(user.id);
+
+  const upcomingEvents = events.filter(
+    (event) => new Date(event.ends_at ?? event.starts_at) >= new Date()
+  );
 
   const displayName =
     profile?.full_name ||
@@ -185,6 +190,54 @@ export default async function DashboardPage({
                   icon={<MessageCircle size={20} />}
                   text="You have not submitted a request yet."
                   action={<ButtonLink href="/requests/new" size="sm">Submit a request</ButtonLink>}
+                />
+              )}
+            </Panel>
+
+            {/* Events */}
+            <Panel
+              title="My events"
+              text="Events you have RSVPed to."
+              action={<TextLink href="/events">Browse events</TextLink>}
+            >
+              {upcomingEvents.length > 0 ? (
+                <ul className="divide-y divide-slate-100">
+                  {upcomingEvents.map((event) => (
+                    <li key={event.id}>
+                      <Link
+                        href={`/events/${event.slug}`}
+                        className="group flex items-center gap-4 py-4 first:pt-0 last:pb-0"
+                      >
+                        <span className="flex size-12 shrink-0 flex-col items-center justify-center rounded-xl bg-brand-50 text-brand-800">
+                          <span className="text-[10px] font-extrabold uppercase">
+                            {new Date(event.starts_at).toLocaleDateString("en-NG", { month: "short", timeZone: "Africa/Lagos" })}
+                          </span>
+                          <span className="text-lg font-extrabold leading-none">
+                            {new Date(event.starts_at).toLocaleDateString("en-NG", { day: "numeric", timeZone: "Africa/Lagos" })}
+                          </span>
+                        </span>
+                        <span className="min-w-0 flex-1">
+                          <span className="block truncate font-bold text-ink group-hover:text-brand-800">
+                            {event.title}
+                          </span>
+                          <span className="mt-0.5 block truncate text-xs text-slate-500">
+                            {formatTime(event.starts_at)}
+                            {event.venue ? ` · ${event.venue}` : ""}
+                          </span>
+                        </span>
+                        <ArrowRight
+                          size={18}
+                          className="shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-brand-700"
+                        />
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <EmptyRow
+                  icon={<CalendarDays size={20} />}
+                  text="You have not RSVPed to any upcoming events."
+                  action={<ButtonLink href="/events" size="sm" variant="outline">See events</ButtonLink>}
                 />
               )}
             </Panel>

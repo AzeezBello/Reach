@@ -9,7 +9,9 @@ import {
 
 import { CtaBand, DetailBody, DetailHero } from "@/components/detail";
 import { JsonLd } from "@/components/json-ld";
+import { LeadersPanel } from "@/components/leaders-panel";
 import { Badge, ButtonLink, FactRow } from "@/components/ui";
+import { getContentLeaders } from "@/lib/leaders";
 import { formatDate, formatNumber, humanize, statusTone } from "@/lib/format";
 import { getProgramme, getTenant } from "@/lib/reach";
 import { programmeSchema } from "@/lib/seo";
@@ -44,6 +46,8 @@ export default async function ProgrammeDetailPage({ params }: Params) {
   if (!programme) {
     notFound();
   }
+
+  const credits = await getContentLeaders("programme", programme.id);
 
   const eventSchema = programmeSchema(programme, tenant, jurisdiction);
 
@@ -128,6 +132,8 @@ export default async function ProgrammeDetailPage({ params }: Params) {
                 steps for this programme.
               </p>
             </div>
+
+            <LeadersPanel credits={credits} />
           </>
         }
       />

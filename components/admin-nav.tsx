@@ -8,6 +8,7 @@ import {
   LayoutDashboard,
   Landmark,
   MapPinned,
+  UserRound,
   Users,
 } from "lucide-react";
 
@@ -17,6 +18,7 @@ const LINKS = [
   { href: "/superadmin/jurisdictions", label: "Jurisdictions", icon: MapPinned },
   { href: "/superadmin/offices", label: "Offices", icon: Building2 },
   { href: "/superadmin/staff", label: "Staff", icon: Users },
+  { href: "/superadmin/leaders", label: "Leaders", icon: UserRound },
   { href: "/superadmin/requests", label: "Requests", icon: ClipboardList },
 ];
 

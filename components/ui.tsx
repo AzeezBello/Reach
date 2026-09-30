@@ -132,7 +132,7 @@ export function buttonClasses(
   size: keyof typeof buttonSize = "md",
   className = ""
 ) {
-  return `inline-flex items-center justify-center gap-2 rounded-xl font-bold transition active:scale-[0.98] ${buttonVariant[variant]} ${buttonSize[size]} ${className}`;
+  return `inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-xl font-bold transition active:scale-[0.98] ${buttonVariant[variant]} ${buttonSize[size]} ${className}`;
 }
 
 export function ButtonLink({

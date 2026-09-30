@@ -8,7 +8,7 @@
 -- Leaders
 -- ---------------------------------------------------------------------------
 
-insert into public.leaders (organization_id, slug, name, role, office, jurisdiction, summary, biography, service, sources, sort_order)
+insert into public.leaders (organization_id, slug, name, role, office, jurisdiction, summary, biography, service, sources, sort_order, image_url)
 select
   (select id from public.organizations where slug = 'fkl-connect'),
   'fuad-kayode-laguda',
@@ -27,10 +27,11 @@ select
     'Chairman, House Committee on Federal Polytechnics and Other Higher Technical Education.'
   ],
   '[{"label": "National Assembly — Official Records", "url": "https://nass.gov.ng/"}]'::jsonb,
-  1
+  1,
+  '/images/leaders/fuad-kayode-laguda.jpg'
 on conflict (slug) do nothing;
 
-insert into public.leaders (organization_id, slug, name, role, office, jurisdiction, summary, biography, service, sources, sort_order)
+insert into public.leaders (organization_id, slug, name, role, office, jurisdiction, summary, biography, service, sources, sort_order, image_url)
 select
   (select id from public.organizations where slug = 'fkl-connect'),
   'femi-gbajabiamila',
@@ -49,7 +50,8 @@ select
     'Former representative for Surulere I Federal Constituency in Lagos State.'
   ],
   '[{"label": "State House — Office of the President", "url": "https://statehouse.gov.ng/presidency/office-of-the-president/"}]'::jsonb,
-  2
+  2,
+  '/images/leaders/femi-gbajabiamila.jpg'
 on conflict (slug) do nothing;
 
 insert into public.leaders (organization_id, slug, name, role, office, jurisdiction, summary, biography, service, sources, sort_order)
@@ -155,4 +157,84 @@ select 'opportunity', op.id, l.id, 'partner'
 from public.opportunities op
 join public.leaders l on l.slug = 'femi-gbajabiamila'
 where op.slug = 'education-support-opportunity'
+on conflict do nothing;
+
+-- ---------------------------------------------------------------------------
+-- Events
+-- ---------------------------------------------------------------------------
+
+insert into public.events (organization_id, title, slug, summary, description, category, venue, location, starts_at, ends_at, capacity, status, image_url, is_featured)
+select
+  o.id,
+  'Acada Carnival 2026',
+  'acada-carnival-2026',
+  'A celebration of learning for students across Surulere: quiz competitions, spelling bees, career talks, scholarship announcements and a fun fair.',
+  E'Acada Carnival brings secondary-school students, teachers and parents from across the constituency together for a full day built around education.\n\nHighlights:\n• Inter-school quiz and spelling-bee finals\n• Career talks with professionals from the community\n• Scholarship and education-support announcements\n• Exhibitions from the FKL Skills Development Programme\n• Games, music and a fun fair for younger children\n\nSchools can register their teams through their principal. Individual students and families are welcome to attend free of charge.',
+  'Education',
+  'Teslim Balogun Stadium',
+  'Surulere, Lagos',
+  '2026-12-12 09:00:00+01',
+  '2026-12-12 17:00:00+01',
+  3000,
+  'published',
+  '/images/765176279_18616848703056110_7215976529452645267_n.webp',
+  true
+from public.organizations o
+where o.slug = 'fkl-connect'
+on conflict (organization_id, slug) do nothing;
+
+insert into public.events (organization_id, title, slug, summary, description, category, venue, location, starts_at, ends_at, capacity, status, image_url, is_featured)
+select
+  o.id,
+  'FKL Sports Community Fitness Day',
+  'fkl-sports-community-fitness-day',
+  'An early-morning aerobics, walk and basketball session open to residents of all ages, led by the FKL Sports team.',
+  E'Join the FKL Sports team for a community fitness morning: a guided warm-up, a 3 km neighbourhood walk, aerobics, and friendly basketball and volleyball games.\n\nBring water and comfortable shoes. Free health checks (blood pressure and blood sugar) will be available on site.',
+  'Sports & Health',
+  'Rowe Park Sports Centre',
+  'Yaba, Lagos',
+  '2026-10-24 07:00:00+01',
+  '2026-10-24 11:00:00+01',
+  null,
+  'published',
+  '/images/731417453_18606717733056110_2647227045067538133_n.webp',
+  false
+from public.organizations o
+where o.slug = 'fkl-connect'
+on conflict (organization_id, slug) do nothing;
+
+insert into public.events (organization_id, title, slug, summary, description, category, venue, location, starts_at, ends_at, capacity, status, image_url, is_featured)
+select
+  o.id,
+  'Constituency Town Hall',
+  'constituency-town-hall',
+  'An open meeting where residents hear updates on projects and programmes and raise issues directly with the constituency office.',
+  E'The town hall is an open forum for residents of Surulere I Federal Constituency.\n\nAgenda:\n• Progress report on community projects\n• Upcoming programmes and opportunities\n• Open floor: questions and requests from residents\n\nResidents who cannot attend can submit their questions in advance through a service request on this site.',
+  'Community',
+  'FKL Connect Digital Constituency Office',
+  'Surulere, Lagos',
+  '2026-11-14 10:00:00+01',
+  '2026-11-14 13:00:00+01',
+  250,
+  'published',
+  '/images/786492805_18624344809056110_2886554270919108580_n.webp',
+  false
+from public.organizations o
+where o.slug = 'fkl-connect'
+on conflict (organization_id, slug) do nothing;
+
+-- Event collaborations: FKL leads every event; Acada Carnival is a joint
+-- collaboration with the Itire-Ikate LCDA chairman.
+insert into public.content_leaders (content_type, content_id, leader_id, role)
+select 'event', e.id, l.id, 'lead'
+from public.events e
+join public.organizations o on o.id = e.organization_id and o.slug = 'fkl-connect'
+join public.leaders l on l.slug = 'fuad-kayode-laguda'
+on conflict do nothing;
+
+insert into public.content_leaders (content_type, content_id, leader_id, role)
+select 'event', e.id, l.id, 'partner'
+from public.events e
+join public.leaders l on l.slug = 'odunayo-oluwafemi-daniel'
+where e.slug = 'acada-carnival-2026'
 on conflict do nothing;

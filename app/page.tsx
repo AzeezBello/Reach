@@ -5,6 +5,7 @@ import {
   CalendarDays,
   CheckCircle2,
   ClipboardList,
+  Clock,
   FolderKanban,
   MapPin,
   MessageCircle,
@@ -25,25 +26,32 @@ import {
   TextLink,
 } from "@/components/ui";
 import { VideoPlayer } from "@/components/video-player";
-import { formatDate, humanize, initials, statusTone } from "@/lib/format";
-import { leaders } from "@/lib/leadership";
+import { formatDate, formatTime, humanize, initials, statusTone } from "@/lib/format";
+import { getLeaders } from "@/lib/leaders";
 import { gallery, hero, photos, stories } from "@/lib/media";
-import { getPublicData, getTenant } from "@/lib/reach";
+import { getPublicData, getTenant, splitEvents } from "@/lib/reach";
 import { siteDescription, siteTitle } from "@/lib/seo";
 
 export async function generateMetadata(): Promise<Metadata> {
   const { tenant, jurisdiction } = await getTenant();
 
+  const title = siteTitle(tenant);
+  const description = siteDescription(tenant, jurisdiction);
+
   return {
-    title: { absolute: siteTitle(tenant) },
-    description: siteDescription(tenant, jurisdiction),
+    title: { absolute: title },
+    description,
     alternates: { canonical: "/" },
+    openGraph: { title, description, url: "/" },
+    twitter: { title, description },
   };
 }
 
 export default async function Home() {
-  const { tenant, jurisdiction, programmes, opportunities, projects } =
-    await getPublicData();
+  const [{ tenant, jurisdiction, programmes, opportunities, projects, events }, leaders] =
+    await Promise.all([getPublicData(), getLeaders()]);
+
+  const { upcoming: upcomingEvents } = splitEvents(events);
 
   const quickLinks = [
     {
@@ -357,6 +365,47 @@ export default async function Home() {
       </section>
 
       {/* ------------------------------------------------------------ */}
+      {/* Events                                                         */}
+      {/* ------------------------------------------------------------ */}
+      {upcomingEvents.length > 0 && (
+        <section className="border-y border-slate-100 bg-slate-50">
+          <Container className="py-16 md:py-24">
+            <SectionHeader
+              eyebrow="Upcoming events"
+              title="Mark your calendar"
+              text="Acada Carnival, town halls, sports days and outreach events. Sign in to RSVP."
+              action={<TextLink href="/events">All events</TextLink>}
+            />
+
+            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {upcomingEvents.slice(0, 3).map((event) => (
+                <ContentCard
+                  key={event.id}
+                  href={`/events/${event.slug}`}
+                  title={event.title}
+                  summary={event.summary}
+                  image={event.image_url}
+                  fallbackIcon={<CalendarDays size={28} />}
+                  badges={[
+                    { label: event.category || "Event" },
+                    ...(event.is_featured ? [{ label: "Featured", tone: "gold" as const }] : []),
+                  ]}
+                  meta={[
+                    { icon: <CalendarDays size={14} />, text: formatDate(event.starts_at) ?? "" },
+                    { icon: <Clock size={14} />, text: formatTime(event.starts_at) ?? "" },
+                    ...((event.venue || event.location)
+                      ? [{ icon: <MapPin size={14} />, text: event.venue || event.location || "" }]
+                      : []),
+                  ]}
+                  cta="Event details"
+                />
+              ))}
+            </div>
+          </Container>
+        </section>
+      )}
+
+      {/* ------------------------------------------------------------ */}
       {/* Stories                                                        */}
       {/* ------------------------------------------------------------ */}
       <section className="bg-ink">
@@ -403,39 +452,55 @@ export default async function Home() {
           />
 
           <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
-            {leaders.map((leader) => (
+            {leaders.slice(0, 4).map((leader) => (
               <article
                 key={leader.slug}
-                className="group relative rounded-3xl border border-slate-200 bg-white p-6 shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-900/10"
+                className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-900/10"
               >
-                <div className="flex size-14 items-center justify-center rounded-2xl bg-linear-to-br from-brand-500 to-brand-800 text-lg font-extrabold text-white">
-                  {initials(leader.name)}
+                <div className="relative aspect-[4/5] overflow-hidden bg-slate-100">
+                  {leader.image_url ? (
+                    <Photo
+                      src={leader.image_url}
+                      alt={`${leader.name}, ${leader.role}`}
+                      sizes="(min-width: 1024px) 300px, (min-width: 640px) 50vw, 100vw"
+                      className="object-top transition duration-500 group-hover:scale-105"
+                    />
+                  ) : (
+                    <div className="flex h-full items-center justify-center bg-linear-to-br from-brand-500 to-brand-800 text-4xl font-extrabold text-white">
+                      {initials(leader.name)}
+                    </div>
+                  )}
+                  <div className="absolute inset-x-0 bottom-0 h-1/3 bg-linear-to-t from-ink/60 to-transparent" />
                 </div>
 
-                <h3 className="mt-5 text-lg font-extrabold leading-tight text-ink">
-                  <Link
-                    href={`/leadership/${leader.slug}`}
-                    className="after:absolute after:inset-0 after:content-[''] group-hover:text-brand-800"
-                  >
-                    {leader.name}
-                  </Link>
-                </h3>
+                <div className="flex flex-1 flex-col p-5">
+                  <h3 className="text-lg font-extrabold leading-tight text-ink">
+                    <Link
+                      href={`/leadership/${leader.slug}`}
+                      className="after:absolute after:inset-0 after:content-[''] group-hover:text-brand-800"
+                    >
+                      {leader.name}
+                    </Link>
+                  </h3>
 
-                <p className="mt-1 text-sm font-bold text-brand-700">
-                  {leader.role}
-                </p>
+                  <p className="mt-1 text-sm font-bold text-brand-700">
+                    {leader.role}
+                  </p>
 
-                <p className="mt-3 text-sm leading-6 text-slate-600">
-                  {leader.office}
-                </p>
+                  {leader.office && (
+                    <p className="mt-2 text-sm leading-6 text-slate-600">
+                      {leader.office}
+                    </p>
+                  )}
 
-                <span className="mt-5 inline-flex items-center gap-2 text-sm font-bold text-ink">
-                  View profile
-                  <ArrowRight
-                    size={15}
-                    className="transition group-hover:translate-x-0.5"
-                  />
-                </span>
+                  <span className="mt-auto inline-flex items-center gap-2 pt-4 text-sm font-bold text-ink">
+                    View profile
+                    <ArrowRight
+                      size={15}
+                      className="transition group-hover:translate-x-0.5"
+                    />
+                  </span>
+                </div>
               </article>
             ))}
           </div>

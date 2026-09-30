@@ -1,14 +1,19 @@
 import { PLATFORM_NAME, SITE_URL } from "@/lib/config";
-import type { Leader } from "@/lib/leadership";
 import { brand } from "@/lib/media";
-import type { Jurisdiction, Programme, Tenant } from "@/lib/types";
+import type {
+  Event,
+  Jurisdiction,
+  Leader,
+  Programme,
+  Tenant,
+} from "@/lib/types";
 
 export function absoluteUrl(path: string) {
   return new URL(path, SITE_URL).toString();
 }
 
 export function siteTitle(tenant: Pick<Tenant, "name">) {
-  return `${tenant.name} · Digital Constituency Office`;
+  return `${PLATFORM_NAME} · Digital Civic Office for ${tenant.name}`;
 }
 
 export function siteDescription(
@@ -93,8 +98,8 @@ export function websiteSchema(tenant: Tenant) {
     "@context": "https://schema.org",
     "@type": "WebSite",
     "@id": absoluteUrl("/#website"),
-    name: siteTitle(tenant),
-    alternateName: PLATFORM_NAME,
+    name: PLATFORM_NAME,
+    alternateName: `${PLATFORM_NAME} · ${tenant.name}`,
     url: SITE_URL,
     publisher: { "@id": absoluteUrl("/#organization") },
     inLanguage: "en-NG",
@@ -126,6 +131,40 @@ export function programmeSchema(
       address: {
         "@type": "PostalAddress",
         addressLocality: programme.location || jurisdiction?.name || undefined,
+        addressRegion: jurisdiction?.state || undefined,
+        addressCountry: "NG",
+      },
+    },
+    organizer: { "@id": absoluteUrl("/#organization") },
+  };
+}
+
+export function eventSchema(
+  event: Event,
+  tenant: Tenant,
+  jurisdiction: Jurisdiction | null
+) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: event.title,
+    description: event.summary || event.description || undefined,
+    url: absoluteUrl(`/events/${event.slug}`),
+    startDate: event.starts_at,
+    ...(event.ends_at && { endDate: event.ends_at }),
+    ...(event.image_url && { image: absoluteUrl(event.image_url) }),
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    eventStatus:
+      event.status === "cancelled"
+        ? "https://schema.org/EventCancelled"
+        : "https://schema.org/EventScheduled",
+    isAccessibleForFree: !event.registration_url,
+    location: {
+      "@type": "Place",
+      name: event.venue || event.location || jurisdiction?.name || tenant.name,
+      address: {
+        "@type": "PostalAddress",
+        addressLocality: event.location || jurisdiction?.name || undefined,
         addressRegion: jurisdiction?.state || undefined,
         addressCountry: "NG",
       },

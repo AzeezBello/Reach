@@ -160,7 +160,7 @@ The public-facing REACH application provides:
 
 ## Brand & Media
 
-The FKL Connect identity uses a leaf-green primary, a gold accent and a deep green-black "ink" for dark sections. The palette lives in `app/globals.css` as Tailwind theme tokens (`brand-*`, `gold-*`, `ink`).
+The app is branded **REACH** in the header, footer, page titles and share image; the tenant (FKL Connect) is named in the footer, metadata and structured data. The identity uses a leaf-green primary, a gold accent and a deep green-black "ink" for dark sections. The palette lives in `app/globals.css` as Tailwind theme tokens (`brand-*`, `gold-*`, `ink`).
 
 Brand assets live in `public/brand/`:
 
@@ -183,6 +183,7 @@ Signed-in residents have a dashboard at `/dashboard` showing:
 * Request statistics (submitted, open, resolved)
 * Recent requests with links to a per-request page (`/requests/[id]`) that shows the status timeline from `request_updates`
 * Programme applications
+* Events the resident has RSVPed to
 * Notifications sent to the resident
 * An editable profile (full name and phone number)
 
@@ -199,9 +200,46 @@ Platform administrators manage every tenant from `/superadmin`:
 | `/superadmin/jurisdictions` | List and create jurisdictions, including parent/child nesting |
 | `/superadmin/offices` | List, create, activate and deactivate offices |
 | `/superadmin/staff` | Attach resident accounts to offices as staff or admin |
+| `/superadmin/leaders` | Create leadership profiles and link them to programmes, opportunities, projects and events as lead or collaboration partner |
 | `/superadmin/requests` | Update request status, post a note to the resident's timeline and keep internal staff notes |
 
 Access is granted to accounts whose `profiles.role` is `admin` or `superadmin`. Every page and server action re-checks the role; row-level security must also allow these operations for the role.
+
+---
+
+## Events
+
+Offices publish dated activities such as **Acada Carnival**, community fitness days and town halls.
+
+Event records contain:
+
+* Title, slug, summary, description, category
+* Venue and location
+* Start and end time
+* Registration URL and capacity
+* Status (`draft`, `published`, `cancelled`)
+* Image and a featured flag
+
+Signed-in residents can RSVP from the event page; the attendee count is shown publicly without exposing who is attending. Events appear on the homepage, at `/events`, in the sitemap, in `llms.txt`, and on the resident dashboard.
+
+---
+
+## Leadership Profiles & Collaborations
+
+Public office holders connected to the community have profile pages at `/leadership/[slug]` with biography, public-service record and official reference sources.
+
+Profiles live in the `leaders` table. Until that table is migrated and seeded, the site falls back to the built-in profiles in `lib/leadership.ts`.
+
+Programmes, opportunities, projects and events are linked to leaders through `content_leaders`:
+
+```text
+content_type   programme | opportunity | project | event
+content_id     the item's id
+leader_id      the leader
+role           lead | partner
+```
+
+An item with a single `lead` is an individual initiative. An item with a `lead` plus one or more `partner` rows is a **joint collaboration**. Detail pages show a "Led by" or "Joint collaboration" panel, and each leader's profile lists everything they are involved in.
 
 ---
 
@@ -458,6 +496,7 @@ reach/
 │   ├── api/tenant/route.ts          Public tenant JSON endpoint
 │   ├── auth/signout/route.ts        Sign-out handler
 │   ├── dashboard/                   Resident dashboard + profile action
+│   ├── events/                      Events index, detail and RSVP action
 │   ├── leadership/                  Leadership index and profiles
 │   ├── llms.txt/route.ts            llms.txt for AI crawlers
 │   ├── login/                       Sign in / create account
@@ -477,6 +516,7 @@ reach/
 │   ├── header.tsx · nav.tsx · footer.tsx
 │   ├── page-hero.tsx · breadcrumbs.tsx · json-ld.tsx
 │   ├── content-card.tsx · detail.tsx · media.tsx · video-player.tsx
+│   ├── leaders-panel.tsx            "Led by" / joint collaboration credits
 │   ├── request-form.tsx · auth-form.tsx · action-form.tsx
 │   ├── admin.tsx · admin-nav.tsx    Dashboard and console building blocks
 │   └── ui.tsx                       Buttons, badges, section headers
@@ -484,15 +524,20 @@ reach/
 ├── lib/
 │   ├── reach.ts                     Public data access (tenant, content, session)
 │   ├── admin.ts                     Dashboard and superadmin data access + guards
+│   ├── leaders.ts                   Leadership profiles and collaborations (with static fallback)
 │   ├── seo.ts                       Canonical URLs and JSON-LD schemas
 │   ├── media.ts                     Curated photos, videos and alt text
 │   ├── format.ts · navigation.ts · config.ts · types.ts · leadership.ts
 │   └── supabase/                    Browser and server clients
 │
 ├── proxy.ts                         Session refresh on navigation
+├── supabase/
+│   ├── migrations/                  Versioned schema and policies
+│   ├── seed.sql                     Leaders, collaborations and events for FKL Connect
+│   └── config.toml
 ├── public/
 │   ├── brand/                       Logo files
-│   ├── images/                      Community photos
+│   ├── images/                      Community photos (+ images/leaders/ portraits)
 │   └── videos/                      Community videos
 │
 ├── next.config.ts
@@ -530,6 +575,25 @@ Do **not** expose Supabase service-role or secret keys in browser/client code.
 
 # Supabase Database
 
+## Migrations
+
+The schema is versioned in `supabase/migrations/` and applied with the Supabase CLI:
+
+```bash
+supabase link --project-ref <project-ref>
+supabase db push                       # applies every migration
+supabase db execute --file supabase/seed.sql   # leaders, collaborations and events for FKL Connect
+```
+
+| File | Contents |
+| --- | --- |
+| `20260930000001_baseline.sql` | All core tables, the profile trigger on `auth.users`, request reference numbers (`REACH-000001`), indexes |
+| `20260930000002_leaders.sql` | `leaders` and `content_leaders` |
+| `20260930000003_policies.sql` | Row-level security for every table, plus the `is_platform_admin()` and `is_office_staff()` helpers |
+| `20260930000004_events.sql` | `events`, `event_rsvps`, the public `event_rsvp_count()` function and event policies |
+
+Every statement is idempotent (`create table if not exists`, `drop policy if exists`), so the files can be applied to the existing project without touching data that is already there.
+
 The current database includes the following major entities:
 
 ```text
@@ -539,6 +603,10 @@ programmes
 programme_applications
 opportunities
 projects
+events
+event_rsvps
+leaders
+content_leaders
 
 organizations
 jurisdictions
@@ -804,6 +872,8 @@ This deployment serves as the initial implementation of the broader REACH platfo
 * [x] Request status timeline
 * [ ] Programme application workflow
 * [ ] Opportunity application tracking
+* [x] Events with RSVP
+* [x] Leadership profiles with collaborations
 * [x] Resident profile
 * [ ] Notifications
 * [ ] Email notifications

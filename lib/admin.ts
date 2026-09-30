@@ -5,7 +5,11 @@ import { getCurrentUser } from "@/lib/reach";
 import { createClient } from "@/lib/supabase/server";
 import type {
   AdminRequest,
+  ContentLeader,
+  ContentType,
+  Event,
   JurisdictionRecord,
+  Leader,
   Notification,
   Office,
   OfficeMember,
@@ -131,7 +135,7 @@ export async function requireSuperadmin() {
 export async function getResidentDashboard(userId: string) {
   const supabase = await createClient();
 
-  const [profile, requests, applications, notifications] = await Promise.all([
+  const [profile, requests, applications, notifications, rsvps] = await Promise.all([
     getProfile(userId),
     supabase
       .from("requests")
@@ -149,9 +153,29 @@ export async function getResidentDashboard(userId: string) {
       .eq("resident_id", userId)
       .order("created_at", { ascending: false })
       .limit(8),
+    supabase
+      .from("event_rsvps")
+      .select("event_id")
+      .eq("resident_id", userId),
   ]);
 
   assertOk(requests.error);
+
+  // Events the resident has RSVPed to (optional until the events migration runs).
+  let events: Event[] = [];
+  const eventIds = (rsvps.data ?? []).map((row: { event_id: string }) => row.event_id);
+
+  if (eventIds.length > 0) {
+    const { data } = await supabase
+      .from("events")
+      .select(
+        "id, title, slug, summary, description, category, venue, location, starts_at, ends_at, registration_url, capacity, status, image_url, is_featured"
+      )
+      .in("id", eventIds)
+      .order("starts_at", { ascending: true });
+
+    events = (data ?? []) as Event[];
+  }
 
   const applicationRows = (applications.data ?? []) as ProgrammeApplication[];
   const programmeIds = [...new Set(applicationRows.map((row) => row.programme_id))];
@@ -180,6 +204,7 @@ export async function getResidentDashboard(userId: string) {
     })),
     // Notifications are optional: an RLS denial should not break the page.
     notifications: (notifications.data ?? []) as Notification[],
+    events,
   };
 }
 
@@ -220,6 +245,7 @@ const COUNTED_TABLES = [
   "programmes",
   "opportunities",
   "projects",
+  "events",
   "requests",
 ] as const;
 
@@ -363,4 +389,71 @@ export async function getContentCounts(organizationId: string) {
   );
 
   return Object.fromEntries(counts) as Record<(typeof tables)[number], number>;
+}
+
+/* ------------------------------------------------------------------ */
+/* Leaders & collaborations                                            */
+/* ------------------------------------------------------------------ */
+
+/** All leadership profiles in the database, including hidden ones. */
+export async function getAdminLeaders(): Promise<Leader[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("leaders")
+    .select(
+      "id, slug, name, role, office, jurisdiction, summary, biography, service, sources, image_url, is_active, sort_order"
+    )
+    .order("sort_order")
+    .order("name");
+
+  if (error) return [];
+
+  return (data ?? []) as Leader[];
+}
+
+export async function getContentLinks(): Promise<ContentLeader[]> {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("content_leaders")
+    .select("content_type, content_id, leader_id, role")
+    .order("content_type");
+
+  if (error) return [];
+
+  return (data ?? []) as ContentLeader[];
+}
+
+export type AdminContentItem = { type: ContentType; id: string; title: string };
+
+/** Every programme, opportunity, project and event that can be credited. */
+export async function getAdminContent(): Promise<AdminContentItem[]> {
+  const supabase = await createClient();
+
+  const tables: { type: ContentType; table: string }[] = [
+    { type: "programme", table: "programmes" },
+    { type: "opportunity", table: "opportunities" },
+    { type: "project", table: "projects" },
+    { type: "event", table: "events" },
+  ];
+
+  const results = await Promise.all(
+    tables.map(async ({ type, table }) => {
+      const { data, error } = await supabase
+        .from(table)
+        .select("id, title")
+        .order("title");
+
+      if (error) return [];
+
+      return ((data ?? []) as { id: string; title: string }[]).map((row) => ({
+        type,
+        id: row.id,
+        title: row.title,
+      }));
+    })
+  );
+
+  return results.flat();
 }

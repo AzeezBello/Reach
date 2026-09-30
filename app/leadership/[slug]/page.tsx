@@ -1,260 +1,305 @@
-import Image from "next/image";
+import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import {
-  getLeadershipBySlug,
-  leadership,
-} from "@/lib/leadership";
+  ArrowRight,
+  ArrowUpRight,
+  Building2,
+  CalendarDays,
+  ClipboardList,
+  FolderKanban,
+  MapPin,
+  Sparkles,
+} from "lucide-react";
 
-type LeadershipProfilePageProps = {
-  params: Promise<{
-    slug: string;
-  }>;
-};
+import { Breadcrumbs } from "@/components/breadcrumbs";
+import { JsonLd } from "@/components/json-ld";
+import { Photo } from "@/components/media";
+import { Badge, ButtonLink, Container, Eyebrow } from "@/components/ui";
+import { formatDate, humanize, initials } from "@/lib/format";
+import { getLeader, getLeaderContent, getLeaders } from "@/lib/leaders";
+import { pageArt } from "@/lib/media";
+import { personSchema } from "@/lib/seo";
+import type { CollaborationRole } from "@/lib/types";
 
-export function generateStaticParams() {
-  return leadership.map((person) => ({
-    slug: person.slug,
-  }));
+type Params = { params: Promise<{ slug: string }> };
+
+export async function generateStaticParams() {
+  const leaders = await getLeaders();
+  return leaders.map((leader) => ({ slug: leader.slug }));
 }
 
-export const dynamicParams = false;
-
-export async function generateMetadata({
-  params,
-}: LeadershipProfilePageProps) {
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const person = getLeadershipBySlug(slug);
+  const leader = await getLeader(slug);
 
-  if (!person) {
-    return {
-      title: "Public Official | REACH",
-    };
-  }
+  if (!leader) return { title: "Profile not found" };
 
   return {
-    title: `${person.name} | REACH`,
-    description: `${person.role}. ${person.office}, ${person.jurisdiction}.`,
+    title: `${leader.name}, ${leader.role}`,
+    description:
+      leader.summary ?? `${leader.name}, ${leader.role}${leader.office ? `, ${leader.office}` : ""}.`,
+    alternates: { canonical: `/leadership/${leader.slug}` },
+    openGraph: leader.image_url
+      ? { images: [{ url: leader.image_url, alt: leader.name }] }
+      : undefined,
   };
 }
 
-export default async function LeadershipProfilePage({
-  params,
-}: LeadershipProfilePageProps) {
+export default async function LeadershipProfilePage({ params }: Params) {
   const { slug } = await params;
-  const person = getLeadershipBySlug(slug);
+  const leader = await getLeader(slug);
 
-  if (!person) {
+  if (!leader) {
     notFound();
   }
 
+  const content = await getLeaderContent(leader.id);
+
+  const involvement = [
+    {
+      key: "programmes",
+      title: "Programmes",
+      icon: <ClipboardList size={18} />,
+      items: content.programmes.map((item) => ({
+        href: `/programmes/${item.slug}`,
+        title: item.title,
+        meta: item.category || "Programme",
+        collaboration: item.collaboration,
+      })),
+    },
+    {
+      key: "projects",
+      title: "Community projects",
+      icon: <FolderKanban size={18} />,
+      items: content.projects.map((item) => ({
+        href: `/projects/${item.slug}`,
+        title: item.title,
+        meta: humanize(item.status, "Project"),
+        collaboration: item.collaboration,
+      })),
+    },
+    {
+      key: "opportunities",
+      title: "Opportunities",
+      icon: <Sparkles size={18} />,
+      items: content.opportunities.map((item) => ({
+        href: `/opportunities/${item.slug}`,
+        title: item.title,
+        meta: humanize(item.type, "Opportunity"),
+        collaboration: item.collaboration,
+      })),
+    },
+    {
+      key: "events",
+      title: "Events",
+      icon: <CalendarDays size={18} />,
+      items: content.events.map((item) => ({
+        href: `/events/${item.slug}`,
+        title: item.title,
+        meta: formatDate(item.starts_at) ?? "Event",
+        collaboration: item.collaboration,
+      })),
+    },
+  ].filter((group) => group.items.length > 0);
+
+  const totalItems = involvement.reduce((sum, group) => sum + group.items.length, 0);
+
   return (
-    <main className="min-h-screen bg-slate-50">
-      {/* Back navigation */}
-      <section className="border-b bg-white">
-        <div className="mx-auto max-w-6xl px-4 py-8 sm:px-6 lg:px-8">
-          <Link
-            href="/leadership"
-            className="inline-flex items-center gap-2 text-sm font-semibold text-slate-500 transition hover:text-emerald-700"
-          >
-            <span aria-hidden="true">←</span>
-            Back to Public Leadership
-          </Link>
-        </div>
-      </section>
+    <>
+      <JsonLd data={personSchema(leader)} />
 
-      {/* Profile */}
-      <section className="mx-auto max-w-6xl px-4 py-12 sm:px-6 lg:px-8 lg:py-16">
-        <div className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-          {/* Profile hero */}
-          <div className="bg-slate-950 text-white">
-            <div className="grid lg:grid-cols-[320px_1fr]">
-              {/* Portrait */}
-              <div className="relative aspect-[4/5] min-h-[360px] overflow-hidden bg-slate-900 lg:min-h-[420px]">
-                {person.image ? (
-                  <Image
-                    src={person.image}
-                    alt={person.name}
-                    fill
-                    priority
-                    sizes="(max-width: 1024px) 100vw, 320px"
-                    className="object-cover object-top"
-                  />
-                ) : (
-                  <div className="flex h-full w-full items-center justify-center bg-emerald-700">
-                    <span className="text-8xl font-bold">
-                      {person.initial}
-                    </span>
-                  </div>
+      <section className="relative isolate overflow-hidden bg-ink text-white">
+        <Photo
+          src={pageArt.leadership.src}
+          alt=""
+          priority
+          sizes="100vw"
+          className="-z-20 opacity-20"
+        />
+        <div className="absolute inset-0 -z-10 bg-linear-to-r from-ink via-ink/90 to-ink/60" />
+
+        <Container className="py-12 md:py-16">
+          <Breadcrumbs
+            tone="light"
+            items={[
+              { label: "Leadership", href: "/leadership" },
+              { label: leader.name, href: `/leadership/${leader.slug}` },
+            ]}
+          />
+
+          <div className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-8">
+            <div className="relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-linear-to-br from-brand-400 to-brand-700 text-3xl font-extrabold text-ink sm:size-28">
+              {leader.image_url ? (
+                <Photo src={leader.image_url} alt={leader.name} sizes="112px" priority />
+              ) : (
+                initials(leader.name)
+              )}
+            </div>
+
+            <div>
+              <Eyebrow tone="light">{leader.role}</Eyebrow>
+
+              <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-balance sm:text-4xl md:text-5xl">
+                {leader.name}
+              </h1>
+
+              <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-sm text-slate-300">
+                {leader.office && (
+                  <span className="inline-flex items-center gap-2">
+                    <Building2 size={16} className="text-brand-400" />
+                    {leader.office}
+                  </span>
                 )}
-
-                <div className="absolute inset-x-0 bottom-0 h-32 bg-gradient-to-t from-slate-950/70 to-transparent lg:hidden" />
-              </div>
-
-              {/* Identity */}
-              <div className="flex flex-col justify-center px-6 py-10 sm:px-10 lg:px-12">
-                <span className="mb-4 inline-flex w-fit rounded-full bg-emerald-500/15 px-3 py-1.5 text-xs font-bold text-emerald-300">
-                  {person.levelLabel}
-                </span>
-
-                <p className="text-sm font-bold uppercase tracking-wider text-emerald-400">
-                  {person.role}
-                </p>
-
-                <h1 className="mt-3 text-3xl font-bold tracking-tight sm:text-4xl lg:text-5xl">
-                  {person.name}
-                </h1>
-
-                <p className="mt-5 text-lg font-semibold text-slate-200">
-                  {person.office}
-                </p>
-
-                <p className="mt-2 text-slate-400">
-                  {person.jurisdiction}
-                </p>
-
-                {person.constituency && (
-                  <div className="mt-7 border-t border-white/10 pt-6">
-                    <p className="text-xs font-bold uppercase tracking-widest text-slate-500">
-                      Constituency
-                    </p>
-
-                    <p className="mt-2 font-semibold text-slate-200">
-                      {person.constituency}
-                    </p>
-                  </div>
+                {leader.jurisdiction && (
+                  <span className="inline-flex items-center gap-2">
+                    <MapPin size={16} className="text-brand-400" />
+                    {leader.jurisdiction}
+                  </span>
                 )}
               </div>
             </div>
           </div>
-
-          {/* Main content */}
-          <div className="grid gap-10 p-6 sm:p-10 lg:grid-cols-[1fr_300px] lg:p-12">
-            <div className="space-y-10">
-              {/* Overview */}
-              <section>
-                <h2 className="text-xl font-bold text-slate-950">
-                  Overview
-                </h2>
-
-                <p className="mt-4 text-base leading-8 text-slate-600">
-                  {person.summary}
-                </p>
-              </section>
-
-              {/* Biography */}
-              <section>
-                <h2 className="text-xl font-bold text-slate-950">
-                  Biography
-                </h2>
-
-                <div className="mt-4 space-y-4">
-                  {person.biography.map((paragraph, index) => (
-                    <p
-                      key={`${person.slug}-bio-${index}`}
-                      className="leading-8 text-slate-600"
-                    >
-                      {paragraph}
-                    </p>
-                  ))}
-                </div>
-              </section>
-
-              {/* Public service */}
-              <section>
-                <h2 className="text-xl font-bold text-slate-950">
-                  Public Service
-                </h2>
-
-                <ul className="mt-4 space-y-3">
-                  {person.service.map((item) => (
-                    <li
-                      key={item}
-                      className="flex items-start gap-3 text-slate-600"
-                    >
-                      <span className="mt-2 h-2 w-2 shrink-0 rounded-full bg-emerald-600" />
-                      <span>{item}</span>
-                    </li>
-                  ))}
-                </ul>
-              </section>
-
-              {/* Sources */}
-              <section>
-                <h2 className="text-xl font-bold text-slate-950">
-                  Sources & References
-                </h2>
-
-                <div className="mt-4 space-y-3">
-                  {person.sources.map((source) => (
-                    <a
-                      key={source.url}
-                      href={source.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-between rounded-xl border border-slate-200 px-4 py-4 text-sm font-semibold text-slate-700 transition hover:border-emerald-200 hover:bg-emerald-50 hover:text-emerald-700"
-                    >
-                      <span>{source.label}</span>
-                      <span aria-hidden="true">↗</span>
-                    </a>
-                  ))}
-                </div>
-              </section>
-            </div>
-
-            {/* Sidebar */}
-            <aside className="space-y-5">
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                  Office
-                </p>
-
-                <p className="mt-2 font-semibold text-slate-950">
-                  {person.office}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                  Jurisdiction
-                </p>
-
-                <p className="mt-2 font-semibold text-slate-950">
-                  {person.jurisdiction}
-                </p>
-              </div>
-
-              <div className="rounded-2xl border border-slate-200 bg-slate-50 p-5">
-                <p className="text-xs font-bold uppercase tracking-widest text-slate-400">
-                  Level
-                </p>
-
-                <p className="mt-2 font-semibold text-slate-950">
-                  {person.levelLabel}
-                </p>
-              </div>
-
-              <div className="rounded-2xl bg-emerald-50 p-5">
-                <p className="font-bold text-slate-950">
-                  Need civic assistance?
-                </p>
-
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Submit a request through REACH and track your request from
-                  submission to resolution.
-                </p>
-
-                <Link
-                  href="/requests/new"
-                  className="mt-4 inline-flex w-full items-center justify-center rounded-xl bg-emerald-700 px-4 py-3 text-sm font-bold text-white transition hover:bg-emerald-800"
-                >
-                  Submit a Request
-                </Link>
-              </div>
-            </aside>
-          </div>
-        </div>
+        </Container>
       </section>
-    </main>
+
+      <Container className="grid gap-8 py-12 md:py-16 lg:grid-cols-[1fr_320px] lg:gap-12">
+        <article className="space-y-6">
+          {leader.biography.length > 0 && (
+            <ProfileSection title="Profile">
+              <div className="space-y-4 text-[15px] leading-7 text-slate-600">
+                {leader.biography.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+              </div>
+            </ProfileSection>
+          )}
+
+          {leader.service.length > 0 && (
+            <ProfileSection title="Public service">
+              <ul className="space-y-3 text-[15px] leading-7 text-slate-600">
+                {leader.service.map((item) => (
+                  <li key={item} className="border-l-2 border-brand-300 pl-4">
+                    {item}
+                  </li>
+                ))}
+              </ul>
+            </ProfileSection>
+          )}
+
+          {involvement.length > 0 && (
+            <ProfileSection
+              title="Programmes, projects & events"
+              intro={`${totalItems} initiative${totalItems === 1 ? "" : "s"} led individually or delivered as a joint collaboration.`}
+            >
+              <div className="space-y-6">
+                {involvement.map((group) => (
+                  <div key={group.key}>
+                    <h3 className="flex items-center gap-2 text-xs font-extrabold uppercase tracking-wider text-slate-500">
+                      <span className="text-brand-700">{group.icon}</span>
+                      {group.title}
+                    </h3>
+
+                    <ul className="mt-3 divide-y divide-slate-100 rounded-2xl border border-slate-200">
+                      {group.items.map((item) => (
+                        <li key={item.href}>
+                          <Link
+                            href={item.href}
+                            className="group flex items-center gap-3 p-4 transition hover:bg-brand-50/60"
+                          >
+                            <span className="min-w-0 flex-1">
+                              <span className="block truncate font-bold text-ink group-hover:text-brand-800">
+                                {item.title}
+                              </span>
+                              <span className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-500">
+                                <CollaborationBadge role={item.collaboration} />
+                                {item.meta}
+                              </span>
+                            </span>
+                            <ArrowRight
+                              size={16}
+                              className="shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-brand-700"
+                            />
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                ))}
+              </div>
+            </ProfileSection>
+          )}
+
+          {leader.sources.length > 0 && (
+            <ProfileSection
+              title="Official reference sources"
+              intro="These profiles use official public sources as references. External sources open in a new tab."
+            >
+              <div className="space-y-3">
+                {leader.sources.map((source) => (
+                  <a
+                    key={source.url}
+                    href={source.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-between gap-4 rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-700 transition hover:border-brand-300 hover:text-brand-800"
+                  >
+                    {source.label}
+                    <ArrowUpRight size={16} className="shrink-0" />
+                  </a>
+                ))}
+              </div>
+            </ProfileSection>
+          )}
+        </article>
+
+        <aside className="h-fit rounded-3xl bg-brand-700 p-7 text-white shadow-sm lg:sticky lg:top-24">
+          <Eyebrow tone="light">Need help?</Eyebrow>
+
+          <h2 className="mt-3 text-2xl font-extrabold text-balance">
+            Need help with a public service?
+          </h2>
+
+          <p className="mt-3 text-sm leading-6 text-brand-100">
+            Submit a request and the office can help route it to the
+            appropriate service.
+          </p>
+
+          <ButtonLink href="/requests/new" variant="light" className="mt-6 w-full">
+            Submit a request
+          </ButtonLink>
+        </aside>
+      </Container>
+    </>
+  );
+}
+
+function CollaborationBadge({ role }: { role: CollaborationRole }) {
+  return (
+    <Badge tone={role === "lead" ? "brand" : "gold"}>
+      {role === "lead" ? "Leads" : "Joint collaboration"}
+    </Badge>
+  );
+}
+
+function ProfileSection({
+  title,
+  intro,
+  children,
+}: {
+  title: string;
+  intro?: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-7">
+      <h2 className="text-xl font-extrabold text-ink">{title}</h2>
+
+      {intro && (
+        <p className="mt-2 text-sm leading-6 text-slate-500">{intro}</p>
+      )}
+
+      <div className="mt-4">{children}</div>
+    </section>
   );
 }

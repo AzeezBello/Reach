@@ -1,4 +1,4 @@
-import { leaders } from "@/lib/leadership";
+import { getLeaders } from "@/lib/leaders";
 import { PLATFORM_NAME, SITE_URL, getPublicData, getTenant } from "@/lib/reach";
 import { siteDescription } from "@/lib/seo";
 
@@ -10,7 +10,7 @@ export async function GET() {
   const lines: string[] = [];
 
   try {
-    const { tenant, jurisdiction, programmes, opportunities, projects } =
+    const { tenant, jurisdiction, programmes, opportunities, projects, events } =
       await getPublicData();
 
     lines.push(
@@ -28,7 +28,8 @@ export async function GET() {
       `- [Programmes](${SITE_URL}/programmes): education, skills, health and community programmes open to residents`,
       `- [Opportunities](${SITE_URL}/opportunities): scholarships, training, jobs, grants and business support`,
       `- [Projects](${SITE_URL}/projects): community infrastructure and public-space projects with status`,
-      `- [Leadership](${SITE_URL}/leadership): public leadership profiles with official reference sources`,
+      `- [Events](${SITE_URL}/events): carnivals, town halls, sports days and outreach events with RSVP`,
+      `- [Leadership](${SITE_URL}/leadership): public leadership profiles, their initiatives and official reference sources`,
       `- [Request assistance](${SITE_URL}/requests/new): submit a service request to the office`,
       `- [My requests](${SITE_URL}/requests): signed-in residents can track their requests`,
       ""
@@ -52,6 +53,18 @@ export async function GET() {
         lines.push(
           `- [${item.title}](${SITE_URL}/opportunities/${item.slug})${
             item.summary ? `: ${item.summary}` : ""
+          }`
+        );
+      }
+      lines.push("");
+    }
+
+    if (events.length > 0) {
+      lines.push("## Events", "");
+      for (const item of events) {
+        lines.push(
+          `- [${item.title}](${SITE_URL}/events/${item.slug}): ${item.starts_at.slice(0, 10)}${
+            item.summary ? ` — ${item.summary}` : ""
           }`
         );
       }
@@ -84,11 +97,14 @@ export async function GET() {
       `- [Programmes](${SITE_URL}/programmes)`,
       `- [Opportunities](${SITE_URL}/opportunities)`,
       `- [Projects](${SITE_URL}/projects)`,
+      `- [Events](${SITE_URL}/events)`,
       `- [Leadership](${SITE_URL}/leadership)`,
       `- [Request assistance](${SITE_URL}/requests/new)`,
       ""
     );
   }
+
+  const leaders = await getLeaders();
 
   lines.push("## Leadership profiles", "");
   for (const leader of leaders) {

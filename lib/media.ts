@@ -128,6 +128,7 @@ export const pageArt = {
   programmes: photos.summerGroup,
   opportunities: photos.skillsWorkshop,
   projects: photos.volleyball,
+  events: photos.basketball,
   leadership: photos.houseOfReps,
   requests: photos.officeMeeting,
   login: photos.brandBanner,

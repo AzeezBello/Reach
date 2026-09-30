@@ -1,11 +1,10 @@
+import { LogoMark } from "@/components/logo-mark";
 import { ButtonLink, Container, Eyebrow } from "@/components/ui";
-import { brand } from "@/lib/media";
 
 export default function NotFound() {
   return (
     <Container className="flex min-h-[60vh] flex-col items-center justify-center py-20 text-center">
-      {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={brand.mark} alt="" width={64} height={64} className="size-16" />
+      <LogoMark className="size-16" />
 
       <Eyebrow className="mt-8">Page not found</Eyebrow>
 

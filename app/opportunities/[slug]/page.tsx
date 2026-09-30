@@ -9,7 +9,9 @@ import {
 } from "lucide-react";
 
 import { CtaBand, DetailBody, DetailHero } from "@/components/detail";
+import { LeadersPanel } from "@/components/leaders-panel";
 import { Badge, ButtonLink, FactRow } from "@/components/ui";
+import { getContentLeaders } from "@/lib/leaders";
 import { formatDate, humanize } from "@/lib/format";
 import { getOpportunity } from "@/lib/reach";
 
@@ -40,6 +42,8 @@ export default async function OpportunityDetailPage({ params }: Params) {
   if (!opportunity) {
     notFound();
   }
+
+  const credits = await getContentLeaders("opportunity", opportunity.id);
 
   const isExternal = Boolean(opportunity.application_url?.startsWith("http"));
 
@@ -125,6 +129,8 @@ export default async function OpportunityDetailPage({ params }: Params) {
                   : "The office will guide you through the next steps."}
               </p>
             </div>
+
+            <LeadersPanel credits={credits} />
           </>
         }
       />

@@ -376,3 +376,150 @@ export async function updateRequestStatus(
       : `Status set to ${status.replace(/_/g, " ")}.`;
   });
 }
+
+/* ------------------------------------------------------------------ */
+/* Leaders & collaborations                                            */
+/* ------------------------------------------------------------------ */
+
+const CONTENT_TYPES = ["programme", "opportunity", "project", "event"];
+const COLLABORATION_ROLES = ["lead", "partner"];
+
+function lines(formData: FormData, name: string) {
+  return text(formData, name)
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+}
+
+function parseSources(formData: FormData) {
+  return lines(formData, "sources").map((line) => {
+    const [label, url] = line.split("|").map((part) => part.trim());
+
+    if (!label || !url || !/^https?:\/\//.test(url)) {
+      throw new Error(`Sources must be "Label | https://…" per line. Check: ${line}`);
+    }
+
+    return { label, url };
+  });
+}
+
+export async function createLeader(
+  _state: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  return run(async () => {
+    await guard();
+
+    const name = required(formData, "name", "Full name");
+    const sortOrder = Number.parseInt(text(formData, "sort_order") || "0", 10);
+
+    const input = {
+      name,
+      slug: slugify(text(formData, "slug") || name),
+      role: required(formData, "role", "Role"),
+      office: optional(formData, "office"),
+      jurisdiction: optional(formData, "jurisdiction"),
+      summary: optional(formData, "summary"),
+      biography: lines(formData, "biography"),
+      service: lines(formData, "service"),
+      sources: parseSources(formData),
+      image_url: optional(formData, "image_url"),
+      is_active: checked(formData, "is_active"),
+      sort_order: Number.isNaN(sortOrder) ? 0 : sortOrder,
+    };
+
+    const supabase = await createClient();
+    const { error } = await supabase.from("leaders").insert(input);
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/superadmin/leaders");
+    revalidatePath("/leadership");
+    revalidatePath("/", "layout");
+
+    return `Created the profile for ${name}.`;
+  });
+}
+
+export async function setLeaderActive(
+  _state: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  return run(async () => {
+    await guard();
+
+    const id = required(formData, "id", "Leader");
+    const isActive = text(formData, "is_active") === "true";
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from("leaders")
+      .update({ is_active: isActive })
+      .eq("id", id);
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/superadmin/leaders");
+    revalidatePath("/leadership");
+    revalidatePath("/", "layout");
+
+    return isActive ? "Profile is now visible." : "Profile is now hidden.";
+  });
+}
+
+export async function linkContentToLeader(
+  _state: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  return run(async () => {
+    await guard();
+
+    const leaderId = required(formData, "leader_id", "Leader");
+    const [contentType, contentId] = required(formData, "content", "Content").split(":");
+    const role = oneOf(required(formData, "role", "Role"), COLLABORATION_ROLES, "Role");
+
+    oneOf(contentType ?? "", CONTENT_TYPES, "Content type");
+
+    if (!contentId) {
+      throw new Error("Please select an item to link.");
+    }
+
+    const supabase = await createClient();
+    const { error } = await supabase.from("content_leaders").upsert(
+      { content_type: contentType, content_id: contentId, leader_id: leaderId, role },
+      { onConflict: "content_type,content_id,leader_id" }
+    );
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/superadmin/leaders");
+    revalidatePath("/leadership", "layout");
+    revalidatePath(`/${contentType}s`, "layout");
+
+    return role === "lead" ? "Linked as lead." : "Linked as collaboration partner.";
+  });
+}
+
+export async function unlinkContentFromLeader(
+  _state: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  return run(async () => {
+    await guard();
+
+    const contentType = oneOf(required(formData, "content_type", "Content type"), CONTENT_TYPES, "Content type");
+    const contentId = required(formData, "content_id", "Content");
+    const leaderId = required(formData, "leader_id", "Leader");
+
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("content_leaders")
+      .delete()
+      .eq("content_type", contentType)
+      .eq("content_id", contentId)
+      .eq("leader_id", leaderId);
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/superadmin/leaders");
+    revalidatePath("/leadership", "layout");
+
+    return "Collaboration removed.";
+  });
+}

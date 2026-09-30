@@ -11,7 +11,7 @@ export function Footer({
   tenant,
   jurisdiction,
 }: {
-  tenant: Pick<Tenant, "name" | "description" | "whatsapp_number" | "email" | "phone" | "website">;
+  tenant: Pick<Tenant, "name" | "whatsapp_number" | "email" | "phone" | "website">;
   jurisdiction: Jurisdiction | null;
 }) {
   const year = new Date().getFullYear();
@@ -50,19 +50,24 @@ export function Footer({
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
               src={brand.logoWhite}
-              alt={`${tenant.name} logo`}
-              width={340}
+              alt="REACH, digital civic office"
+              width={250}
               height={64}
               className="h-10 w-auto"
             />
 
             <p className="mt-5 max-w-md text-sm leading-7">
-              {tenant.description ||
-                "A digital constituency office connecting residents with programmes, opportunities, projects and service requests."}
+              Residents Engagement, Access, Communication &amp; Help. One digital
+              office for programmes, opportunities, community projects, events
+              and service requests.
+            </p>
+
+            <p className="mt-5 text-sm font-semibold text-white">
+              Serving {tenant.name}
             </p>
 
             {jurisdiction && (
-              <p className="mt-5 inline-flex items-center gap-2 text-sm font-semibold text-white">
+              <p className="mt-2 inline-flex items-center gap-2 text-sm text-slate-300">
                 <MapPin size={16} className="text-brand-400" />
                 {jurisdiction.name}
                 {jurisdiction.state ? `, ${jurisdiction.state}` : ""}
@@ -131,7 +136,7 @@ export function Footer({
 
         <div className="mt-12 flex flex-col gap-3 border-t border-white/10 pt-6 text-xs sm:flex-row sm:items-center sm:justify-between">
           <p>
-            © {year} {tenant.name}. All rights reserved.
+            © {year} REACH. All rights reserved.
           </p>
           <p>
             Powered by{" "}

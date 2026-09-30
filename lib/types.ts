@@ -154,3 +154,61 @@ export type AdminRequest = ResidentRequest & {
   jurisdiction_id: string | null;
   staff_notes: string | null;
 };
+
+/* ------------------------------------------------------------------ */
+/* Events                                                              */
+/* ------------------------------------------------------------------ */
+
+export type Event = {
+  id: string;
+  title: string;
+  slug: string;
+  summary: string | null;
+  description: string | null;
+  category: string | null;
+  venue: string | null;
+  location: string | null;
+  starts_at: string;
+  ends_at: string | null;
+  registration_url: string | null;
+  capacity: number | null;
+  status: string | null;
+  image_url: string | null;
+  is_featured: boolean;
+};
+
+/* ------------------------------------------------------------------ */
+/* Leaders & collaborations                                            */
+/* ------------------------------------------------------------------ */
+
+export type LeaderSource = { label: string; url: string };
+
+export type Leader = {
+  /** Null for the built-in fallback profiles used before the migration runs. */
+  id: string | null;
+  slug: string;
+  name: string;
+  role: string;
+  office: string | null;
+  jurisdiction: string | null;
+  summary: string | null;
+  biography: string[];
+  service: string[];
+  sources: LeaderSource[];
+  image_url: string | null;
+  is_active?: boolean;
+  sort_order?: number;
+};
+
+export type ContentType = "programme" | "opportunity" | "project" | "event";
+
+export type CollaborationRole = "lead" | "partner";
+
+export type ContentLeader = {
+  content_type: ContentType;
+  content_id: string;
+  leader_id: string;
+  role: CollaborationRole;
+};
+
+export type LeaderCredit = { leader: Leader; role: CollaborationRole };

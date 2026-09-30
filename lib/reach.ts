@@ -2,6 +2,7 @@ import { cache } from "react";
 
 import { createClient } from "@/lib/supabase/server";
 import type {
+  Event,
   Jurisdiction,
   Opportunity,
   Programme,
@@ -32,6 +33,9 @@ const PROJECT_FIELDS =
 
 const REQUEST_FIELDS =
   "id, reference_no, category, subject, description, status, created_at, updated_at";
+
+const EVENT_FIELDS =
+  "id, title, slug, summary, description, category, venue, location, starts_at, ends_at, registration_url, capacity, status, image_url, is_featured";
 
 function assertOk(error: { message: string } | null) {
   if (error) {
@@ -92,7 +96,7 @@ export const getPublicData = cache(
     const { tenant, jurisdiction } = await getTenant(slug);
     const supabase = await createClient();
 
-    const [programmes, opportunities, projects] = await Promise.all([
+    const [programmes, opportunities, projects, events] = await Promise.all([
       supabase
         .from("programmes")
         .select(PROGRAMME_FIELDS)
@@ -110,6 +114,13 @@ export const getPublicData = cache(
         .select(PROJECT_FIELDS)
         .eq("organization_id", tenant.id)
         .order("created_at", { ascending: false }),
+      // Events are optional until the events migration has been applied.
+      supabase
+        .from("events")
+        .select(EVENT_FIELDS)
+        .eq("organization_id", tenant.id)
+        .eq("status", "published")
+        .order("starts_at", { ascending: true }),
     ]);
 
     assertOk(programmes.error);
@@ -123,6 +134,7 @@ export const getPublicData = cache(
       programmes: (programmes.data ?? []) as Programme[],
       opportunities: (opportunities.data ?? []) as Opportunity[],
       projects: (projects.data ?? []) as Project[],
+      events: (events.error ? [] : (events.data ?? [])) as Event[],
     };
   }
 );
@@ -174,6 +186,35 @@ export async function getProject(slug: string) {
     .maybeSingle();
 
   return (data as Project | null) ?? null;
+}
+
+export async function getEvent(slug: string) {
+  const { tenant } = await getTenant();
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("events")
+    .select(EVENT_FIELDS)
+    .eq("organization_id", tenant.id)
+    .eq("slug", slug)
+    .eq("status", "published")
+    .maybeSingle();
+
+  if (error) return null;
+
+  return (data as Event | null) ?? null;
+}
+
+/** Published events split into upcoming and past, soonest first. */
+export function splitEvents(events: Event[], now = new Date()) {
+  const upcoming = events.filter(
+    (event) => new Date(event.ends_at ?? event.starts_at) >= now
+  );
+  const past = events
+    .filter((event) => new Date(event.ends_at ?? event.starts_at) < now)
+    .reverse();
+
+  return { upcoming, past };
 }
 
 /*

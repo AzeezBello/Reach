@@ -15,6 +15,38 @@ export function formatDate(
     day: "numeric",
     month: style === "long" ? "long" : "short",
     year: "numeric",
+    timeZone: "Africa/Lagos",
+  });
+}
+
+/** Formats a timestamp with the time of day, e.g. "12 Dec 2026, 9:00 am". */
+export function formatDateTime(value: string | null | undefined) {
+  if (!value) return null;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return date.toLocaleString(LOCALE, {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "Africa/Lagos",
+  });
+}
+
+/** Time of day only, e.g. "9:00 am". */
+export function formatTime(value: string | null | undefined) {
+  if (!value) return null;
+
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+
+  return date.toLocaleTimeString(LOCALE, {
+    hour: "numeric",
+    minute: "2-digit",
+    timeZone: "Africa/Lagos",
   });
 }
 

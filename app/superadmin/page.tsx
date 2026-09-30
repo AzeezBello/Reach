@@ -3,6 +3,7 @@ import Link from "next/link";
 import {
   ArrowRight,
   Building2,
+  CalendarDays,
   ClipboardList,
   FolderKanban,
   GraduationCap,
@@ -60,6 +61,7 @@ export default async function SuperadminOverviewPage() {
         <StatCard icon={<GraduationCap size={20} />} label="Programmes" value={stats.programmes} />
         <StatCard icon={<Sparkles size={20} />} label="Opportunities" value={stats.opportunities} />
         <StatCard icon={<FolderKanban size={20} />} label="Projects" value={stats.projects} />
+        <StatCard icon={<CalendarDays size={20} />} label="Events" value={stats.events} />
         <StatCard icon={<ClipboardList size={20} />} label="Requests" value={stats.requests} />
       </div>
 

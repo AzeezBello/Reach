@@ -135,11 +135,7 @@ export default async function RootLayout({
           </>
         )}
 
-        <Header
-          tenantName={tenant.name}
-          logoUrl={tenant.logo_url}
-          signedIn={Boolean(user)}
-        />
+        <Header signedIn={Boolean(user)} />
 
         <main className="flex-1">{children}</main>
 

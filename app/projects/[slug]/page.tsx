@@ -9,7 +9,9 @@ import {
 } from "lucide-react";
 
 import { CtaBand, DetailBody, DetailHero } from "@/components/detail";
+import { LeadersPanel } from "@/components/leaders-panel";
 import { Badge, ButtonLink, FactRow } from "@/components/ui";
+import { getContentLeaders } from "@/lib/leaders";
 import { formatDate, formatNumber, humanize, statusTone } from "@/lib/format";
 import { getProject } from "@/lib/reach";
 
@@ -40,6 +42,8 @@ export default async function ProjectDetailPage({ params }: Params) {
   if (!project) {
     notFound();
   }
+
+  const credits = await getContentLeaders("project", project.id);
 
   const facts = [
     project.location && {
@@ -114,6 +118,8 @@ export default async function ProjectDetailPage({ params }: Params) {
                 project.
               </p>
             </div>
+
+            <LeadersPanel credits={credits} />
           </>
         }
       >
