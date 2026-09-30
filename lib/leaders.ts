@@ -15,7 +15,7 @@ import type {
 } from "@/lib/types";
 
 const LEADER_FIELDS =
-  "id, slug, name, role, office, jurisdiction, summary, biography, service, sources, image_url, is_active, sort_order";
+  "id, slug, name, role, level, level_label, office, jurisdiction, constituency, summary, biography, service, sources, image_url, is_active, sort_order";
 
 const CONTENT_FIELDS: Record<ContentType, string> = {
   programme:
@@ -49,8 +49,11 @@ function normalize(row: Record<string, unknown>): Leader {
     slug: row.slug as string,
     name: row.name as string,
     role: row.role as string,
+    level: (row.level as Leader["level"]) ?? null,
+    level_label: (row.level_label as string | null) ?? null,
     office: (row.office as string | null) ?? null,
     jurisdiction: (row.jurisdiction as string | null) ?? null,
+    constituency: (row.constituency as string | null) ?? null,
     summary: (row.summary as string | null) ?? null,
     biography: (row.biography as string[] | null) ?? [],
     service: (row.service as string[] | null) ?? [],

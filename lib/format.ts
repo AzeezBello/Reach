@@ -59,11 +59,19 @@ export function humanize(value: string | null | undefined, fallback = "") {
     .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
-/** First letters of the first two words of a name. */
+const HONORIFICS = new Set([
+  "hon", "hon.", "rt", "rt.", "rt.hon.", "sen", "sen.", "senator", "dr", "dr.",
+  "mr", "mr.", "mrs", "mrs.", "ms", "ms.", "chief", "prince", "princess",
+  "alhaji", "alhaja", "engr", "engr.", "barr", "barr.", "prof", "prof.", "his",
+  "her", "excellency", "comrade", "otunba", "oba", "pastor", "rev", "rev.",
+]);
+
+/** First letters of the first two name words, ignoring honorifics such as "Hon." */
 export function initials(name: string) {
-  return name
-    .split(" ")
-    .filter(Boolean)
+  const words = name.split(/\s+/).filter(Boolean);
+  const meaningful = words.filter((word) => !HONORIFICS.has(word.toLowerCase()));
+
+  return (meaningful.length > 0 ? meaningful : words)
     .slice(0, 2)
     .map((word) => word[0]!.toUpperCase())
     .join("");

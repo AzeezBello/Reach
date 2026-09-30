@@ -74,7 +74,7 @@ export default async function LeadersAdminPage() {
 
       <Panel title="Leadership profiles" text={`${leaders.length} in the database`}>
         <Table
-          head={["Leader", "Office", "Initiatives", "Status", ""]}
+          head={["Leader", "Level", "Office", "Initiatives", "Status", ""]}
           rows={leaders.length}
           empty="No leadership profiles in the database yet."
         >
@@ -84,6 +84,7 @@ export default async function LeadersAdminPage() {
                 <span className="block font-bold text-ink">{leader.name}</span>
                 <span className="text-xs text-slate-500">{leader.role}</span>
               </td>
+              <td className={cell}>{humanize(leader.level, "—")}</td>
               <td className={cell}>
                 {leader.office ?? "—"}
                 {leader.jurisdiction && (
@@ -199,8 +200,21 @@ export default async function LeadersAdminPage() {
             <Field label="Full name" name="name" required placeholder="e.g. Hon. Adebola Adeyemi" />
             <Field label="Slug" name="slug" placeholder="Generated from the name if left empty" />
             <Field label="Role" name="role" required placeholder="e.g. Member, House of Representatives" />
-            <Field label="Office" name="office" placeholder="e.g. Surulere I Federal Constituency" />
-            <Field label="Jurisdiction" name="jurisdiction" placeholder="e.g. Lagos State" />
+            <SelectField
+              label="Level"
+              name="level"
+              required
+              defaultValue="federal"
+              options={[
+                { value: "federal", label: "Federal Government" },
+                { value: "state", label: "State Government" },
+                { value: "local", label: "Local Government / LCDA" },
+              ]}
+            />
+            <Field label="Level label" name="level_label" placeholder="e.g. Lagos State Government" hint="Shown as the group heading on the leadership page." />
+            <Field label="Office" name="office" placeholder="e.g. House of Representatives, Surulere I Federal Constituency" />
+            <Field label="Jurisdiction" name="jurisdiction" placeholder="e.g. Surulere I Federal Constituency" />
+            <Field label="Constituency" name="constituency" placeholder="e.g. Surulere I Federal Constituency" />
             <Field label="Photo URL" name="image_url" type="url" placeholder="/images/… or https://…" />
             <Field label="Sort order" name="sort_order" type="number" defaultValue="0" hint="Lower numbers appear first." />
           </div>

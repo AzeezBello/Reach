@@ -131,14 +131,17 @@ export default async function LeadershipProfilePage({ params }: Params) {
           <div className="mt-8 flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-8">
             <div className="relative flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-3xl bg-linear-to-br from-brand-400 to-brand-700 text-3xl font-extrabold text-ink sm:size-28">
               {leader.image_url ? (
-                <Photo src={leader.image_url} alt={leader.name} sizes="112px" priority />
+                <Photo src={leader.image_url} alt={leader.name} sizes="112px" priority className="object-top" />
               ) : (
                 initials(leader.name)
               )}
             </div>
 
             <div>
-              <Eyebrow tone="light">{leader.role}</Eyebrow>
+              <div className="flex flex-wrap items-center gap-3">
+                <Eyebrow tone="light">{leader.role}</Eyebrow>
+                {leader.level_label && <Badge tone="gold">{leader.level_label}</Badge>}
+              </div>
 
               <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-balance sm:text-4xl md:text-5xl">
                 {leader.name}

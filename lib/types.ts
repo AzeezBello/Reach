@@ -183,14 +183,19 @@ export type Event = {
 
 export type LeaderSource = { label: string; url: string };
 
+export type LeadershipLevel = "federal" | "state" | "local";
+
 export type Leader = {
   /** Null for the built-in fallback profiles used before the migration runs. */
   id: string | null;
   slug: string;
   name: string;
   role: string;
+  level: LeadershipLevel | null;
+  level_label: string | null;
   office: string | null;
   jurisdiction: string | null;
+  constituency: string | null;
   summary: string | null;
   biography: string[];
   service: string[];

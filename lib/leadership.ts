@@ -1,118 +1,42 @@
-import type { Leader } from "@/lib/types";
+import data from "@/lib/data/leaders.json";
+import type { Leader, LeadershipLevel } from "@/lib/types";
 
 /**
- * Built-in leadership profiles.
+ * Built-in leadership profiles: federal, Lagos State and local government
+ * office holders connected to Surulere.
  *
- * These are the fallback shown until the `leaders` table has been migrated
- * and seeded (see supabase/seed.sql, which contains the same four profiles).
- * `id` is null because they do not exist in the database.
+ * `lib/data/leaders.json` is the single source of truth. It is shown until the
+ * `leaders` table has been migrated and seeded (supabase/seed.sql is
+ * generated from the same file), and `id` is null because these rows do not
+ * exist in the database.
  */
-export const staticLeaders: Leader[] = [
+export const staticLeaders: Leader[] = data as Leader[];
+
+export const LEADERSHIP_LEVELS: { id: LeadershipLevel; title: string; description: string }[] = [
   {
-    id: null,
-    slug: "fuad-kayode-laguda",
-    name: "Fuad Kayode Laguda",
-    role: "Member, House of Representatives",
-    office: "Surulere I Federal Constituency",
-    jurisdiction: "Lagos State",
-    summary:
-      "Member of the House of Representatives for Surulere I Federal Constituency and principal of the FKL Connect digital constituency office.",
-    biography: [
-      "Fuad Kayode Laguda is a member of Nigeria's House of Representatives representing Surulere I Federal Constituency.",
-      "National Assembly records provide public documentation of his participation in legislative proceedings and parliamentary business.",
-    ],
-    service: [
-      "Member of the 10th House of Representatives.",
-      "Representative for Surulere I Federal Constituency, Lagos State.",
-      "Chairman, House Committee on Federal Polytechnics and Other Higher Technical Education.",
-    ],
-    sources: [
-      {
-        label: "National Assembly — Official Records",
-        url: "https://nass.gov.ng/",
-      },
-    ],
-    image_url: "/images/leaders/fuad-kayode-laguda.jpg",
+    id: "federal",
+    title: "Federal Government",
+    description:
+      "Federal representatives and national public-service leadership connected to Surulere and Nigeria's federal government.",
   },
   {
-    id: null,
-    slug: "femi-gbajabiamila",
-    name: "Femi Gbajabiamila",
-    role: "Chief of Staff to the President",
-    office: "Office of the President",
-    jurisdiction: "Federal Republic of Nigeria",
-    summary:
-      "Chief of Staff to the President. The State House records that he assumed the role on June 14, 2023, after serving in the House of Representatives and as Speaker of the 9th House.",
-    biography: [
-      "The State House identifies Femi Gbajabiamila as a lawyer and politician serving as Chief of Staff to the President.",
-      "The State House records that he attended Igbobi College, Yaba, Lagos, and later pursued Advanced Level studies at King William's College, Isle of Man, United Kingdom.",
-    ],
-    service: [
-      "Chief of Staff to the President since June 14, 2023.",
-      "Former Speaker of Nigeria's 9th House of Representatives, serving from June 11, 2019 to June 13, 2023.",
-      "Former representative for Surulere I Federal Constituency in Lagos State.",
-    ],
-    sources: [
-      {
-        label: "State House — Office of the President",
-        url: "https://statehouse.gov.ng/presidency/office-of-the-president/",
-      },
-    ],
-    image_url: "/images/leaders/femi-gbajabiamila.jpg",
+    id: "state",
+    title: "Lagos State Government",
+    description:
+      "Lagos State representatives serving Surulere through the Lagos State House of Assembly.",
   },
   {
-    id: null,
-    slug: "lanre-okunlola",
-    name: "Lanre Okunlola",
-    role: "Member, House of Representatives",
-    office: "Surulere II Federal Constituency",
-    jurisdiction: "Lagos State",
-    summary:
-      "Member of the House of Representatives for Surulere II Federal Constituency, according to the National Assembly's official legislator profile.",
-    biography: [
-      "The National Assembly's official legislator profile identifies Hon. Lanre Okunlola as a member of the House of Representatives for Surulere II Federal Constituency.",
-      "The official profile provides parliamentary information for his office and constituency.",
-    ],
-    service: [
-      "Member of the House of Representatives.",
-      "Representative for Surulere II Federal Constituency, Lagos State.",
-    ],
-    sources: [
-      {
-        label: "National Assembly — Legislator Profile",
-        url: "https://nass.gov.ng/mps/single/588",
-      },
-    ],
-    image_url: null,
-  },
-  {
-    id: null,
-    slug: "odunayo-oluwafemi-daniel",
-    name: "Odunayo Oluwafemi Daniel",
-    role: "Executive Chairman",
-    office: "Itire-Ikate LCDA",
-    jurisdiction: "Lagos State",
-    summary: "Executive Chairman of Itire-Ikate Local Council Development Area.",
-    biography: [
-      "The official Itire-Ikate LCDA profile identifies Hon. Odunayo Oluwafemi Daniel as Executive Chairman.",
-      "The LCDA's official profile states that he attended Saint Thomas Aquinas Primary School and Birch Freeman High School in Surulere, Lagos, before studying at the University of Lagos.",
-      "The same official profile records an Advanced Diploma in Security Operations and Management from the University of Lagos between 2012 and 2014.",
-    ],
-    service: [
-      "Executive Chairman of Itire-Ikate LCDA.",
-      "The official LCDA profile describes prior experience in specialised security support and training.",
-      "The LCDA identifies community development and public service as areas of his administration.",
-    ],
-    sources: [
-      {
-        label: "Itire-Ikate LCDA — Chairman Profile",
-        url: "https://www.itireikatelcda.lg.gov.ng/meet-the-chairman/",
-      },
-      {
-        label: "Itire-Ikate LCDA — Official Team Profile",
-        url: "https://www.itireikatelcda.lg.gov.ng/team/hon-odunayo-oluwafemi-daniel/",
-      },
-    ],
-    image_url: null,
+    id: "local",
+    title: "Local Government & LCDA",
+    description:
+      "Local government and LCDA leadership responsible for grassroots administration and community service delivery.",
   },
 ];
+
+/** Groups leaders by level, keeping only the levels that have members. */
+export function groupLeaders(leaders: Leader[]) {
+  return LEADERSHIP_LEVELS.map((level) => ({
+    ...level,
+    members: leaders.filter((leader) => (leader.level ?? "local") === level.id),
+  })).filter((group) => group.members.length > 0);
+}

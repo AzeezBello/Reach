@@ -402,7 +402,7 @@ export async function getAdminLeaders(): Promise<Leader[]> {
   const { data, error } = await supabase
     .from("leaders")
     .select(
-      "id, slug, name, role, office, jurisdiction, summary, biography, service, sources, image_url, is_active, sort_order"
+      "id, slug, name, role, level, level_label, office, jurisdiction, constituency, summary, biography, service, sources, image_url, is_active, sort_order"
     )
     .order("sort_order")
     .order("name");

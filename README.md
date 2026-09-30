@@ -228,7 +228,7 @@ Signed-in residents can RSVP from the event page; the attendee count is shown pu
 
 Public office holders connected to the community have profile pages at `/leadership/[slug]` with biography, public-service record and official reference sources.
 
-Profiles live in the `leaders` table. Until that table is migrated and seeded, the site falls back to the built-in profiles in `lib/leadership.ts`.
+Profiles live in the `leaders` table and are grouped by level (`federal`, `state`, `local`). Until that table is migrated and seeded, the site falls back to the built-in profiles in `lib/data/leaders.json` (ten office holders across the federal, Lagos State and local levels).
 
 Programmes, opportunities, projects and events are linked to leaders through `content_leaders`:
 
@@ -527,6 +527,7 @@ reach/
 │   ├── leaders.ts                   Leadership profiles and collaborations (with static fallback)
 │   ├── seo.ts                       Canonical URLs and JSON-LD schemas
 │   ├── media.ts                     Curated photos, videos and alt text
+│   ├── data/leaders.json            Built-in leadership profiles (source for seed.sql)
 │   ├── format.ts · navigation.ts · config.ts · types.ts · leadership.ts
 │   └── supabase/                    Browser and server clients
 │
@@ -857,7 +858,7 @@ supabase db push
 supabase db execute --file supabase/seed.sql
 ```
 
-The seed loads the four leadership profiles, their collaborations, and three published events (Acada Carnival 2026, FKL Sports Community Fitness Day, Constituency Town Hall). It is safe to run more than once.
+The seed loads the ten leadership profiles (federal, Lagos State and local government), their collaborations, and three published events (Acada Carnival 2026, FKL Sports Community Fitness Day, Constituency Town Hall). It is safe to run more than once.
 
 ## 2. Create the first platform administrator
 
@@ -871,7 +872,7 @@ Then sign in and open `/superadmin`. The resident dashboard at `/dashboard` work
 
 ## 3. Add the remaining leader photos
 
-Portraits exist for Fuad Kayode Laguda and Femi Gbajabiamila in `public/images/leaders/`. Lanre Okunlola and Odunayo Oluwafemi Daniel show an initials avatar until a photo is added. Drop a portrait into `public/images/leaders/<slug>.jpg`, then set `image_url` on the leader from `/superadmin/leaders` (or in `supabase/seed.sql` and `lib/leadership.ts`).
+Portraits exist for eight leaders in `public/images/leaders/`. Hon. Prince Muiz Dosunmu and Hon. Akeem Olayiwola AbdulRahman show an initials avatar until a photo is added. Drop a portrait into `public/images/leaders/<slug>.jpg`, then set `image_url` on the leader from `/superadmin/leaders` (or in `supabase/seed.sql` and `lib/leadership.ts`).
 
 ## 4. Supply the official logo
 

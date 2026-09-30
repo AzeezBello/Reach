@@ -382,6 +382,7 @@ export async function updateRequestStatus(
 /* ------------------------------------------------------------------ */
 
 const CONTENT_TYPES = ["programme", "opportunity", "project", "event"];
+const LEADERSHIP_LEVELS = ["federal", "state", "local"];
 const COLLABORATION_ROLES = ["lead", "partner"];
 
 function lines(formData: FormData, name: string) {
@@ -417,8 +418,11 @@ export async function createLeader(
       name,
       slug: slugify(text(formData, "slug") || name),
       role: required(formData, "role", "Role"),
+      level: oneOf(required(formData, "level", "Level"), LEADERSHIP_LEVELS, "Level"),
+      level_label: optional(formData, "level_label"),
       office: optional(formData, "office"),
       jurisdiction: optional(formData, "jurisdiction"),
+      constituency: optional(formData, "constituency"),
       summary: optional(formData, "summary"),
       biography: lines(formData, "biography"),
       service: lines(formData, "service"),
