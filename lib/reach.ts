@@ -1,5 +1,6 @@
 import { createClient } from "@/lib/supabase/server";
 
+export const PLATFORM_NAME = "REACH";
 export const DEFAULT_TENANT_SLUG = "fkl-connect";
 
 export async function getPublicData(
@@ -174,6 +175,7 @@ export async function getPublicData(
   }
 
   return {
+    platform: PLATFORM_NAME,
     tenant,
     jurisdiction,
     programmes: programmes ?? [],

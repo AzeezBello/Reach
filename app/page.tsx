@@ -464,6 +464,14 @@ export default async function Home() {
             />
 
             <LeadershipCard
+              name="Fuad Kayode Laguda"
+              role="Surulere Constituency 1"
+              description="Public profile and background information."
+              href="https://en.wikipedia.org/wiki/Fuad_Kayode_Laguda"
+              linkLabel="View profile"
+            />
+            
+            <LeadershipCard
               name="Lanre Okunlola"
               role="Member, House of Representatives"
               description="Representative for Surulere II Federal Constituency."
