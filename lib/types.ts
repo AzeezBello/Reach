@@ -152,6 +152,7 @@ export type AdminRequest = ResidentRequest & {
   resident_id: string;
   organization_id: string;
   jurisdiction_id: string | null;
+  assigned_office_id: string | null;
   staff_notes: string | null;
 };
 

@@ -10,6 +10,7 @@ import {
   MapPinned,
   UserRound,
   Users,
+  ShieldCheck,
 } from "lucide-react";
 
 const LINKS = [
@@ -23,8 +24,8 @@ const LINKS = [
   { href: "/superadmin/members", label: "Staff & Roles", icon: Users },
   { href: "/superadmin/routing", label: "Request Routing", icon: ClipboardList },
   { href: "/superadmin/whatsapp", label: "WhatsApp", icon: ClipboardList },
-  { href: "/office", label: "Office Dashboard",},
-  { href: "/superadmin/leader-accounts", label: "Leader Accounts",},
+  { href: "/office", label: "Office Dashboard", icon: Building2 },
+  { href: "/superadmin/leader-accounts", label: "Leader Accounts", icon: ShieldCheck },
 ];
 
 /** Sidebar on large screens, horizontal scrolling tabs on small ones. */

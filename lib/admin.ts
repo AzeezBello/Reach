@@ -113,12 +113,20 @@ const REQUEST_FIELDS =
   "id, reference_no, category, subject, description, status, created_at, updated_at";
 
 const ADMIN_REQUEST_FIELDS = `
-  ${REQUEST_FIELDS},
+  id,
+  reference_no,
   resident_id,
   organization_id,
   jurisdiction_id,
   assigned_office_id,
-  staff_notes
+  subject,
+  description,
+  category,
+  status,
+  staff_notes,
+  created_at,
+  updated_at,
+  routed_at
 `;
 
 const COUNTED_TABLES = [
@@ -285,11 +293,15 @@ export const getSuperadminAccess = cache(
 /**
  * Require a platform administrator.
  */
-export async function requireSuperadmin() {
+export async function requireSuperadmin(
+  next = "/superadmin",
+) {
   const access = await getSuperadminAccess();
 
   if (!access.user) {
-    redirect("/login?next=/superadmin");
+    redirect(
+      `/login?next=${encodeURIComponent(next)}`,
+    );
   }
 
   if (!access.allowed) {
