@@ -3,6 +3,8 @@
 import { FormEvent, useState } from "react";
 import { CheckCircle2, Loader2, MapPin, Send } from "lucide-react";
 
+import JurisdictionSelector from "@/components/jurisdiction-selector";
+
 type ServiceMatch = {
   id: string;
   office_id: string;
@@ -42,6 +44,11 @@ export default function RequestForm() {
     setMatches([]);
     setSelectedMatch(null);
 
+    if (subject.trim().length < 3) {
+      setError("Please enter a short subject for your request.");
+      return;
+    }
+
     if (description.trim().length < 10) {
       setError(
         "Please describe your issue in at least a few words.",
@@ -60,7 +67,7 @@ export default function RequestForm() {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            problemText: `${subject}\n${description}`,
+            problemText: `${subject.trim()}\n${description.trim()}`,
             jurisdictionId: jurisdictionId || null,
           }),
         },
@@ -86,11 +93,24 @@ export default function RequestForm() {
     }
   }
 
-  async function submitRequest(event: FormEvent) {
+  async function submitRequest(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     setError("");
     setResult(null);
+
+    if (subject.trim().length < 3) {
+      setError("Please enter a short subject for your request.");
+      return;
+    }
+
+    if (description.trim().length < 10) {
+      setError(
+        "Please describe your issue in at least a few words.",
+      );
+      return;
+    }
+
     setSubmitting(true);
 
     try {
@@ -100,9 +120,11 @@ export default function RequestForm() {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          subject,
-          description,
+          subject: subject.trim(),
+          description: description.trim(),
           jurisdictionId: jurisdictionId || null,
+          serviceMatchId: selectedMatch?.id ?? null,
+          officeId: selectedMatch?.office_id ?? null,
         }),
       });
 
@@ -118,6 +140,7 @@ export default function RequestForm() {
 
       setSubject("");
       setDescription("");
+      setJurisdictionId("");
       setMatches([]);
       setSelectedMatch(null);
     } catch (err) {
@@ -131,49 +154,59 @@ export default function RequestForm() {
     }
   }
 
+  function resetForm() {
+    setResult(null);
+    setError("");
+    setSubject("");
+    setDescription("");
+    setJurisdictionId("");
+    setMatches([]);
+    setSelectedMatch(null);
+  }
+
   if (result) {
     return (
-      <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-8">
+      <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-6 sm:p-8">
         <div className="flex items-start gap-4">
-          <CheckCircle2 className="mt-1 h-7 w-7 text-emerald-600" />
+          <CheckCircle2 className="mt-1 h-7 w-7 shrink-0 text-emerald-600" />
 
-          <div>
+          <div className="min-w-0 flex-1">
             <h2 className="text-xl font-bold text-slate-900">
               Request submitted
             </h2>
 
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-sm leading-6 text-slate-600">
               Your request has been submitted and routed for
               review.
             </p>
 
-            <div className="mt-6 space-y-3 rounded-2xl bg-white p-5">
+            <div className="mt-6 space-y-4 rounded-2xl bg-white p-5">
               <div>
-                <p className="text-xs uppercase tracking-wide text-slate-500">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Reference
                 </p>
 
-                <p className="mt-1 font-mono font-bold">
+                <p className="mt-1 font-mono font-bold text-slate-900">
                   {result.reference_no}
                 </p>
               </div>
 
               <div>
-                <p className="text-xs uppercase tracking-wide text-slate-500">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Assigned office
                 </p>
 
-                <p className="mt-1 font-semibold">
+                <p className="mt-1 font-semibold text-slate-900">
                   {result.office_name}
                 </p>
               </div>
 
               <div>
-                <p className="text-xs uppercase tracking-wide text-slate-500">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Category
                 </p>
 
-                <p className="mt-1">
+                <p className="mt-1 text-slate-700">
                   {result.category || "General request"}
                 </p>
               </div>
@@ -181,8 +214,8 @@ export default function RequestForm() {
 
             <button
               type="button"
-              onClick={() => setResult(null)}
-              className="mt-6 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white"
+              onClick={resetForm}
+              className="mt-6 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2"
             >
               Submit another request
             </button>
@@ -198,34 +231,54 @@ export default function RequestForm() {
       className="space-y-6"
     >
       <div>
-        <label className="mb-2 block text-sm font-semibold text-slate-900">
+        <label
+          htmlFor="request-subject"
+          className="mb-2 block text-sm font-semibold text-slate-900"
+        >
           What do you need help with?
         </label>
 
         <input
+          id="request-subject"
+          type="text"
           value={subject}
           onChange={(event) => setSubject(event.target.value)}
           placeholder="e.g. Blocked drainage on my street"
-          className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-slate-900"
+          className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
           required
+          minLength={3}
+          maxLength={200}
+          disabled={submitting || checking}
         />
       </div>
 
       <div>
-        <label className="mb-2 block text-sm font-semibold text-slate-900">
+        <label
+          htmlFor="request-description"
+          className="mb-2 block text-sm font-semibold text-slate-900"
+        >
           Tell us more
         </label>
 
         <textarea
+          id="request-description"
           value={description}
           onChange={(event) =>
             setDescription(event.target.value)
           }
           placeholder="Describe the problem, location and any useful details..."
           rows={6}
-          className="w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-slate-900"
+          className="w-full resize-none rounded-xl border border-slate-300 bg-white px-4 py-3 text-slate-900 outline-none transition placeholder:text-slate-400 focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10"
           required
+          minLength={10}
+          maxLength={5000}
+          disabled={submitting || checking}
         />
+
+        <p className="mt-2 text-xs text-slate-500">
+          Please include the location and any details that could
+          help the responsible office understand the issue.
+        </p>
       </div>
 
       <div>
@@ -234,91 +287,114 @@ export default function RequestForm() {
           Your jurisdiction
         </label>
 
-        <input
+        <JurisdictionSelector
           value={jurisdictionId}
-          onChange={(event) =>
-            setJurisdictionId(event.target.value)
-          }
-          placeholder="Jurisdiction ID"
-          className="w-full rounded-xl border border-slate-300 px-4 py-3"
+          onChange={setJurisdictionId}
         />
       </div>
 
       {error && (
-        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+        <div
+          role="alert"
+          aria-live="polite"
+          className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-700"
+        >
           {error}
         </div>
       )}
 
-      <button
-        type="button"
-        onClick={findOffice}
-        disabled={checking}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-5 py-3 font-semibold text-slate-900 disabled:opacity-50"
-      >
-        {checking ? (
-          <>
-            <Loader2 className="h-4 w-4 animate-spin" />
-            Finding the right office...
-          </>
-        ) : (
-          <>
-            <MapPin className="h-4 w-4" />
-            Find Who Handles This
-          </>
-        )}
-      </button>
+      <div className="space-y-3">
+        <button
+          type="button"
+          onClick={findOffice}
+          disabled={
+            checking ||
+            submitting ||
+            subject.trim().length < 3 ||
+            description.trim().length < 10
+          }
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 bg-white px-5 py-3 font-semibold text-slate-900 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {checking ? (
+            <>
+              <Loader2 className="h-4 w-4 animate-spin" />
+              Finding the right office...
+            </>
+          ) : (
+            <>
+              <MapPin className="h-4 w-4" />
+              Find Who Handles This
+            </>
+          )}
+        </button>
+      </div>
 
       {matches.length > 0 && (
         <div className="space-y-3">
-          <h3 className="font-bold text-slate-900">
-            Possible service offices
-          </h3>
+          <div>
+            <h3 className="font-bold text-slate-900">
+              Possible service offices
+            </h3>
 
-          {matches.map((match) => {
-            const selected =
-              selectedMatch?.id === match.id;
+            <p className="mt-1 text-sm text-slate-500">
+              Select the office that best matches your request.
+            </p>
+          </div>
 
-            return (
-              <button
-                type="button"
-                key={match.id}
-                onClick={() => setSelectedMatch(match)}
-                className={`w-full rounded-2xl border p-5 text-left transition ${
-                  selected
-                    ? "border-slate-900 bg-slate-50"
-                    : "border-slate-200 bg-white hover:border-slate-400"
-                }`}
-              >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <p className="font-bold text-slate-900">
-                      {match.title}
-                    </p>
+          <div className="space-y-3">
+            {matches.map((match) => {
+              const selected =
+                selectedMatch?.id === match.id;
 
-                    <p className="mt-1 text-sm text-slate-600">
-                      {match.description}
-                    </p>
+              return (
+                <button
+                  type="button"
+                  key={match.id}
+                  onClick={() =>
+                    setSelectedMatch(match)
+                  }
+                  disabled={submitting}
+                  aria-pressed={selected}
+                  className={`w-full rounded-2xl border p-5 text-left transition focus:outline-none focus:ring-2 focus:ring-slate-900/20 ${
+                    selected
+                      ? "border-slate-900 bg-slate-50 ring-1 ring-slate-900"
+                      : "border-slate-200 bg-white hover:border-slate-400 hover:bg-slate-50"
+                  }`}
+                >
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="min-w-0">
+                      <p className="font-bold text-slate-900">
+                        {match.title}
+                      </p>
 
-                    <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
-                      {match.category}
-                    </p>
+                      {match.description && (
+                        <p className="mt-1 text-sm leading-6 text-slate-600">
+                          {match.description}
+                        </p>
+                      )}
+
+                      {match.category && (
+                        <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          {match.category}
+                        </p>
+                      )}
+                    </div>
+
+                    {selected && (
+                      <CheckCircle2 className="h-5 w-5 shrink-0 text-slate-900" />
+                    )}
                   </div>
-
-                  {selected && (
-                    <CheckCircle2 className="h-5 w-5 shrink-0" />
-                  )}
-                </div>
-              </button>
-            );
-          })}
+                </button>
+              );
+            })}
+          </div>
         </div>
       )}
 
       <button
         type="submit"
-        disabled={submitting}
-        className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white disabled:opacity-50"
+        disabled={submitting || checking}
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {submitting ? (
           <>
