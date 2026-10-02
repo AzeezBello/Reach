@@ -36,10 +36,56 @@ import { updateProfile } from "./actions";
 
 export const metadata: Metadata = {
   title: "My dashboard",
-  description: "Your requests, applications, notifications and profile in one place.",
-  robots: { index: false, follow: false },
-  alternates: { canonical: "/dashboard" },
+  description:
+    "Your requests, applications, notifications and profile in one place.",
+  robots: {
+    index: false,
+    follow: false,
+  },
+  alternates: {
+    canonical: "/dashboard",
+  },
 };
+
+type OpenRequestStatus =
+  (typeof OPEN_REQUEST_STATUSES)[number];
+
+type SuperadminRole =
+  (typeof SUPERADMIN_ROLES)[number];
+
+function isOpenRequestStatus(
+  status: string | null | undefined,
+): status is OpenRequestStatus {
+  return (
+    typeof status === "string" &&
+    (OPEN_REQUEST_STATUSES as readonly string[]).includes(status)
+  );
+}
+
+function isSuperadminRole(
+  role: string | null | undefined,
+): role is SuperadminRole {
+  return (
+    typeof role === "string" &&
+    (SUPERADMIN_ROLES as readonly string[]).includes(role)
+  );
+}
+
+function getRequestStatus(
+  status: string | null | undefined,
+) {
+  if (
+    status === "submitted" ||
+    status === "under_review" ||
+    status === "in_progress" ||
+    status === "resolved" ||
+    status === "closed"
+  ) {
+    return status;
+  }
+
+  return "submitted";
+}
 
 export default async function DashboardPage({
   searchParams,
@@ -51,11 +97,19 @@ export default async function DashboardPage({
     searchParams,
   ]);
 
-  const { profile, requests, applications, notifications, events } =
-    await getResidentDashboard(user.id);
+  const {
+    profile,
+    requests,
+    applications,
+    notifications,
+    events,
+  } = await getResidentDashboard(user.id);
 
   const upcomingEvents = events.filter(
-    (event) => new Date(event.ends_at ?? event.starts_at) >= new Date()
+    (event) =>
+      new Date(
+        event.ends_at ?? event.starts_at,
+      ) >= new Date(),
   );
 
   const displayName =
@@ -65,27 +119,44 @@ export default async function DashboardPage({
     "Resident";
 
   const openRequests = requests.filter((request) =>
-    OPEN_REQUEST_STATUSES.includes(request.status ?? "submitted")
-  );
-  const resolvedRequests = requests.filter(
-    (request) => request.status === "resolved" || request.status === "closed"
+    isOpenRequestStatus(request.status),
   );
 
-  const isSuperadmin = SUPERADMIN_ROLES.includes(profile?.role ?? "");
+  const resolvedRequests = requests.filter(
+    (request) =>
+      request.status === "resolved" ||
+      request.status === "closed",
+  );
+
+  const isSuperadmin = isSuperadminRole(profile?.role);
 
   return (
     <div className="bg-slate-50">
       <Container className="py-8 md:py-12">
-        <Breadcrumbs items={[{ label: "Dashboard", href: "/dashboard" }]} />
+        <Breadcrumbs
+          items={[
+            {
+              label: "Dashboard",
+              href: "/dashboard",
+            },
+          ]}
+        />
 
         {denied === "superadmin" && (
           <p
             role="alert"
             className="mt-6 flex items-start gap-3 rounded-2xl border border-gold-200 bg-gold-100/60 p-4 text-sm leading-6 text-gold-700"
           >
-            <ShieldAlert size={18} className="mt-0.5 shrink-0" />
-            Your account does not have access to the platform console. Ask a
-            platform administrator to grant your profile the admin role.
+            <ShieldAlert
+              size={18}
+              className="mt-0.5 shrink-0"
+            />
+
+            <span>
+              Your account does not have access to the
+              platform console. Ask a platform administrator
+              to grant your profile the admin role.
+            </span>
           </p>
         )}
 
@@ -99,20 +170,31 @@ export default async function DashboardPage({
               <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-brand-700">
                 Resident dashboard
               </p>
+
               <h1 className="mt-1 text-2xl font-extrabold tracking-tight text-ink sm:text-3xl">
                 Welcome, {displayName}
               </h1>
-              <p className="mt-1 text-sm text-slate-500">{user.email}</p>
+
+              <p className="mt-1 text-sm text-slate-500">
+                {user.email}
+              </p>
             </div>
           </div>
 
           <div className="flex flex-wrap gap-3">
             {isSuperadmin && (
-              <ButtonLink href="/superadmin" variant="dark">
+              <ButtonLink
+                href="/superadmin"
+                variant="dark"
+              >
                 Platform console
               </ButtonLink>
             )}
-            <ButtonLink href="/requests/new" arrow>
+
+            <ButtonLink
+              href="/requests/new"
+              arrow
+            >
               New request
             </ButtonLink>
           </div>
@@ -125,17 +207,20 @@ export default async function DashboardPage({
             label="Requests submitted"
             value={requests.length}
           />
+
           <StatCard
             icon={<ClipboardList size={20} />}
             label="Open requests"
             value={openRequests.length}
             hint="Submitted, under review or in progress"
           />
+
           <StatCard
             icon={<CheckCircle2 size={20} />}
             label="Resolved"
             value={resolvedRequests.length}
           />
+
           <StatCard
             icon={<GraduationCap size={20} />}
             label="Programme applications"
@@ -149,14 +234,18 @@ export default async function DashboardPage({
             <Panel
               title="Recent requests"
               text="Your latest submissions and their current status."
-              action={<TextLink href="/requests">All requests</TextLink>}
+              action={
+                <TextLink href="/requests">
+                  All requests
+                </TextLink>
+              }
             >
               {requests.length > 0 ? (
                 <ul className="divide-y divide-slate-100">
                   {requests.slice(0, 5).map((request) => (
                     <li key={request.id}>
                       <Link
-                        href={`/requests/${request.id}`}
+                        href={`/dashboard/requests/${request.id}`}
                         className="group flex items-center gap-4 py-4 first:pt-0 last:pb-0"
                       >
                         <span className="min-w-0 flex-1">
@@ -166,13 +255,23 @@ export default async function DashboardPage({
                                 {request.reference_no}
                               </span>
                             )}
-                            <StatusBadge status={request.status} fallback="Submitted" />
+
+                            <StatusBadge
+                              status={getRequestStatus(
+                                request.status,
+                              )}
+                              fallback="Submitted"
+                            />
                           </span>
+
                           <span className="mt-2 block truncate font-bold text-ink group-hover:text-brand-800">
                             {request.subject}
                           </span>
+
                           <span className="mt-0.5 block text-xs text-slate-500">
-                            {request.category ? `${request.category} · ` : ""}
+                            {request.category
+                              ? `${request.category} · `
+                              : ""}
                             {formatDate(request.created_at)}
                           </span>
                         </span>
@@ -189,7 +288,14 @@ export default async function DashboardPage({
                 <EmptyRow
                   icon={<MessageCircle size={20} />}
                   text="You have not submitted a request yet."
-                  action={<ButtonLink href="/requests/new" size="sm">Submit a request</ButtonLink>}
+                  action={
+                    <ButtonLink
+                      href="/requests/new"
+                      size="sm"
+                    >
+                      Submit a request
+                    </ButtonLink>
+                  }
                 />
               )}
             </Panel>
@@ -198,7 +304,11 @@ export default async function DashboardPage({
             <Panel
               title="My events"
               text="Events you have RSVPed to."
-              action={<TextLink href="/events">Browse events</TextLink>}
+              action={
+                <TextLink href="/events">
+                  Browse events
+                </TextLink>
+              }
             >
               {upcomingEvents.length > 0 ? (
                 <ul className="divide-y divide-slate-100">
@@ -210,21 +320,45 @@ export default async function DashboardPage({
                       >
                         <span className="flex size-12 shrink-0 flex-col items-center justify-center rounded-xl bg-brand-50 text-brand-800">
                           <span className="text-[10px] font-extrabold uppercase">
-                            {new Date(event.starts_at).toLocaleDateString("en-NG", { month: "short", timeZone: "Africa/Lagos" })}
+                            {new Date(
+                              event.starts_at,
+                            ).toLocaleDateString(
+                              "en-NG",
+                              {
+                                month: "short",
+                                timeZone:
+                                  "Africa/Lagos",
+                              },
+                            )}
                           </span>
+
                           <span className="text-lg font-extrabold leading-none">
-                            {new Date(event.starts_at).toLocaleDateString("en-NG", { day: "numeric", timeZone: "Africa/Lagos" })}
+                            {new Date(
+                              event.starts_at,
+                            ).toLocaleDateString(
+                              "en-NG",
+                              {
+                                day: "numeric",
+                                timeZone:
+                                  "Africa/Lagos",
+                              },
+                            )}
                           </span>
                         </span>
+
                         <span className="min-w-0 flex-1">
                           <span className="block truncate font-bold text-ink group-hover:text-brand-800">
                             {event.title}
                           </span>
+
                           <span className="mt-0.5 block truncate text-xs text-slate-500">
                             {formatTime(event.starts_at)}
-                            {event.venue ? ` · ${event.venue}` : ""}
+                            {event.venue
+                              ? ` · ${event.venue}`
+                              : ""}
                           </span>
                         </span>
+
                         <ArrowRight
                           size={18}
                           className="shrink-0 text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-brand-700"
@@ -237,7 +371,15 @@ export default async function DashboardPage({
                 <EmptyRow
                   icon={<CalendarDays size={20} />}
                   text="You have not RSVPed to any upcoming events."
-                  action={<ButtonLink href="/events" size="sm" variant="outline">See events</ButtonLink>}
+                  action={
+                    <ButtonLink
+                      href="/events"
+                      size="sm"
+                      variant="outline"
+                    >
+                      See events
+                    </ButtonLink>
+                  }
                 />
               )}
             </Panel>
@@ -246,7 +388,11 @@ export default async function DashboardPage({
             <Panel
               title="Programme applications"
               text="Programmes you have applied to through this office."
-              action={<TextLink href="/programmes">Browse programmes</TextLink>}
+              action={
+                <TextLink href="/programmes">
+                  Browse programmes
+                </TextLink>
+              }
             >
               {applications.length > 0 ? (
                 <ul className="divide-y divide-slate-100">
@@ -264,13 +410,23 @@ export default async function DashboardPage({
                             {application.programme.title}
                           </Link>
                         ) : (
-                          <span className="block font-bold text-ink">Programme</span>
+                          <span className="block font-bold text-ink">
+                            Programme
+                          </span>
                         )}
+
                         <span className="mt-0.5 block text-xs text-slate-500">
-                          Applied {formatDate(application.created_at)}
+                          Applied{" "}
+                          {formatDate(
+                            application.created_at,
+                          )}
                         </span>
                       </div>
-                      <StatusBadge status={application.status} fallback="Pending" />
+
+                      <StatusBadge
+                        status={application.status}
+                        fallback="Pending"
+                      />
                     </li>
                   ))}
                 </ul>
@@ -278,7 +434,15 @@ export default async function DashboardPage({
                 <EmptyRow
                   icon={<GraduationCap size={20} />}
                   text="No programme applications yet. Open programmes are listed on the programmes page."
-                  action={<ButtonLink href="/programmes" size="sm" variant="outline">View programmes</ButtonLink>}
+                  action={
+                    <ButtonLink
+                      href="/programmes"
+                      size="sm"
+                      variant="outline"
+                    >
+                      View programmes
+                    </ButtonLink>
+                  }
                 />
               )}
             </Panel>
@@ -286,15 +450,28 @@ export default async function DashboardPage({
 
           <div className="space-y-6">
             {/* Profile */}
-            <Panel title="My profile" text="The office uses these details to follow up with you.">
-              <ActionForm action={updateProfile} submitLabel="Save profile">
+            <Panel
+              title="My profile"
+              text="The office uses these details to follow up with you."
+            >
+              <ActionForm
+                action={updateProfile}
+                submitLabel="Save profile"
+              >
                 <Field
                   label="Full name"
                   name="full_name"
                   required
                   autoComplete="name"
-                  defaultValue={profile?.full_name ?? (user.user_metadata?.full_name as string | undefined) ?? ""}
+                  defaultValue={
+                    profile?.full_name ??
+                    (user.user_metadata?.full_name as
+                      | string
+                      | undefined) ??
+                    ""
+                  }
                 />
+
                 <Field
                   label="Phone number"
                   name="phone"
@@ -304,8 +481,12 @@ export default async function DashboardPage({
                   placeholder="e.g. 0801 234 5678"
                   hint="Used for WhatsApp and SMS updates when available."
                 />
+
                 <div>
-                  <p className="mb-1.5 text-sm font-bold text-ink">Email</p>
+                  <p className="mb-1.5 text-sm font-bold text-ink">
+                    Email
+                  </p>
+
                   <p className="rounded-xl border border-slate-200 bg-slate-50 px-3.5 py-2.5 text-sm text-slate-600">
                     {user.email}
                   </p>
@@ -314,37 +495,56 @@ export default async function DashboardPage({
 
               <div className="mt-5 flex items-center gap-2 border-t border-slate-100 pt-4 text-xs text-slate-500">
                 <UserRound size={14} />
-                Role: <Badge tone="slate">{profile?.role ?? "resident"}</Badge>
+                Role:
+                <Badge tone="slate">
+                  {profile?.role ?? "resident"}
+                </Badge>
               </div>
             </Panel>
 
             {/* Notifications */}
-            <Panel title="Notifications" text="Updates from the office about your requests and programmes.">
+            <Panel
+              title="Notifications"
+              text="Updates from the office about your requests and programmes."
+            >
               {notifications.length > 0 ? (
                 <ul className="space-y-4">
                   {notifications.map((notification) => (
-                    <li key={notification.id} className="flex gap-3">
+                    <li
+                      key={notification.id}
+                      className="flex gap-3"
+                    >
                       <span className="mt-0.5 flex size-8 shrink-0 items-center justify-center rounded-lg bg-brand-50 text-brand-700">
                         <Bell size={15} />
                       </span>
+
                       <div className="min-w-0">
                         <p className="text-sm font-bold text-ink">
-                          {notification.title || "Update"}
+                          {notification.title ||
+                            "Update"}
                         </p>
+
                         {notification.message && (
                           <p className="mt-0.5 text-sm leading-6 text-slate-600">
                             {notification.message}
                           </p>
                         )}
+
                         <p className="mt-1 text-xs text-slate-400">
-                          {formatDate(notification.sent_at ?? notification.created_at)}
+                          {formatDate(
+                            notification.sent_at ??
+                              notification.created_at,
+                          )}
                         </p>
                       </div>
                     </li>
                   ))}
                 </ul>
               ) : (
-                <EmptyRow icon={<Bell size={20} />} text="No notifications yet. You will see updates here when the office responds." />
+                <EmptyRow
+                  icon={<Bell size={20} />}
+                  text="No notifications yet. You will see updates here when the office responds."
+                />
               )}
             </Panel>
 
@@ -352,18 +552,37 @@ export default async function DashboardPage({
             <Panel title="Explore">
               <ul className="grid gap-2">
                 {[
-                  { href: "/programmes", icon: <ClipboardList size={18} />, label: "Programmes" },
-                  { href: "/opportunities", icon: <Sparkles size={18} />, label: "Opportunities" },
-                  { href: "/projects", icon: <FolderKanban size={18} />, label: "Community projects" },
+                  {
+                    href: "/programmes",
+                    icon: <ClipboardList size={18} />,
+                    label: "Programmes",
+                  },
+                  {
+                    href: "/opportunities",
+                    icon: <Sparkles size={18} />,
+                    label: "Opportunities",
+                  },
+                  {
+                    href: "/projects",
+                    icon: <FolderKanban size={18} />,
+                    label: "Community projects",
+                  },
                 ].map((item) => (
                   <li key={item.href}>
                     <Link
                       href={item.href}
                       className="group flex items-center gap-3 rounded-xl border border-slate-200 px-4 py-3 text-sm font-bold text-ink transition hover:border-brand-300 hover:bg-brand-50/60"
                     >
-                      <span className="text-brand-700">{item.icon}</span>
+                      <span className="text-brand-700">
+                        {item.icon}
+                      </span>
+
                       {item.label}
-                      <ArrowRight size={16} className="ml-auto text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-brand-700" />
+
+                      <ArrowRight
+                        size={16}
+                        className="ml-auto text-slate-300 transition group-hover:translate-x-0.5 group-hover:text-brand-700"
+                      />
                     </Link>
                   </li>
                 ))}
@@ -390,7 +609,11 @@ function EmptyRow({
       <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-white text-brand-700 ring-1 ring-slate-200">
         {icon}
       </span>
-      <p className="flex-1 text-sm leading-6 text-slate-600">{text}</p>
+
+      <p className="flex-1 text-sm leading-6 text-slate-600">
+        {text}
+      </p>
+
       {action}
     </div>
   );

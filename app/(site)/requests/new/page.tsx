@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
-import { RequestForm } from "@/components/request-form";
+import RequestForm from "@/components/request-form";
 import { Container, Eyebrow } from "@/components/ui";
 import { getCurrentUser, getTenant } from "@/lib/reach";
 
