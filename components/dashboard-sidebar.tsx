@@ -1,22 +1,12 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { usePathname } from "next/navigation";
 
 import {
-  Building2,
   ClipboardList,
-  FileText,
   LayoutDashboard,
-  Landmark,
   LogOut,
-  MapPinned,
-  Settings,
-  ShieldCheck,
-  UserRound,
-  Users,
-  Workflow,
 } from "lucide-react";
 
 const LINKS = [
@@ -30,72 +20,6 @@ const LINKS = [
   {
     href: "/dashboard/requests",
     label: "My Requests",
-    icon: ClipboardList,
-  },
-
-  {
-    href: "/office",
-    label: "Office",
-    icon: Building2,
-  },
-
-  {
-    href: "/superadmin",
-    label: "Administration",
-    icon: ShieldCheck,
-  },
-
-  {
-    href: "/superadmin/organizations",
-    label: "Organizations",
-    icon: Landmark,
-  },
-
-  {
-    href: "/superadmin/jurisdictions",
-    label: "Jurisdictions",
-    icon: MapPinned,
-  },
-
-  {
-    href: "/superadmin/offices",
-    label: "Offices",
-    icon: Building2,
-  },
-
-  {
-    href: "/superadmin/leaders",
-    label: "Leadership",
-    icon: UserRound,
-  },
-
-  {
-    href: "/superadmin/leader-accounts",
-    label: "Leader Accounts",
-    icon: ShieldCheck,
-  },
-
-  {
-    href: "/superadmin/members",
-    label: "Staff & Roles",
-    icon: Users,
-  },
-
-  {
-    href: "/superadmin/routing",
-    label: "Request Routing",
-    icon: Workflow,
-  },
-
-  {
-    href: "/superadmin/requests",
-    label: "All Requests",
-    icon: FileText,
-  },
-
-  {
-    href: "/superadmin/whatsapp",
-    label: "WhatsApp",
     icon: ClipboardList,
   },
 ];
@@ -137,7 +61,7 @@ export function DashboardSidebar() {
             </p>
 
             <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-slate-400">
-              Service Console
+              Resident Portal
             </p>
           </div>
         </Link>

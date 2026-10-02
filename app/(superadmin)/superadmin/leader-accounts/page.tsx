@@ -15,7 +15,7 @@ import { Badge } from "@/components/ui";
 import { requireSuperadmin } from "@/lib/admin";
 import { createClient } from "@/lib/supabase/server";
 
-import { linkLeaderAccount, unlinkLeaderAccount } from "../actions";
+import { inviteLeaderAccount, unlinkLeaderAccount } from "../actions";
 
 export const metadata: Metadata = { title: "Leader accounts" };
 
@@ -48,7 +48,7 @@ export default async function LeaderAccountsPage() {
       <AdminHeader
         eyebrow="Administration"
         title="Leader accounts"
-        text="Connect leadership profiles to existing REACH accounts. This does not create users or send invitations."
+        text="Link a registered account or invite a leader to create their own secure sign-in. No shared passwords are used."
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
@@ -107,18 +107,30 @@ export default async function LeaderAccountsPage() {
         </Table>
       </Panel>
 
-      {leaderRows.length > 0 && (
-        <Panel title="Link an existing account" text="Use the email address on the person's REACH account.">
-          <ActionForm action={linkLeaderAccount} submitLabel="Link account" resetOnSuccess>
+      {unlinkedCount > 0 && (
+        <Panel
+          title="Link or invite a leader"
+          text="Use the leader's verified email address. Existing REACH accounts are linked; new accounts receive a one-time email invitation to set their own password."
+        >
+          <ActionForm action={inviteLeaderAccount} submitLabel="Link / send invitation" resetOnSuccess>
             <div className="grid gap-5 sm:grid-cols-2">
               <SelectField
                 label="Leadership profile"
                 name="leader_id"
                 required
-                options={leaderRows.map((leader) => ({ value: leader.id, label: leader.name }))}
+                options={leaderRows
+                  .filter((leader) => !leader.profile_id)
+                  .map((leader) => ({ value: leader.id, label: leader.name }))}
                 placeholder="Select a leader"
               />
-              <Field label="Account email" name="email" type="email" required placeholder="person@example.com" />
+              <Field
+                label="Verified email address"
+                name="email"
+                type="email"
+                required
+                placeholder="leader@example.org"
+                hint="An invitation is sent only if no REACH account exists for this address."
+              />
             </div>
           </ActionForm>
         </Panel>

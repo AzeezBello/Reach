@@ -338,3 +338,10 @@ from public.events e
 join public.leaders l on l.slug = 'odunayo-oluwafemi-daniel'
 where e.slug = 'acada-carnival-2026'
 on conflict do nothing;
+
+insert into public.content_leaders (content_type, content_id, leader_id, role)
+select 'event', e.id, l.id, 'partner'
+from public.events e
+join public.leaders l on l.slug = 'femi-gbajabiamila'
+where e.slug = 'gbaja-mega-empowerment'
+on conflict do nothing;

@@ -87,6 +87,10 @@ export type AdminContentItem = {
   title: string;
 };
 
+export type AdminLeader = Leader & {
+  organization_id: string | null;
+};
+
 export type RequestAccess =
   | "resident"
   | "office"
@@ -1184,9 +1188,7 @@ export async function getContentCounts(
  * All leadership profiles in the database,
  * including inactive/hidden profiles.
  */
-export async function getAdminLeaders(): Promise<
-  Leader[]
-> {
+export async function getAdminLeaders(): Promise<AdminLeader[]> {
   await requireSuperadmin();
 
   const supabase = await createClient();
@@ -1199,6 +1201,7 @@ export async function getAdminLeaders(): Promise<
     .select(
       `
       id,
+      organization_id,
       slug,
       name,
       role,
@@ -1223,8 +1226,7 @@ export async function getAdminLeaders(): Promise<
     return [];
   }
 
-  return (data ??
-    []) as Leader[];
+  return (data ?? []) as AdminLeader[];
 }
 
 /* ------------------------------------------------------------------ */

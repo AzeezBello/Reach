@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { ActionForm } from "@/components/action-form";
 import {
@@ -25,6 +26,7 @@ import {
   createLeader,
   linkContentToLeader,
   setLeaderActive,
+  updateLeaderProfile,
   unlinkContentFromLeader,
 } from "../actions";
 
@@ -32,8 +34,13 @@ export const metadata: Metadata = {
   title: "Leadership",
 };
 
-export default async function LeadersPage() {
+export default async function LeadersPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ edit?: string }>;
+}) {
   await requireSuperadmin();
+  const { edit } = await searchParams;
 
   const [leaders, content, links, organizations] = await Promise.all([
     getAdminLeaders(),
@@ -49,6 +56,8 @@ export default async function LeadersPage() {
   const leaderMap = new Map(
     leaders.map((leader) => [leader.id, leader])
   );
+  const editingLeader = leaders.find((leader) => leader.id === edit) ?? null;
+  const profileAction = editingLeader ? updateLeaderProfile : createLeader;
 
   return (
     <div className="space-y-8">
@@ -98,33 +107,30 @@ export default async function LeadersPage() {
               </td>
 
               <td className={`${cell} text-right`}>
-                <ActionForm
-                  action={setLeaderActive}
-                  inline
-                  variant="outline"
-                  submitLabel={
-                    leader.is_active !== false
-                      ? "Hide"
-                      : "Publish"
-                  }
-                  pendingLabel="…"
-                >
-                  <input
-                    type="hidden"
-                    name="id"
-                    value={leader.id ?? ""}
-                  />
-
-                  <input
-                    type="hidden"
-                    name="is_active"
-                    value={
-                      leader.is_active === false
-                        ? "true"
-                        : "false"
-                    }
-                  />
-                </ActionForm>
+                <div className="flex flex-wrap items-center justify-end gap-2">
+                  {leader.id && (
+                    <Link
+                      href={`/superadmin/leaders?edit=${encodeURIComponent(leader.id)}`}
+                      className="inline-flex min-h-10 items-center rounded-lg px-3 text-sm font-bold text-brand-700 hover:bg-brand-50"
+                    >
+                      Edit
+                    </Link>
+                  )}
+                  <ActionForm
+                    action={setLeaderActive}
+                    inline
+                    variant="outline"
+                    submitLabel={leader.is_active !== false ? "Archive" : "Publish"}
+                    pendingLabel="…"
+                  >
+                    <input type="hidden" name="id" value={leader.id ?? ""} />
+                    <input
+                      type="hidden"
+                      name="is_active"
+                      value={leader.is_active === false ? "true" : "false"}
+                    />
+                  </ActionForm>
+                </div>
               </td>
             </tr>
           ))}
@@ -132,19 +138,21 @@ export default async function LeadersPage() {
       </Panel>
 
       <Panel
-        title="Create leadership profile"
-        text="Use neutral, source-backed descriptions and official public references."
+        title={editingLeader ? `Edit ${editingLeader.name}` : "Add a leader"}
+        text="Keep current office, constituency, biography and public sources up to date after elections. Archived profiles stay in the database."
       >
         <ActionForm
-          action={createLeader}
-          submitLabel="Create profile"
-          resetOnSuccess
+          action={profileAction}
+          submitLabel={editingLeader ? "Save profile" : "Create profile"}
+          resetOnSuccess={!editingLeader}
         >
+          {editingLeader && <input type="hidden" name="id" value={editingLeader.id ?? ""} />}
           <div className="grid gap-5 sm:grid-cols-2">
             <SelectField
               label="Organization"
               name="organization_id"
               required
+              defaultValue={editingLeader?.organization_id}
               placeholder="Select organization"
               options={organizations.map((org) => ({
                 value: org.id,
@@ -156,24 +164,29 @@ export default async function LeadersPage() {
               label="Full name"
               name="name"
               required
+              defaultValue={editingLeader?.name}
             />
 
             <Field
               label="Slug"
               name="slug"
+              defaultValue={editingLeader?.slug}
               placeholder="Generated from name if blank"
+              hint="Changing the slug changes the public profile URL."
             />
 
             <Field
               label="Role"
               name="role"
               required
+              defaultValue={editingLeader?.role}
             />
 
             <SelectField
               label="Level"
               name="level"
               required
+              defaultValue={editingLeader?.level}
               options={labelOptions([
                 "federal",
                 "state",
@@ -184,27 +197,32 @@ export default async function LeadersPage() {
             <Field
               label="Level label"
               name="level_label"
+              defaultValue={editingLeader?.level_label}
               placeholder="Federal Government"
             />
 
             <Field
               label="Office"
               name="office"
+              defaultValue={editingLeader?.office}
             />
 
             <Field
               label="Jurisdiction"
               name="jurisdiction"
+              defaultValue={editingLeader?.jurisdiction}
             />
 
             <Field
               label="Constituency"
               name="constituency"
+              defaultValue={editingLeader?.constituency}
             />
 
             <Field
               label="Image URL"
               name="image_url"
+              defaultValue={editingLeader?.image_url}
               placeholder="/leaders/person.jpg"
             />
 
@@ -212,7 +230,7 @@ export default async function LeadersPage() {
               label="Sort order"
               name="sort_order"
               type="number"
-              defaultValue="0"
+              defaultValue={String(editingLeader?.sort_order ?? 0)}
             />
           </div>
 
@@ -220,12 +238,14 @@ export default async function LeadersPage() {
             <TextareaField
               label="Summary"
               name="summary"
+              defaultValue={editingLeader?.summary}
               rows={3}
             />
 
             <TextareaField
               label="Biography"
               name="biography"
+              defaultValue={editingLeader?.biography.join("\n")}
               rows={5}
               hint="One paragraph per line."
             />
@@ -233,6 +253,7 @@ export default async function LeadersPage() {
             <TextareaField
               label="Public service"
               name="service"
+              defaultValue={editingLeader?.service.join("\n")}
               rows={5}
               hint="One service item per line."
             />
@@ -240,6 +261,7 @@ export default async function LeadersPage() {
             <TextareaField
               label="Sources"
               name="sources"
+              defaultValue={editingLeader?.sources.map((source) => `${source.label} | ${source.url}`).join("\n")}
               rows={5}
               hint='One per line: Label | https://official-source.example'
             />
@@ -249,13 +271,21 @@ export default async function LeadersPage() {
                 type="checkbox"
                 name="is_active"
                 value="on"
-                defaultChecked
+                defaultChecked={editingLeader ? editingLeader.is_active !== false : true}
                 className="size-4 rounded border-slate-300 accent-brand-600"
               />
 
               Publish profile
             </label>
           </div>
+          {editingLeader && (
+            <Link
+              href="/superadmin/leaders"
+              className="inline-flex min-h-10 items-center text-sm font-bold text-slate-600 hover:text-ink"
+            >
+              Cancel editing
+            </Link>
+          )}
         </ActionForm>
       </Panel>
 

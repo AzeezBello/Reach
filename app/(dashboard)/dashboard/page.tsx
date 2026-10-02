@@ -26,11 +26,11 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { Badge, ButtonLink, Container, TextLink } from "@/components/ui";
 import {
   OPEN_REQUEST_STATUSES,
-  SUPERADMIN_ROLES,
   getResidentDashboard,
   requireUser,
 } from "@/lib/admin";
 import { formatDate, formatTime, initials } from "@/lib/format";
+import { getLinkedLeaders } from "@/lib/leaders";
 
 import { updateProfile } from "./actions";
 
@@ -50,24 +50,12 @@ export const metadata: Metadata = {
 type OpenRequestStatus =
   (typeof OPEN_REQUEST_STATUSES)[number];
 
-type SuperadminRole =
-  (typeof SUPERADMIN_ROLES)[number];
-
 function isOpenRequestStatus(
   status: string | null | undefined,
 ): status is OpenRequestStatus {
   return (
     typeof status === "string" &&
     (OPEN_REQUEST_STATUSES as readonly string[]).includes(status)
-  );
-}
-
-function isSuperadminRole(
-  role: string | null | undefined,
-): role is SuperadminRole {
-  return (
-    typeof role === "string" &&
-    (SUPERADMIN_ROLES as readonly string[]).includes(role)
   );
 }
 
@@ -97,13 +85,11 @@ export default async function DashboardPage({
     searchParams,
   ]);
 
-  const {
-    profile,
-    requests,
-    applications,
-    notifications,
-    events,
-  } = await getResidentDashboard(user.id);
+  const [residentDashboard, linkedLeaders] = await Promise.all([
+    getResidentDashboard(user.id),
+    getLinkedLeaders(user.id),
+  ]);
+  const { profile, requests, applications, notifications, events } = residentDashboard;
 
   const upcomingEvents = events.filter(
     (event) =>
@@ -128,8 +114,6 @@ export default async function DashboardPage({
       request.status === "closed",
   );
 
-  const isSuperadmin = isSuperadminRole(profile?.role);
-
   return (
     <div className="bg-slate-50">
       <Container className="py-8 md:py-12">
@@ -142,7 +126,7 @@ export default async function DashboardPage({
           ]}
         />
 
-        {denied === "superadmin" && (
+        {(denied === "superadmin" || denied === "leader") && (
           <p
             role="alert"
             className="mt-6 flex items-start gap-3 rounded-2xl border border-gold-200 bg-gold-100/60 p-4 text-sm leading-6 text-gold-700"
@@ -153,9 +137,9 @@ export default async function DashboardPage({
             />
 
             <span>
-              Your account does not have access to the
-              platform console. Ask a platform administrator
-              to grant your profile the admin role.
+              {denied === "leader"
+                ? "Your account is not linked to an active leadership profile. Ask a platform administrator to link your account."
+                : "Your account does not have access to the platform console. Ask a platform administrator to grant your profile the admin role."}
             </span>
           </p>
         )}
@@ -182,15 +166,11 @@ export default async function DashboardPage({
           </div>
 
           <div className="flex flex-wrap gap-3">
-            {isSuperadmin && (
-              <ButtonLink
-                href="/superadmin"
-                variant="dark"
-              >
-                Platform console
+            {linkedLeaders.length > 0 && (
+              <ButtonLink href="/leader" variant="dark">
+                Leader workspace
               </ButtonLink>
             )}
-
             <ButtonLink
               href="/requests/new"
               arrow

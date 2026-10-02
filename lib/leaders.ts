@@ -1,6 +1,9 @@
 import { cache } from "react";
+import { redirect } from "next/navigation";
 
+import { requireUser } from "@/lib/admin";
 import { createPublicClient } from "@/lib/supabase/public";
+import { createClient as createServerClient } from "@/lib/supabase/server";
 
 import type {
   CollaborationRole,
@@ -305,6 +308,33 @@ const EMPTY_CONTENT: LeaderContent = {
   projects: [],
   events: [],
 };
+
+export async function getLinkedLeaders(userId: string): Promise<Leader[]> {
+  const supabase = await createServerClient();
+  const { data, error } = await supabase
+    .from("leaders")
+    .select(
+      "id, slug, name, role, level, level_label, office, jurisdiction, constituency, summary, biography, service, sources, image_url, is_active, sort_order",
+    )
+    .eq("profile_id", userId)
+    .eq("is_active", true)
+    .order("sort_order")
+    .order("name");
+
+  if (error) throw new Error(error.message);
+  return (data ?? []) as Leader[];
+}
+
+export async function requireLeader(next = "/leader") {
+  const user = await requireUser(next);
+  const leaders = await getLinkedLeaders(user.id);
+
+  if (!leaders.length) {
+    redirect("/dashboard?denied=leader");
+  }
+
+  return { user, leaders };
+}
 
 /**
  * Everything a leader leads

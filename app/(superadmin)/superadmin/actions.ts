@@ -12,6 +12,8 @@ import {
   getSuperadminAccess,
 } from "@/lib/admin";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin-client";
+import { SITE_URL } from "@/lib/config";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -404,6 +406,29 @@ function parseSources(formData: FormData) {
   });
 }
 
+function leaderProfileInput(formData: FormData) {
+  const name = required(formData, "name", "Full name");
+  const sortOrder = Number.parseInt(text(formData, "sort_order") || "0", 10);
+
+  return {
+    name,
+    slug: slugify(text(formData, "slug") || name),
+    role: required(formData, "role", "Role"),
+    level: oneOf(required(formData, "level", "Level"), LEADERSHIP_LEVELS, "Level"),
+    level_label: optional(formData, "level_label"),
+    office: optional(formData, "office"),
+    jurisdiction: optional(formData, "jurisdiction"),
+    constituency: optional(formData, "constituency"),
+    summary: optional(formData, "summary"),
+    biography: lines(formData, "biography"),
+    service: lines(formData, "service"),
+    sources: parseSources(formData),
+    image_url: optional(formData, "image_url"),
+    is_active: checked(formData, "is_active"),
+    sort_order: Number.isNaN(sortOrder) ? 0 : sortOrder,
+  };
+}
+
 export async function createLeader(
   _state: ActionState,
   formData: FormData
@@ -411,36 +436,48 @@ export async function createLeader(
   return run(async () => {
     await guard();
 
-    const name = required(formData, "name", "Full name");
-    const sortOrder = Number.parseInt(text(formData, "sort_order") || "0", 10);
-
-    const input = {
-      name,
-      slug: slugify(text(formData, "slug") || name),
-      role: required(formData, "role", "Role"),
-      level: oneOf(required(formData, "level", "Level"), LEADERSHIP_LEVELS, "Level"),
-      level_label: optional(formData, "level_label"),
-      office: optional(formData, "office"),
-      jurisdiction: optional(formData, "jurisdiction"),
-      constituency: optional(formData, "constituency"),
-      summary: optional(formData, "summary"),
-      biography: lines(formData, "biography"),
-      service: lines(formData, "service"),
-      sources: parseSources(formData),
-      image_url: optional(formData, "image_url"),
-      is_active: checked(formData, "is_active"),
-      sort_order: Number.isNaN(sortOrder) ? 0 : sortOrder,
-    };
+    const organizationId = required(formData, "organization_id", "Organization");
+    const input = leaderProfileInput(formData);
 
     const supabase = await createClient();
-    const { error } = await supabase.from("leaders").insert(input);
+    const { error } = await supabase
+      .from("leaders")
+      .insert({ ...input, organization_id: organizationId });
     if (error) throw new Error(error.message);
 
     revalidatePath("/superadmin/leaders");
     revalidatePath("/leadership");
     revalidatePath("/", "layout");
 
-    return `Created the profile for ${name}.`;
+    return `Created the profile for ${input.name}.`;
+  });
+}
+
+export async function updateLeaderProfile(
+  _state: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  return run(async () => {
+    await guard();
+
+    const id = required(formData, "id", "Leader");
+    const organizationId = required(formData, "organization_id", "Organization");
+    const input = leaderProfileInput(formData);
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("leaders")
+      .update({ ...input, organization_id: organizationId })
+      .eq("id", id);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/superadmin/leaders");
+    revalidatePath("/superadmin/leader-accounts");
+    revalidatePath("/leadership");
+    revalidatePath(`/leadership/${input.slug}`);
+    revalidatePath("/", "layout");
+
+    return `Updated the profile for ${input.name}.`;
   });
 }
 
@@ -531,6 +568,91 @@ export async function unlinkLeaderAccount(
     revalidatePath("/superadmin/leaders");
 
     return "Leader account unlinked.";
+  });
+}
+
+export async function inviteLeaderAccount(
+  _state: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  return run(async () => {
+    await guard();
+
+    const leaderId = required(formData, "leader_id", "Leader");
+    const email = required(formData, "email", "Email").toLowerCase();
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      throw new Error("Enter a valid email address.");
+    }
+
+    const supabase = await createClient();
+    const { data: leader, error: leaderError } = await supabase
+      .from("leaders")
+      .select("name, profile_id")
+      .eq("id", leaderId)
+      .maybeSingle();
+
+    if (leaderError) throw new Error(leaderError.message);
+    if (!leader) throw new Error("The selected leadership profile no longer exists.");
+    if (leader.profile_id) {
+      throw new Error("This leader already has an account linked. Unlink it first.");
+    }
+
+    const { data: existingProfile, error: profileError } = await supabase
+      .from("profiles")
+      .select("id, full_name")
+      .ilike("email", email)
+      .maybeSingle();
+
+    if (profileError) throw new Error(profileError.message);
+
+    if (existingProfile) {
+      const { data: linked, error: linkError } = await supabase
+        .from("leaders")
+        .update({ profile_id: existingProfile.id })
+        .eq("id", leaderId)
+        .is("profile_id", null)
+        .select("id")
+        .maybeSingle();
+
+      if (linkError) throw new Error(linkError.message);
+      if (!linked) throw new Error("This leader was linked by another admin. Refresh and try again.");
+
+      revalidatePath("/superadmin/leader-accounts");
+      revalidatePath("/superadmin/leaders");
+      return `${existingProfile.full_name || email} linked to ${leader.name}.`;
+    }
+
+    const admin = createAdminClient();
+    const { data, error } = await admin.auth.admin.inviteUserByEmail(email, {
+      data: { full_name: leader.name },
+      redirectTo: `${SITE_URL}/auth/set-password`,
+    });
+
+    if (error) throw new Error(error.message);
+    if (!data.user) throw new Error("The invitation did not return a user record.");
+
+    const { data: linked, error: linkError } = await admin
+      .from("leaders")
+      .update({ profile_id: data.user.id })
+      .eq("id", leaderId)
+      .is("profile_id", null)
+      .select("id")
+      .maybeSingle();
+
+    if (linkError || !linked) {
+      const { error: cleanupError } = await admin.auth.admin.deleteUser(data.user.id);
+      if (cleanupError) {
+        throw new Error(`The leader link failed, and the invited account could not be removed: ${cleanupError.message}`);
+      }
+
+      if (linkError) throw new Error(linkError.message);
+      throw new Error("This leader was linked by another admin. The invitation was canceled.");
+    }
+
+    revalidatePath("/superadmin/leader-accounts");
+    revalidatePath("/superadmin/leaders");
+
+    return `Invitation sent to ${email}. They can set their own password from the email link.`;
   });
 }
 

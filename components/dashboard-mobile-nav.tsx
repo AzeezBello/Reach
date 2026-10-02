@@ -6,9 +6,6 @@ import {
   X,
   LayoutDashboard,
   ClipboardList,
-  Building2,
-  ShieldCheck,
-  UserRound,
 } from "lucide-react";
 
 import {
@@ -25,21 +22,6 @@ const LINKS = [
     href: "/dashboard/requests",
     label: "My Requests",
     icon: ClipboardList,
-  },
-  {
-    href: "/office",
-    label: "Office",
-    icon: Building2,
-  },
-  {
-    href: "/superadmin",
-    label: "Administration",
-    icon: ShieldCheck,
-  },
-  {
-    href: "/superadmin/leaders",
-    label: "Leadership",
-    icon: UserRound,
   },
 ];
 

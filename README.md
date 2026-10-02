@@ -203,11 +203,13 @@ The platform console uses its own responsive administration shell, separate from
 | `/superadmin/offices` | List, create, activate and deactivate offices |
 | `/superadmin/staff` | Attach resident accounts to offices as staff or admin |
 | `/superadmin/members` | Assign existing accounts to organizations, update membership roles and remove memberships |
-| `/superadmin/leader-accounts` | Link existing REACH accounts to leadership profiles and remove those links; does not create or invite users |
-| `/superadmin/leaders` | Create leadership profiles and link them to programmes, opportunities, projects and events as lead or collaboration partner |
+| `/superadmin/leader-accounts` | Link existing REACH accounts or invite leaders by verified email; invitees set their own password |
+| `/superadmin/leaders` | Add, edit, publish and archive leadership profiles; link leaders to programmes, opportunities, projects and events |
 | `/superadmin/requests` | Update request status, post a note to the resident's timeline and keep internal staff notes |
 
 Access is granted to accounts whose `profiles.role` is `admin` or `superadmin`. Every page and server action re-checks the role; row-level security must also allow these operations for the role.
+
+Residents use `/dashboard`, office staff use the separate `/office` workspace, and accounts linked to an active leadership profile use `/leader`. Each workspace has its own navigation and access checks. Leader invitations require a valid server-side `SUPABASE_SERVICE_ROLE_KEY` and an allowed Supabase redirect URL; invitees choose their own password.
 
 ---
 
@@ -232,7 +234,7 @@ Signed-in residents can RSVP from the event page; the attendee count is shown pu
 
 Public office holders connected to the community have profile pages at `/leadership/[slug]` with biography, public-service record and official reference sources.
 
-Profiles live in the `leaders` table and are grouped by level (`federal`, `state`, `local`). Until that table is migrated and seeded, the site falls back to the built-in profiles in `lib/data/leaders.json` (ten office holders across the federal, Lagos State and local levels).
+Profiles live in the `leaders` table and are grouped by level (`federal`, `state`, `local`). The `20261002020000_refresh_leader_profiles.sql` migration upserts ten current Surulere-area profiles with source links while preserving account and content relationships. Add or edit successors from `/superadmin/leaders`, and archive outgoing leaders without deleting their history.
 
 Programmes, opportunities, projects and events are linked to leaders through `content_leaders`:
 
@@ -528,10 +530,9 @@ reach/
 ├── lib/
 │   ├── reach.ts                     Public data access (tenant, content, session)
 │   ├── admin.ts                     Dashboard and superadmin data access + guards
-│   ├── leaders.ts                   Leadership profiles and collaborations (with static fallback)
+│   ├── leaders.ts                   Database-backed leadership profiles and collaborations
 │   ├── seo.ts                       Canonical URLs and JSON-LD schemas
 │   ├── media.ts                     Curated photos, videos and alt text
-│   ├── data/leaders.json            Built-in leadership profiles (source for seed.sql)
 │   ├── format.ts · navigation.ts · config.ts · types.ts · leadership.ts
 │   └── supabase/                    Browser and server clients
 │
@@ -854,7 +855,7 @@ Work that is ready in the codebase but still needs an action on the Supabase pro
 
 ## 1. Apply the database migrations and seed data
 
-The `events`, `event_rsvps`, `leaders` and `content_leaders` tables and the row-level security policies live in `supabase/migrations/` but have not been applied to the hosted project yet. Until they are, the site falls back to the built-in leadership profiles and shows no events.
+The `events`, `event_rsvps`, `leaders` and `content_leaders` tables, profile refresh, content links, and row-level security policies are versioned in `supabase/migrations/`. Apply pending migrations before running the seed.
 
 ```bash
 supabase link --project-ref <project-ref>
@@ -862,7 +863,7 @@ supabase db push
 supabase db execute --file supabase/seed.sql
 ```
 
-The seed loads the ten leadership profiles (federal, Lagos State and local government), their collaborations, and three published events (Acada Carnival 2026, FKL Sports Community Fitness Day, Constituency Town Hall). It is safe to run more than once.
+The seed loads leadership profiles, collaborations and events. The profile refresh migration links FKL to tenant content, Gbaja to education support and his empowerment event, and FOD to the health, lighting and Acada initiatives. These inserts are safe to rerun.
 
 ## 2. Create the first platform administrator
 

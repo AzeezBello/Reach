@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import {
   Building2,
@@ -138,58 +139,65 @@ export default async function OfficeDashboardPage() {
         </div>
       </Panel>
 
-      <Panel
-        title="Assigned requests"
-        text="Only requests assigned to your authorized offices are displayed."
-      >
-        <Table
-          head={[
-            "Reference",
-            "Subject",
-            "Category",
-            "Office",
-            "Status",
-            "Submitted",
-          ]}
-          rows={requests?.length ?? 0}
-          empty="No requests are currently assigned to your offices."
+      <div id="assigned-requests">
+        <Panel
+          title="Assigned requests"
+          text="Only requests assigned to your authorized offices are displayed."
         >
-          {(requests ?? []).map((request) => (
-            <tr key={request.id}>
-              <td className={`${cell} font-mono text-xs`}>
-                {request.reference_no ?? "—"}
-              </td>
+          <Table
+            head={[
+              "Reference",
+              "Subject",
+              "Category",
+              "Office",
+              "Status",
+              "Submitted",
+            ]}
+            rows={requests?.length ?? 0}
+            empty="No requests are currently assigned to your offices."
+          >
+            {(requests ?? []).map((request) => (
+              <tr key={request.id}>
+                <td className={`${cell} font-mono text-xs`}>
+                  <Link
+                    href={`/office/requests/${request.id}`}
+                    className="font-bold text-brand-700 underline-offset-4 hover:underline"
+                  >
+                    {request.reference_no ?? "Open request"}
+                  </Link>
+                </td>
 
-              <td className={cell}>
-                <span className="font-bold text-ink">
-                  {request.subject}
-                </span>
-              </td>
+                <td className={cell}>
+                  <span className="font-bold text-ink">
+                    {request.subject}
+                  </span>
+                </td>
 
-              <td className={cell}>
-                {request.category || "—"}
-              </td>
+                <td className={cell}>
+                  {request.category || "—"}
+                </td>
 
-              <td className={cell}>
-                {officeMap.get(
-                  request.assigned_office_id,
-                ) ?? "—"}
-              </td>
+                <td className={cell}>
+                  {officeMap.get(
+                    request.assigned_office_id,
+                  ) ?? "—"}
+                </td>
 
-              <td className={cell}>
-                <StatusBadge
-                  status={request.status}
-                  fallback="Submitted"
-                />
-              </td>
+                <td className={cell}>
+                  <StatusBadge
+                    status={request.status}
+                    fallback="Submitted"
+                  />
+                </td>
 
-              <td className={cell}>
-                {formatDate(request.created_at)}
-              </td>
-            </tr>
-          ))}
-        </Table>
-      </Panel>
+                <td className={cell}>
+                  {formatDate(request.created_at)}
+                </td>
+              </tr>
+            ))}
+          </Table>
+        </Panel>
+      </div>
     </div>
   );
 }
