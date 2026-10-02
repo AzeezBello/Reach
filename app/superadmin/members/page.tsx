@@ -1,228 +1,146 @@
-import type { Metadata } from "next";
+import {
+  Shield,
+  Users,
+} from "lucide-react";
 
 import {
   AdminHeader,
-  Field,
   Panel,
-  SelectField,
   Table,
   cell,
-  labelOptions,
 } from "@/components/admin";
 
-import { ActionForm } from "@/components/action-form";
-
-import {
-  getOrganizationMembers,
-  getOrganizations,
-  getOffices,
-  getProfilesByIds,
-  requireSuperadmin,
-} from "@/lib/admin";
-
-import {
-  assignOrganizationRole,
-  assignOfficeRole,
-  removeOrganizationRole,
-} from "../actions";
-
-export const metadata: Metadata = {
-  title: "Staff & Roles",
-};
+import { requireSuperadmin } from "@/lib/admin";
+import { createClient } from "@/lib/supabase/server";
 
 export default async function MembersPage() {
-  await requireSuperadmin();
+  await requireSuperadmin("/superadmin/members");
 
-  const [
-    organizations,
-    offices,
-    memberships,
-  ] = await Promise.all([
-    getOrganizations(),
-    getOffices(),
-    getOrganizationMembers(),
-  ]);
+  const supabase = await createClient();
 
-  const profiles = await getProfilesByIds(
-    memberships.map(
-      (member) => member.user_id
+  const { data: members } = await supabase
+    .from("organization_members")
+    .select(
+      `
+        id,
+        organization_id,
+        user_id,
+        role,
+        created_at
+      `,
     )
+    .order("created_at", {
+      ascending: false,
+    });
+
+  const userIds = [
+    ...new Set(
+      (members ?? []).map(
+        (member) => member.user_id,
+      ),
+    ),
+  ];
+
+  let profiles: any[] = [];
+
+  if (userIds.length) {
+    const { data } = await supabase
+      .from("profiles")
+      .select(
+        "id, full_name, email, role",
+      )
+      .in("id", userIds);
+
+    profiles = data ?? [];
+  }
+
+  const profileMap = new Map(
+    profiles.map((profile) => [
+      profile.id,
+      profile,
+    ]),
   );
 
   return (
     <div className="space-y-8">
       <AdminHeader
-        eyebrow="Access control"
+        eyebrow="Administration"
         title="Staff & roles"
-        text="Assign organization and office-level access to REACH users."
+        text="View organization memberships and staff access."
       />
 
-      <div className="grid gap-8 xl:grid-cols-2">
-        <Panel
-          title="Organization access"
-          text="Assign platform users to an organization."
-        >
-          <ActionForm
-            action={assignOrganizationRole}
-            submitLabel="Assign organization role"
-          >
-            <div className="space-y-5">
-              <SelectField
-                label="Organization"
-                name="organization_id"
-                required
-                placeholder="Select organization"
-                options={organizations.map(
-                  (organization) => ({
-                    value: organization.id,
-                    label: organization.name,
-                  })
-                )}
-              />
+      <div className="grid gap-4 md:grid-cols-2">
+        <div className="rounded-2xl border bg-white p-5">
+          <Users className="h-5 w-5" />
 
-              <Field
-                label="User email"
-                name="email"
-                type="email"
-                required
-                placeholder="staff@example.com"
-              />
+          <p className="mt-4 text-sm text-slate-500">
+            Organization members
+          </p>
 
-              <SelectField
-                label="Role"
-                name="role"
-                required
-                options={labelOptions([
-                  "org_admin",
-                  "staff",
-                  "admin",
-                  "superadmin",
-                ])}
-              />
-            </div>
-          </ActionForm>
-        </Panel>
+          <p className="text-3xl font-bold">
+            {members?.length ?? 0}
+          </p>
+        </div>
 
-        <Panel
-          title="Office access"
-          text="Assign staff to a specific public office."
-        >
-          <ActionForm
-            action={assignOfficeRole}
-            submitLabel="Assign office role"
-          >
-            <div className="space-y-5">
-              <SelectField
-                label="Office"
-                name="office_id"
-                required
-                placeholder="Select office"
-                options={offices.map(
-                  (office) => ({
-                    value: office.id,
-                    label: office.name,
-                  })
-                )}
-              />
+        <div className="rounded-2xl border bg-white p-5">
+          <Shield className="h-5 w-5" />
 
-              <Field
-                label="User email"
-                name="email"
-                type="email"
-                required
-                placeholder="staff@example.com"
-              />
+          <p className="mt-4 text-sm text-slate-500">
+            Roles
+          </p>
 
-              <SelectField
-                label="Role"
-                name="role"
-                required
-                options={labelOptions([
-                  "office_admin",
-                  "staff",
-                  "admin",
-                ])}
-              />
-            </div>
-          </ActionForm>
-        </Panel>
+          <p className="text-3xl font-bold">
+            {
+              new Set(
+                (members ?? []).map(
+                  (member) => member.role,
+                ),
+              ).size
+            }
+          </p>
+        </div>
       </div>
 
       <Panel
         title="Organization memberships"
-        text={`${memberships.length} membership records`}
+        text="Current organization-level access."
       >
         <Table
           head={[
             "User",
+            "Email",
             "Organization",
             "Role",
-            "",
           ]}
-          rows={memberships.length}
-          empty="No organization memberships yet."
+          rows={members?.length ?? 0}
+          empty="No organization memberships found."
         >
-          {memberships.map((member) => {
-            const profile =
-              profiles.get(member.user_id);
-
-            const organization =
-              organizations.find(
-                (item) =>
-                  item.id ===
-                  member.organization_id
-              );
+          {(members ?? []).map((member) => {
+            const profile = profileMap.get(
+              member.user_id,
+            );
 
             return (
-              <tr
-                key={`${member.organization_id}:${member.user_id}`}
-              >
+              <tr key={member.id}>
                 <td className={cell}>
-                  <span className="block font-bold text-ink">
-                    {profile?.full_name ||
-                      "Unnamed user"}
-                  </span>
-
-                  <span className="text-xs text-slate-500">
-                    {profile?.email ||
-                      member.user_id}
+                  <span className="font-semibold">
+                    {profile?.full_name ??
+                      "Unknown user"}
                   </span>
                 </td>
 
                 <td className={cell}>
-                  {organization?.name || "—"}
+                  {profile?.email ?? "—"}
                 </td>
 
                 <td className={cell}>
-                  {member.role}
+                  {member.organization_id}
                 </td>
 
-                <td
-                  className={`${cell} text-right`}
-                >
-                  <ActionForm
-                    action={
-                      removeOrganizationRole
-                    }
-                    inline
-                    variant="outline"
-                    submitLabel="Remove"
-                    pendingLabel="…"
-                  >
-                    <input
-                      type="hidden"
-                      name="organization_id"
-                      value={
-                        member.organization_id
-                      }
-                    />
-
-                    <input
-                      type="hidden"
-                      name="user_id"
-                      value={member.user_id}
-                    />
-                  </ActionForm>
+                <td className={cell}>
+                  <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-semibold">
+                    {member.role}
+                  </span>
                 </td>
               </tr>
             );

@@ -1,124 +1,192 @@
 "use client";
 
-import Link from "next/link";
-import { type FormEvent, useState } from "react";
-import { AlertCircle, CheckCircle2, LogIn } from "lucide-react";
+import { FormEvent, useState } from "react";
+import { CheckCircle2, Loader2, MapPin, Send } from "lucide-react";
 
-import { buttonClasses } from "@/components/ui";
-import { createClient } from "@/lib/supabase/client";
+type ServiceMatch = {
+  id: string;
+  office_id: string;
+  organization_id: string;
+  title: string;
+  description: string;
+  category: string;
+  score?: number;
+};
 
-const CATEGORIES = [
-  "Roads",
-  "Drainage",
-  "Street Lighting",
-  "Water",
-  "Waste Management",
-  "Education",
-  "Healthcare",
-  "Employment",
-  "Business",
-  "Welfare",
-  "Documentation",
-  "Other",
-];
+type CreatedRequest = {
+  request_id: string;
+  reference_no: string;
+  category: string;
+  office_id: string;
+  office_name: string;
+  organization_id: string;
+};
 
-const inputClasses =
-  "w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-ink placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200";
-
-type Status =
-  | { kind: "idle" }
-  | { kind: "submitting" }
-  | { kind: "error"; message: string }
-  | { kind: "success"; reference: string | null };
-
-export function RequestForm({
-  tenantId,
-  jurisdictionId,
-  userId,
-}: {
-  tenantId: string;
-  jurisdictionId: string | null;
-  userId: string | null;
-}) {
-  const [category, setCategory] = useState(CATEGORIES[0]);
+export default function RequestForm() {
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
-  const [status, setStatus] = useState<Status>({ kind: "idle" });
+  const [jurisdictionId, setJurisdictionId] = useState("");
 
-  async function submit(event: FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+  const [matches, setMatches] = useState<ServiceMatch[]>([]);
+  const [selectedMatch, setSelectedMatch] =
+    useState<ServiceMatch | null>(null);
 
-    if (!userId) {
-      setStatus({
-        kind: "error",
-        message: "Please sign in before submitting a request.",
-      });
+  const [checking, setChecking] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const [result, setResult] = useState<CreatedRequest | null>(null);
+  const [error, setError] = useState("");
+
+  async function findOffice() {
+    setError("");
+    setMatches([]);
+    setSelectedMatch(null);
+
+    if (description.trim().length < 10) {
+      setError(
+        "Please describe your issue in at least a few words.",
+      );
       return;
     }
 
-    setStatus({ kind: "submitting" });
+    setChecking(true);
 
-    const supabase = createClient();
+    try {
+      const response = await fetch(
+        "/api/service-directory/match",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            problemText: `${subject}\n${description}`,
+            jurisdictionId: jurisdictionId || null,
+          }),
+        },
+      );
 
-    const { data, error } = await supabase
-      .from("requests")
-      .insert({
-        resident_id: userId,
-        organization_id: tenantId,
-        jurisdiction_id: jurisdictionId,
-        category,
-        subject: subject.trim(),
-        description: description.trim(),
-      })
-      .select("reference_no")
-      .maybeSingle();
+      const data = await response.json();
 
-    if (error) {
-      setStatus({ kind: "error", message: error.message });
-      return;
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Unable to find an office.",
+        );
+      }
+
+      setMatches(data.matches ?? []);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to find the appropriate office.",
+      );
+    } finally {
+      setChecking(false);
     }
-
-    setSubject("");
-    setDescription("");
-    setStatus({ kind: "success", reference: data?.reference_no ?? null });
   }
 
-  if (status.kind === "success") {
+  async function submitRequest(event: FormEvent) {
+    event.preventDefault();
+
+    setError("");
+    setResult(null);
+    setSubmitting(true);
+
+    try {
+      const response = await fetch("/api/requests", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          subject,
+          description,
+          jurisdictionId: jurisdictionId || null,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(
+          data.error || "Unable to submit request.",
+        );
+      }
+
+      setResult(data.request);
+
+      setSubject("");
+      setDescription("");
+      setMatches([]);
+      setSelectedMatch(null);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Unable to submit your request.",
+      );
+    } finally {
+      setSubmitting(false);
+    }
+  }
+
+  if (result) {
     return (
-      <div className="rounded-3xl border border-brand-200 bg-white p-6 shadow-sm sm:p-8">
-        <span className="flex size-12 items-center justify-center rounded-2xl bg-brand-50 text-brand-700">
-          <CheckCircle2 size={26} />
-        </span>
+      <div className="rounded-3xl border border-emerald-200 bg-emerald-50 p-8">
+        <div className="flex items-start gap-4">
+          <CheckCircle2 className="mt-1 h-7 w-7 text-emerald-600" />
 
-        <h2 className="mt-5 text-2xl font-extrabold text-ink">
-          Your request has been submitted
-        </h2>
+          <div>
+            <h2 className="text-xl font-bold text-slate-900">
+              Request submitted
+            </h2>
 
-        {status.reference ? (
-          <p className="mt-3 text-sm leading-7 text-slate-600">
-            Keep this reference number for follow-up:{" "}
-            <span className="rounded-lg bg-ink px-2.5 py-1 font-mono text-xs font-bold text-white">
-              {status.reference}
-            </span>
-          </p>
-        ) : (
-          <p className="mt-3 text-sm leading-7 text-slate-600">
-            The office has received your request. You can follow its progress
-            from your requests page.
-          </p>
-        )}
+            <p className="mt-2 text-sm text-slate-600">
+              Your request has been submitted and routed for
+              review.
+            </p>
 
-        <div className="mt-6 flex flex-col gap-3 sm:flex-row">
-          <Link href="/dashboard" className={buttonClasses("primary")}>
-            Go to my dashboard
-          </Link>
-          <button
-            type="button"
-            onClick={() => setStatus({ kind: "idle" })}
-            className={buttonClasses("outline")}
-          >
-            Submit another request
-          </button>
+            <div className="mt-6 space-y-3 rounded-2xl bg-white p-5">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-500">
+                  Reference
+                </p>
+
+                <p className="mt-1 font-mono font-bold">
+                  {result.reference_no}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-500">
+                  Assigned office
+                </p>
+
+                <p className="mt-1 font-semibold">
+                  {result.office_name}
+                </p>
+              </div>
+
+              <div>
+                <p className="text-xs uppercase tracking-wide text-slate-500">
+                  Category
+                </p>
+
+                <p className="mt-1">
+                  {result.category || "General request"}
+                </p>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setResult(null)}
+              className="mt-6 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white"
+            >
+              Submit another request
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -126,91 +194,143 @@ export function RequestForm({
 
   return (
     <form
-      onSubmit={submit}
-      className="grid gap-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8"
+      onSubmit={submitRequest}
+      className="space-y-6"
     >
-      {!userId && (
-        <div className="flex flex-col gap-4 rounded-2xl border border-gold-200 bg-gold-100/60 p-4 text-sm leading-6 text-gold-700 sm:flex-row sm:items-center sm:justify-between">
-          <p className="flex items-start gap-2">
-            <LogIn size={18} className="mt-0.5 shrink-0" />
-            You need a resident account to submit a request, so the office can
-            follow up with you.
-          </p>
+      <div>
+        <label className="mb-2 block text-sm font-semibold text-slate-900">
+          What do you need help with?
+        </label>
 
-          <Link
-            href="/login?next=/requests/new"
-            className={buttonClasses("dark", "sm", "shrink-0")}
-          >
-            Sign in or create account
-          </Link>
+        <input
+          value={subject}
+          onChange={(event) => setSubject(event.target.value)}
+          placeholder="e.g. Blocked drainage on my street"
+          className="w-full rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-slate-900"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="mb-2 block text-sm font-semibold text-slate-900">
+          Tell us more
+        </label>
+
+        <textarea
+          value={description}
+          onChange={(event) =>
+            setDescription(event.target.value)
+          }
+          placeholder="Describe the problem, location and any useful details..."
+          rows={6}
+          className="w-full resize-none rounded-xl border border-slate-300 px-4 py-3 outline-none focus:border-slate-900"
+          required
+        />
+      </div>
+
+      <div>
+        <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-900">
+          <MapPin className="h-4 w-4" />
+          Your jurisdiction
+        </label>
+
+        <input
+          value={jurisdictionId}
+          onChange={(event) =>
+            setJurisdictionId(event.target.value)
+          }
+          placeholder="Jurisdiction ID"
+          className="w-full rounded-xl border border-slate-300 px-4 py-3"
+        />
+      </div>
+
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          {error}
         </div>
       )}
 
-      <div>
-        <label htmlFor="category" className="mb-2 block text-sm font-bold text-ink">
-          Category
-        </label>
-        <select
-          id="category"
-          value={category}
-          onChange={(event) => setCategory(event.target.value)}
-          className={inputClasses}
-        >
-          {CATEGORIES.map((item) => (
-            <option key={item}>{item}</option>
-          ))}
-        </select>
-      </div>
+      <button
+        type="button"
+        onClick={findOffice}
+        disabled={checking}
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-slate-300 px-5 py-3 font-semibold text-slate-900 disabled:opacity-50"
+      >
+        {checking ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Finding the right office...
+          </>
+        ) : (
+          <>
+            <MapPin className="h-4 w-4" />
+            Find Who Handles This
+          </>
+        )}
+      </button>
 
-      <div>
-        <label htmlFor="subject" className="mb-2 block text-sm font-bold text-ink">
-          Subject
-        </label>
-        <input
-          id="subject"
-          required
-          maxLength={120}
-          value={subject}
-          onChange={(event) => setSubject(event.target.value)}
-          placeholder="Briefly describe the issue"
-          className={inputClasses}
-        />
-      </div>
+      {matches.length > 0 && (
+        <div className="space-y-3">
+          <h3 className="font-bold text-slate-900">
+            Possible service offices
+          </h3>
 
-      <div>
-        <label htmlFor="description" className="mb-2 block text-sm font-bold text-ink">
-          Description
-        </label>
-        <textarea
-          id="description"
-          required
-          rows={6}
-          value={description}
-          onChange={(event) => setDescription(event.target.value)}
-          placeholder="Where is it, how long has it been happening, and who is affected?"
-          className={inputClasses}
-        />
-        <p className="mt-2 text-xs text-slate-500">
-          Include a street or landmark so the office can locate the issue.
-        </p>
-      </div>
+          {matches.map((match) => {
+            const selected =
+              selectedMatch?.id === match.id;
 
-      {status.kind === "error" && (
-        <p
-          role="alert"
-          className="flex items-start gap-2 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm leading-6 text-red-700"
-        >
-          <AlertCircle size={18} className="mt-0.5 shrink-0" />
-          {status.message}
-        </p>
+            return (
+              <button
+                type="button"
+                key={match.id}
+                onClick={() => setSelectedMatch(match)}
+                className={`w-full rounded-2xl border p-5 text-left transition ${
+                  selected
+                    ? "border-slate-900 bg-slate-50"
+                    : "border-slate-200 bg-white hover:border-slate-400"
+                }`}
+              >
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <p className="font-bold text-slate-900">
+                      {match.title}
+                    </p>
+
+                    <p className="mt-1 text-sm text-slate-600">
+                      {match.description}
+                    </p>
+
+                    <p className="mt-3 text-xs font-semibold uppercase tracking-wide text-slate-500">
+                      {match.category}
+                    </p>
+                  </div>
+
+                  {selected && (
+                    <CheckCircle2 className="h-5 w-5 shrink-0" />
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
       )}
 
       <button
         type="submit"
-        disabled={status.kind === "submitting" || !userId}
-        className={buttonClasses("primary", "lg", "w-full disabled:cursor-not-allowed disabled:opacity-50 sm:w-auto")}
+        disabled={submitting}
+        className="flex w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-3 font-semibold text-white disabled:opacity-50"
       >
-        {status.kind === "submitting" ? "Submitting…" : "Submit request"}
+        {submitting ? (
+          <>
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Submitting...
+          </>
+        ) : (
+          <>
+            <Send className="h-4 w-4" />
+            Submit Request
+          </>
+        )}
       </button>
     </form>
   );
