@@ -2,14 +2,17 @@ import type { Metadata } from "next";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import RequestForm from "@/components/request-form";
-import { Container, Eyebrow } from "@/components/ui";
+import { Container } from "@/components/ui";
 import { getCurrentUser, getTenant } from "@/lib/reach";
 
 export const metadata: Metadata = {
-  title: "Request assistance",
+  title: "Submit a request",
   description:
-    "Tell the civic office about an issue or service request in your community.",
-  alternates: { canonical: "/requests/new" },
+    "Submit a service request and connect with the appropriate public office.",
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default async function NewRequestPage() {
@@ -19,36 +22,52 @@ export default async function NewRequestPage() {
   ]);
 
   return (
-    <section className="bg-slate-50">
-      <Container className="max-w-3xl py-10 md:py-16">
-        <div className="mb-8">
-          <Breadcrumbs
-            items={[
-              { label: "My requests", href: "/requests" },
-              { label: "New request", href: "/requests/new" },
-            ]}
-          />
-        </div>
+    <div className="bg-slate-50">
+      <Container className="py-8 md:py-12">
+        <Breadcrumbs
+          items={[
+            {
+              label: "Requests",
+              href: "/requests",
+            },
+            {
+              label: "New request",
+              href: "/requests/new",
+            },
+          ]}
+        />
 
-        <Eyebrow>{tenant.name}</Eyebrow>
+        <div className="mx-auto mt-8 max-w-3xl">
+          <div className="mb-8">
+            <p className="text-xs font-extrabold uppercase tracking-[0.2em] text-brand-700">
+              Civic service request
+            </p>
 
-        <h1 className="mt-3 text-3xl font-extrabold tracking-tight text-ink text-balance sm:text-4xl md:text-5xl">
-          Request assistance
-        </h1>
+            <h1 className="mt-2 text-3xl font-extrabold tracking-tight text-ink md:text-4xl">
+              How can we help?
+            </h1>
 
-        <p className="mt-4 text-base leading-7 text-slate-600 sm:text-lg">
-          Tell the office about an issue or service request in your community.
-          You will receive a reference number to follow up with.
-        </p>
+            <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
+              Tell us what you need help with. REACH will help identify the
+              appropriate office and route your request.
+            </p>
 
-        <div className="mt-8">
-          <RequestForm
-            tenantId={tenant.id}
-            jurisdictionId={jurisdiction?.id ?? null}
-            userId={user?.id ?? null}
-          />
+            {tenant?.name && tenant.name !== "REACH" && (
+              <p className="mt-3 text-sm text-slate-500">
+                Submitting through{" "}
+                <span className="font-bold text-ink">
+                  {tenant.name}
+                </span>
+                {jurisdiction?.name
+                  ? ` · ${jurisdiction.name}`
+                  : ""}
+              </p>
+            )}
+          </div>
+
+          <RequestForm />
         </div>
       </Container>
-    </section>
+    </div>
   );
 }
