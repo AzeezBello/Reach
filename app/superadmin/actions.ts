@@ -527,3 +527,318 @@ export async function unlinkContentFromLeader(
     return "Collaboration removed.";
   });
 }
+
+
+/* ------------------------------------------------------------------ */
+/* Organization membership                                             */
+/* ------------------------------------------------------------------ */
+
+const MEMBERSHIP_ROLES = [
+  "org_admin",
+  "staff",
+  "admin",
+  "superadmin",
+] as const;
+
+const OFFICE_MEMBER_ROLES = [
+  "staff",
+  "admin",
+  "office_admin",
+] as const;
+
+export async function assignOrganizationRole(
+  _state: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  return run(async () => {
+    await guard();
+
+    const organizationId = required(
+      formData,
+      "organization_id",
+      "Organization"
+    );
+
+    const email = required(
+      formData,
+      "email",
+      "User email"
+    );
+
+    const role = oneOf(
+      required(formData, "role", "Role"),
+      MEMBERSHIP_ROLES,
+      "Role"
+    );
+
+    const profile = await getProfileByEmail(email);
+
+    if (!profile) {
+      throw new Error(
+        "No registered user was found with that email."
+      );
+    }
+
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from("organization_members")
+      .upsert(
+        {
+          organization_id: organizationId,
+          user_id: profile.id,
+          role,
+        },
+        {
+          onConflict: "organization_id,user_id",
+        }
+      );
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    revalidatePath(
+      "/superadmin/organizations"
+    );
+
+    revalidatePath(
+      "/superadmin/members"
+    );
+
+    return `${profile.full_name || email} is now ${role}.`;
+  });
+}
+
+
+export async function assignOfficeRole(
+  _state: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  return run(async () => {
+    await guard();
+
+    const officeId = required(
+      formData,
+      "office_id",
+      "Office"
+    );
+
+    const email = required(
+      formData,
+      "email",
+      "User email"
+    );
+
+    const role = oneOf(
+      required(formData, "role", "Role"),
+      OFFICE_MEMBER_ROLES,
+      "Role"
+    );
+
+    const profile = await getProfileByEmail(email);
+
+    if (!profile) {
+      throw new Error(
+        "No registered user was found with that email."
+      );
+    }
+
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from("office_members")
+      .upsert(
+        {
+          office_id: officeId,
+          user_id: profile.id,
+          role,
+        },
+        {
+          onConflict: "office_id,user_id",
+        }
+      );
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    revalidatePath(
+      "/superadmin/members"
+    );
+
+    return `${profile.full_name || email} is now assigned to the office.`;
+  });
+}
+
+
+export async function removeOrganizationRole(
+  _state: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  return run(async () => {
+    await guard();
+
+    const organizationId = required(
+      formData,
+      "organization_id",
+      "Organization"
+    );
+
+    const userId = required(
+      formData,
+      "user_id",
+      "User"
+    );
+
+    const supabase = await createClient();
+
+    const { error } = await supabase
+      .from("organization_members")
+      .delete()
+      .eq(
+        "organization_id",
+        organizationId
+      )
+      .eq("user_id", userId);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    revalidatePath(
+      "/superadmin/members"
+    );
+
+    return "Organization membership removed.";
+  });
+}
+
+
+
+
+
+const ROUTING_CATEGORIES = [
+  "general",
+  "education",
+  "employment",
+  "health",
+  "housing",
+  "infrastructure",
+  "business",
+  "social_support",
+  "documentation",
+  "community",
+];
+
+export async function createServiceRoute(
+  _state: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  return run(async () => {
+    await guard();
+
+    const organizationId = required(
+      formData,
+      "organization_id",
+      "Organization"
+    );
+
+    const officeId = required(
+      formData,
+      "office_id",
+      "Office"
+    );
+
+    const jurisdictionId =
+      optional(
+        formData,
+        "jurisdiction_id"
+      );
+
+    const category =
+      optional(formData, "category");
+
+    const priorityValue =
+      Number.parseInt(
+        text(formData, "priority") || "100",
+        10
+      );
+
+    const supabase =
+      await createClient();
+
+    const { error } =
+      await supabase
+        .from("service_routes")
+        .insert({
+          organization_id:
+            organizationId,
+          jurisdiction_id:
+            jurisdictionId,
+          category,
+          office_id: officeId,
+          priority:
+            Number.isNaN(priorityValue)
+              ? 100
+              : priorityValue,
+          is_active: checked(
+            formData,
+            "is_active"
+          ),
+        });
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    revalidatePath(
+      "/superadmin/routing"
+    );
+
+    return "Routing rule created.";
+  });
+}
+
+
+export async function setServiceRouteActive(
+  _state: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  return run(async () => {
+    await guard();
+
+    const id = required(
+      formData,
+      "id",
+      "Routing rule"
+    );
+
+    const isActive =
+      text(formData, "is_active") ===
+      "true";
+
+    const supabase =
+      await createClient();
+
+    const { error } =
+      await supabase
+        .from("service_routes")
+        .update({
+          is_active: isActive,
+        })
+        .eq("id", id);
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    revalidatePath(
+      "/superadmin/routing"
+    );
+
+    return isActive
+      ? "Routing rule activated."
+      : "Routing rule disabled.";
+  });
+}

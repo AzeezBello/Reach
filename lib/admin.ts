@@ -333,6 +333,47 @@ export async function getOfficeMembers() {
   return (data ?? []) as OfficeMember[];
 }
 
+export async function getOrganizationMembers() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("organization_members")
+    .select(
+      "organization_id, user_id, role, created_at"
+    )
+    .order("created_at", {
+      ascending: false,
+    });
+
+  assertOk(error);
+
+  return data ?? [];
+}
+
+export async function getServiceRoutes() {
+  const supabase = await createClient();
+
+  const { data, error } = await supabase
+    .from("service_routes")
+    .select(`
+      id,
+      organization_id,
+      jurisdiction_id,
+      category,
+      office_id,
+      priority,
+      is_active,
+      created_at,
+      updated_at
+    `)
+    .order("priority")
+    .order("created_at");
+
+  assertOk(error);
+
+  return data ?? [];
+}
+
 export async function getProfilesByIds(ids: string[]) {
   if (ids.length === 0) return new Map<string, Profile>();
 

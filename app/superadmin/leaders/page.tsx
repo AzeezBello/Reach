@@ -1,27 +1,25 @@
 import type { Metadata } from "next";
-import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
 
 import { ActionForm } from "@/components/action-form";
 import {
   ActiveBadge,
   AdminHeader,
-  CheckboxField,
   Field,
   Panel,
   SelectField,
   Table,
   TextareaField,
   cell,
+  labelOptions,
 } from "@/components/admin";
-import { Badge } from "@/components/ui";
+
 import {
   getAdminContent,
   getAdminLeaders,
   getContentLinks,
+  getOrganizations,
   requireSuperadmin,
 } from "@/lib/admin";
-import { humanize } from "@/lib/format";
 
 import {
   createLeader,
@@ -30,89 +28,103 @@ import {
   unlinkContentFromLeader,
 } from "../actions";
 
-export const metadata: Metadata = { title: "Leaders" };
+export const metadata: Metadata = {
+  title: "Leadership",
+};
 
-export default async function LeadersAdminPage() {
+export default async function LeadersPage() {
   await requireSuperadmin();
 
-  const [leaders, links, content] = await Promise.all([
+  const [leaders, content, links, organizations] = await Promise.all([
     getAdminLeaders(),
-    getContentLinks(),
     getAdminContent(),
+    getContentLinks(),
+    getOrganizations(),
   ]);
 
-  const leaderNames = new Map(leaders.map((leader) => [leader.id, leader.name]));
-  const contentTitles = new Map(
-    content.map((item) => [`${item.type}:${item.id}`, item.title])
+  const contentMap = new Map(
+    content.map((item) => [`${item.type}:${item.id}`, item])
   );
-  const linkCounts = new Map<string, number>();
-  for (const link of links) {
-    linkCounts.set(link.leader_id, (linkCounts.get(link.leader_id) ?? 0) + 1);
-  }
 
-  const contentOptions = content.map((item) => ({
-    value: `${item.type}:${item.id}`,
-    label: `${humanize(item.type)} · ${item.title}`,
-  }));
+  const leaderMap = new Map(
+    leaders.map((leader) => [leader.id, leader])
+  );
 
   return (
     <div className="space-y-8">
       <AdminHeader
-        eyebrow="Public leadership"
-        title="Leaders"
-        text="Leadership profiles shown on the site, and the programmes, opportunities, projects and events each one leads individually or delivers as a joint collaboration."
+        eyebrow="Leadership"
+        title="Leadership database"
+        text="Manage public leadership profiles and connect them to programmes, opportunities, projects and events."
       />
 
-      {leaders.length === 0 && (
-        <p className="rounded-2xl border border-gold-200 bg-gold-100/60 p-4 text-sm leading-6 text-gold-700">
-          The leaders table is empty, so the site is showing its built-in
-          profiles. Run <code className="font-mono">supabase/seed.sql</code> to load
-          the FKL Connect leadership profiles and their collaborations, or create
-          profiles below.
-        </p>
-      )}
-
-      <Panel title="Leadership profiles" text={`${leaders.length} in the database`}>
+      <Panel
+        title="Leadership profiles"
+        text={`${leaders.length} profiles in the database`}
+      >
         <Table
-          head={["Leader", "Level", "Office", "Initiatives", "Status", ""]}
+          head={[
+            "Profile",
+            "Level",
+            "Office",
+            "Status",
+            "",
+          ]}
           rows={leaders.length}
-          empty="No leadership profiles in the database yet."
+          empty="No leadership profiles yet."
         >
           {leaders.map((leader) => (
-            <tr key={leader.id ?? leader.slug}>
+            <tr key={leader.id}>
               <td className={cell}>
-                <span className="block font-bold text-ink">{leader.name}</span>
-                <span className="text-xs text-slate-500">{leader.role}</span>
-              </td>
-              <td className={cell}>{humanize(leader.level, "—")}</td>
-              <td className={cell}>
-                {leader.office ?? "—"}
-                {leader.jurisdiction && (
-                  <span className="block text-xs text-slate-500">{leader.jurisdiction}</span>
-                )}
-              </td>
-              <td className={cell}>{linkCounts.get(leader.id ?? "") ?? 0}</td>
-              <td className={cell}><ActiveBadge active={leader.is_active ?? true} /></td>
-              <td className={`${cell} text-right`}>
-                <div className="flex items-center justify-end gap-3">
-                  <ActionForm
-                    action={setLeaderActive}
-                    inline
-                    variant="outline"
-                    submitLabel={leader.is_active ? "Hide" : "Show"}
-                    pendingLabel="…"
-                  >
-                    <input type="hidden" name="id" value={leader.id ?? ""} />
-                    <input type="hidden" name="is_active" value={leader.is_active ? "false" : "true"} />
-                  </ActionForm>
+                <span className="block font-bold text-ink">
+                  {leader.name}
+                </span>
 
-                  <Link
-                    href={`/leadership/${leader.slug}`}
-                    className="inline-flex items-center gap-1 text-xs font-bold text-brand-700 hover:text-brand-900"
-                  >
-                    View <ArrowUpRight size={14} />
-                  </Link>
-                </div>
+                <span className="text-xs text-slate-500">
+                  {leader.role}
+                </span>
+              </td>
+
+              <td className={cell}>
+                {leader.level_label || leader.level || "—"}
+              </td>
+
+              <td className={cell}>
+                {leader.office || "—"}
+              </td>
+
+              <td className={cell}>
+                <ActiveBadge active={leader.is_active !== false} />
+              </td>
+
+              <td className={`${cell} text-right`}>
+                <ActionForm
+                  action={setLeaderActive}
+                  inline
+                  variant="outline"
+                  submitLabel={
+                    leader.is_active !== false
+                      ? "Hide"
+                      : "Publish"
+                  }
+                  pendingLabel="…"
+                >
+                  <input
+                    type="hidden"
+                    name="id"
+                    value={leader.id ?? ""}
+                  />
+
+                  <input
+                    type="hidden"
+                    name="is_active"
+                    value={
+                      leader.is_active === false
+                        ? "true"
+                        : "false"
+                    }
+                  />
+                </ActionForm>
               </td>
             </tr>
           ))}
@@ -120,116 +132,249 @@ export default async function LeadersAdminPage() {
       </Panel>
 
       <Panel
-        title="Collaborations"
-        text="Who leads what. An item with one leader is an individual initiative; an item with several is a joint collaboration."
+        title="Create leadership profile"
+        text="Use neutral, source-backed descriptions and official public references."
       >
-        <Table
-          head={["Content", "Leader", "Role", ""]}
-          rows={links.length}
-          empty="No collaborations yet. Link a leader to content below."
+        <ActionForm
+          action={createLeader}
+          submitLabel="Create profile"
+          resetOnSuccess
         >
-          {links.map((link) => (
-            <tr key={`${link.content_type}-${link.content_id}-${link.leader_id}`}>
-              <td className={cell}>
-                <span className="block font-bold text-ink">
-                  {contentTitles.get(`${link.content_type}:${link.content_id}`) ?? "Unpublished item"}
-                </span>
-                <span className="text-xs text-slate-500">{humanize(link.content_type)}</span>
-              </td>
-              <td className={cell}>{leaderNames.get(link.leader_id) ?? "—"}</td>
-              <td className={cell}>
-                <Badge tone={link.role === "lead" ? "brand" : "gold"}>
-                  {link.role === "lead" ? "Lead" : "Partner"}
-                </Badge>
-              </td>
-              <td className={`${cell} text-right`}>
-                <ActionForm
-                  action={unlinkContentFromLeader}
-                  inline
-                  variant="outline"
-                  submitLabel="Unlink"
-                  pendingLabel="…"
-                  className="justify-end"
-                >
-                  <input type="hidden" name="content_type" value={link.content_type} />
-                  <input type="hidden" name="content_id" value={link.content_id} />
-                  <input type="hidden" name="leader_id" value={link.leader_id} />
-                </ActionForm>
-              </td>
-            </tr>
-          ))}
-        </Table>
-
-        <div className="mt-6 border-t border-slate-100 pt-6">
-          <h3 className="text-sm font-extrabold text-ink">Link content to a leader</h3>
-
-          <ActionForm action={linkContentToLeader} submitLabel="Add collaboration" resetOnSuccess className="mt-4">
-            <div className="grid gap-5 sm:grid-cols-3">
-              <SelectField
-                label="Leader"
-                name="leader_id"
-                required
-                options={leaders.map((leader) => ({ value: leader.id ?? "", label: leader.name }))}
-                placeholder="Select a leader"
-              />
-              <SelectField
-                label="Content"
-                name="content"
-                required
-                options={contentOptions}
-                placeholder="Select a programme, opportunity, project or event"
-              />
-              <SelectField
-                label="Role"
-                name="role"
-                required
-                defaultValue="lead"
-                options={[
-                  { value: "lead", label: "Lead (individual initiative)" },
-                  { value: "partner", label: "Partner (joint collaboration)" },
-                ]}
-              />
-            </div>
-          </ActionForm>
-        </div>
-      </Panel>
-
-      <Panel title="Create a leadership profile">
-        <ActionForm action={createLeader} submitLabel="Create profile" resetOnSuccess>
           <div className="grid gap-5 sm:grid-cols-2">
-            <Field label="Full name" name="name" required placeholder="e.g. Hon. Adebola Adeyemi" />
-            <Field label="Slug" name="slug" placeholder="Generated from the name if left empty" />
-            <Field label="Role" name="role" required placeholder="e.g. Member, House of Representatives" />
+            <SelectField
+              label="Organization"
+              name="organization_id"
+              required
+              placeholder="Select organization"
+              options={organizations.map((org) => ({
+                value: org.id,
+                label: org.name,
+              }))}
+            />
+
+            <Field
+              label="Full name"
+              name="name"
+              required
+            />
+
+            <Field
+              label="Slug"
+              name="slug"
+              placeholder="Generated from name if blank"
+            />
+
+            <Field
+              label="Role"
+              name="role"
+              required
+            />
+
             <SelectField
               label="Level"
               name="level"
               required
-              defaultValue="federal"
-              options={[
-                { value: "federal", label: "Federal Government" },
-                { value: "state", label: "State Government" },
-                { value: "local", label: "Local Government / LCDA" },
-              ]}
+              options={labelOptions([
+                "federal",
+                "state",
+                "local",
+              ])}
             />
-            <Field label="Level label" name="level_label" placeholder="e.g. Lagos State Government" hint="Shown as the group heading on the leadership page." />
-            <Field label="Office" name="office" placeholder="e.g. House of Representatives, Surulere I Federal Constituency" />
-            <Field label="Jurisdiction" name="jurisdiction" placeholder="e.g. Surulere I Federal Constituency" />
-            <Field label="Constituency" name="constituency" placeholder="e.g. Surulere I Federal Constituency" />
-            <Field label="Photo URL" name="image_url" type="url" placeholder="/images/… or https://…" />
-            <Field label="Sort order" name="sort_order" type="number" defaultValue="0" hint="Lower numbers appear first." />
+
+            <Field
+              label="Level label"
+              name="level_label"
+              placeholder="Federal Government"
+            />
+
+            <Field
+              label="Office"
+              name="office"
+            />
+
+            <Field
+              label="Jurisdiction"
+              name="jurisdiction"
+            />
+
+            <Field
+              label="Constituency"
+              name="constituency"
+            />
+
+            <Field
+              label="Image URL"
+              name="image_url"
+              placeholder="/leaders/person.jpg"
+            />
+
+            <Field
+              label="Sort order"
+              name="sort_order"
+              type="number"
+              defaultValue="0"
+            />
           </div>
-          <TextareaField label="Summary" name="summary" rows={2} placeholder="One or two sentences shown on cards." />
-          <TextareaField label="Biography" name="biography" rows={4} hint="One paragraph per line." />
-          <TextareaField label="Public service" name="service" rows={3} hint="One item per line." />
-          <TextareaField
-            label="Official sources"
-            name="sources"
-            rows={3}
-            placeholder={"National Assembly — Legislator Profile | https://nass.gov.ng/mps/single/588"}
-            hint="One per line as: Label | URL"
-          />
-          <CheckboxField label="Show on the site" name="is_active" defaultChecked />
+
+          <div className="mt-5 space-y-5">
+            <TextareaField
+              label="Summary"
+              name="summary"
+              rows={3}
+            />
+
+            <TextareaField
+              label="Biography"
+              name="biography"
+              rows={5}
+              hint="One paragraph per line."
+            />
+
+            <TextareaField
+              label="Public service"
+              name="service"
+              rows={5}
+              hint="One service item per line."
+            />
+
+            <TextareaField
+              label="Sources"
+              name="sources"
+              rows={5}
+              hint='One per line: Label | https://official-source.example'
+            />
+
+            <label className="flex items-center gap-3 text-sm font-bold text-ink">
+              <input
+                type="checkbox"
+                name="is_active"
+                value="on"
+                defaultChecked
+                className="size-4 rounded border-slate-300 accent-brand-600"
+              />
+
+              Publish profile
+            </label>
+          </div>
         </ActionForm>
+      </Panel>
+
+      <Panel
+        title="Link leader to content"
+        text="Attach a leader as the lead or a collaboration partner."
+      >
+        <ActionForm
+          action={linkContentToLeader}
+          submitLabel="Save collaboration"
+        >
+          <div className="grid gap-5 sm:grid-cols-2">
+            <SelectField
+              label="Leader"
+              name="leader_id"
+              required
+              placeholder="Select leader"
+              options={leaders
+                .filter((leader) => leader.id)
+                .map((leader) => ({
+                  value: leader.id!,
+                  label: leader.name,
+                }))}
+            />
+
+            <SelectField
+              label="Content"
+              name="content"
+              required
+              placeholder="Select content"
+              options={content.map((item) => ({
+                value: `${item.type}:${item.id}`,
+                label: `${item.type.toUpperCase()} — ${item.title}`,
+              }))}
+            />
+
+            <SelectField
+              label="Relationship"
+              name="role"
+              required
+              options={labelOptions([
+                "lead",
+                "partner",
+              ])}
+            />
+          </div>
+        </ActionForm>
+      </Panel>
+
+      <Panel
+        title="Current collaborations"
+        text={`${links.length} leader/content links`}
+      >
+        <Table
+          head={[
+            "Leader",
+            "Content",
+            "Relationship",
+            "",
+          ]}
+          rows={links.length}
+          empty="No collaborations have been created yet."
+        >
+          {links.map((link) => {
+            const leader = leaderMap.get(link.leader_id);
+
+            const item = contentMap.get(
+              `${link.content_type}:${link.content_id}`
+            );
+
+            return (
+              <tr
+                key={`${link.content_type}:${link.content_id}:${link.leader_id}`}
+              >
+                <td className={cell}>
+                  {leader?.name || "Unknown leader"}
+                </td>
+
+                <td className={cell}>
+                  {item?.title || "Unknown content"}
+                </td>
+
+                <td className={cell}>
+                  {link.role === "lead"
+                    ? "Lead"
+                    : "Partner"}
+                </td>
+
+                <td className={`${cell} text-right`}>
+                  <ActionForm
+                    action={unlinkContentFromLeader}
+                    inline
+                    variant="outline"
+                    submitLabel="Remove"
+                    pendingLabel="…"
+                  >
+                    <input
+                      type="hidden"
+                      name="content_type"
+                      value={link.content_type}
+                    />
+
+                    <input
+                      type="hidden"
+                      name="content_id"
+                      value={link.content_id}
+                    />
+
+                    <input
+                      type="hidden"
+                      name="leader_id"
+                      value={link.leader_id}
+                    />
+                  </ActionForm>
+                </td>
+              </tr>
+            );
+          })}
+        </Table>
       </Panel>
     </div>
   );
