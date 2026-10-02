@@ -20,7 +20,6 @@ const LINKS = [
   { href: "/superadmin/staff", label: "Staff", icon: Users },
   { href: "/superadmin/leaders", label: "Leaders", icon: UserRound },
   { href: "/superadmin/requests", label: "Requests", icon: ClipboardList },
-  { href: "/superadmin/leaders", label: "Leadership", icon: UserRound },
   { href: "/superadmin/members", label: "Staff & Roles", icon: Users },
   { href: "/superadmin/routing", label: "Request Routing", icon: ClipboardList },
   { href: "/superadmin/whatsapp", label: "WhatsApp", icon: ClipboardList },
