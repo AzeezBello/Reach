@@ -7,8 +7,7 @@ export const size = { width: 1200, height: 630 };
 export const contentType = "image/png";
 
 export default async function OpenGraphImage() {
-  const { tenant, jurisdiction } = await getTenant().catch(() => ({
-    tenant: { name: "FKL Connect", description: null },
+  const { jurisdiction } = await getTenant().catch(() => ({
     jurisdiction: null,
   }));
 
@@ -121,7 +120,7 @@ export default async function OpenGraphImage() {
             />
             {subtitle}
           </div>
-          <div>{`Serving ${tenant.name}`}</div>
+        <div>REACH · Residents Engagement, Access, Communication &amp; Help</div>
         </div>
       </div>
     ),

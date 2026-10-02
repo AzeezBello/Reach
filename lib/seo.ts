@@ -12,8 +12,8 @@ export function absoluteUrl(path: string) {
   return new URL(path, SITE_URL).toString();
 }
 
-export function siteTitle(tenant: Pick<Tenant, "name">) {
-  return `${PLATFORM_NAME} · Digital Civic Office for ${tenant.name}`;
+export function siteTitle(_tenant: Pick<Tenant, "name">) {
+  return PLATFORM_NAME;
 }
 
 export function siteDescription(
