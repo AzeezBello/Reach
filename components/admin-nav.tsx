@@ -23,6 +23,8 @@ const LINKS = [
   { href: "/superadmin/members", label: "Staff & Roles", icon: Users },
   { href: "/superadmin/routing", label: "Request Routing", icon: ClipboardList },
   { href: "/superadmin/whatsapp", label: "WhatsApp", icon: ClipboardList },
+  { href: "/office", label: "Office Dashboard",},
+  { href: "/superadmin/leader-accounts", label: "Leader Accounts",},
 ];
 
 /** Sidebar on large screens, horizontal scrolling tabs on small ones. */
