@@ -11,7 +11,6 @@ import {
 
 import {
   organizationSchema,
-  siteDescription,
   websiteSchema,
 } from "@/lib/seo";
 

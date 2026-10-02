@@ -8,7 +8,6 @@ import {
   SelectField,
   Table,
   cell,
-  labelOptions,
 } from "@/components/admin";
 
 import { ActionForm } from "@/components/action-form";

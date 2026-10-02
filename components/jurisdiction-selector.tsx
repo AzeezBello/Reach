@@ -10,11 +10,19 @@ type Jurisdiction = {
 };
 
 type Props = {
+  id?: string;
+  name?: string;
+  label?: string;
+  required?: boolean;
   value?: string;
   onChange: (id: string) => void;
 };
 
 export default function JurisdictionSelector({
+  id = "jurisdiction",
+  name,
+  label = "Where is this issue?",
+  required = false,
   value,
   onChange,
 }: Props) {
@@ -79,10 +87,13 @@ export default function JurisdictionSelector({
   return (
     <div>
       <label className="mb-2 block text-sm font-semibold text-slate-900">
-        Where is this issue?
+        {label}
       </label>
 
       <select
+        id={id}
+        name={name}
+        required={required}
         value={value ?? ""}
         onChange={(event) =>
           onChange(event.target.value)

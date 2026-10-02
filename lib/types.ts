@@ -89,6 +89,7 @@ export type Profile = {
   role: string | null;
   email: string | null;
   phone: string | null;
+  home_jurisdiction_id: string | null;
   created_at: string | null;
 };
 

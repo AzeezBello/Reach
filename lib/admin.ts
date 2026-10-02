@@ -108,7 +108,7 @@ export type RequestAccessResult = {
 /* ------------------------------------------------------------------ */
 
 const PROFILE_FIELDS =
-  "id, full_name, role, email, phone, created_at";
+  "id, full_name, role, email, phone, home_jurisdiction_id, created_at";
 
 const ORGANIZATION_FIELDS =
   "id, name, slug, description, logo_url, primary_color, secondary_color, whatsapp_number, email, phone, website, is_active, created_at";

@@ -943,8 +943,10 @@ export async function createServiceRoute(
         "jurisdiction_id"
       );
 
-    const category =
-      optional(formData, "category");
+    const categoryValue = optional(formData, "category");
+    const category = categoryValue
+      ? oneOf(categoryValue, ROUTING_CATEGORIES, "Category")
+      : null;
 
     const priorityValue =
       Number.parseInt(

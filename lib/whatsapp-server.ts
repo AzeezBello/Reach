@@ -506,13 +506,11 @@ async function createNotification({
 }
 
 async function sendAndRecordWhatsApp({
-  organizationId,
   phone,
   phoneNumberId,
   conversationId,
   message,
 }: {
-  organizationId: string;
   phone: string;
   phoneNumberId: string;
   conversationId: string;
@@ -684,7 +682,6 @@ export async function processIncomingWhatsAppMessage(
 
   if (parsed.type === "greeting") {
     await sendAndRecordWhatsApp({
-      organizationId: organization.id,
       phone: message.from,
       phoneNumberId:
         message.phoneNumberId,
@@ -702,7 +699,6 @@ export async function processIncomingWhatsAppMessage(
 
   if (parsed.type === "help") {
     await sendAndRecordWhatsApp({
-      organizationId: organization.id,
       phone: message.from,
       phoneNumberId:
         message.phoneNumberId,
@@ -740,7 +736,6 @@ export async function processIncomingWhatsAppMessage(
       : "I couldn't find that request. Please check the reference number and try again.";
 
     await sendAndRecordWhatsApp({
-      organizationId: organization.id,
       phone: message.from,
       phoneNumberId:
         message.phoneNumberId,
@@ -806,7 +801,6 @@ export async function processIncomingWhatsAppMessage(
     );
 
     await sendAndRecordWhatsApp({
-      organizationId: organization.id,
       phone: message.from,
       phoneNumberId:
         message.phoneNumberId,

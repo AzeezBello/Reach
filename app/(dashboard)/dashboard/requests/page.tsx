@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ClipboardList, Plus } from "lucide-react";
+import { Plus } from "lucide-react";
 
 import {
   AdminHeader,

@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import RequestForm from "@/components/request-form";
 import { Container } from "@/components/ui";
-import { getCurrentUser, getTenant } from "@/lib/reach";
+import { getTenant } from "@/lib/reach";
 
 export const metadata: Metadata = {
   title: "Submit a request",
@@ -16,10 +16,7 @@ export const metadata: Metadata = {
 };
 
 export default async function NewRequestPage() {
-  const [{ tenant, jurisdiction }, user] = await Promise.all([
-    getTenant(),
-    getCurrentUser(),
-  ]);
+  const { tenant, jurisdiction } = await getTenant();
 
   return (
     <div className="bg-slate-50">
