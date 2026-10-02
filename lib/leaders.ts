@@ -83,35 +83,27 @@ function normalize(
     role: row.role as string,
 
     level:
-      (row.level as Leader["level"]) ??
-      null,
+      (row.level as Leader["level"]) ?? null,
 
     level_label:
-      (row.level_label as string | null) ??
-      null,
+      (row.level_label as string | null) ?? null,
 
     office:
-      (row.office as string | null) ??
-      null,
+      (row.office as string | null) ?? null,
 
-    jurisdiction:
-      jurisdictionName,
+    jurisdiction: jurisdictionName,
 
     constituency:
-      (row.constituency as string | null) ??
-      null,
+      (row.constituency as string | null) ?? null,
 
     summary:
-      (row.summary as string | null) ??
-      null,
+      (row.summary as string | null) ?? null,
 
     biography:
-      (row.biography as string[] | null) ??
-      [],
+      (row.biography as string[] | null) ?? [],
 
     service:
-      (row.service as string[] | null) ??
-      [],
+      (row.service as string[] | null) ?? [],
 
     sources: Array.isArray(row.sources)
       ? (row.sources as {
@@ -121,16 +113,13 @@ function normalize(
       : [],
 
     image_url:
-      (row.image_url as string | null) ??
-      null,
+      (row.image_url as string | null) ?? null,
 
     is_active:
-      (row.is_active as boolean | undefined) ??
-      true,
+      (row.is_active as boolean | undefined) ?? true,
 
     sort_order:
-      (row.sort_order as number | undefined) ??
-      0,
+      (row.sort_order as number | undefined) ?? 0,
   };
 }
 
@@ -144,10 +133,7 @@ export const getLeaders = cache(
     try {
       const supabase = createPublicClient();
 
-      const {
-        data,
-        error,
-      } = await supabase
+      const { data, error } = await supabase
         .from("leaders")
         .select(LEADER_FIELDS)
         .eq("is_active", true)
@@ -172,51 +158,39 @@ export const getLeaders = cache(
       }
 
       const rows =
-        data as Record<
-          string,
-          unknown
-        >[];
+        data as Record<string, unknown>[];
 
-      /*
+      /**
        * Resolve jurisdiction IDs to
        * human-readable jurisdiction names.
        */
-      const jurisdictionIds =
-        Array.from(
-          new Set(
-            rows
-              .map(
-                (row) =>
-                  row.jurisdiction_id as
-                    | string
-                    | null,
-              )
-              .filter(
-                (
-                  id,
-                ): id is string =>
-                  Boolean(id),
-              ),
-          ),
-        );
+      const jurisdictionIds = Array.from(
+        new Set(
+          rows
+            .map(
+              (row) =>
+                row.jurisdiction_id as
+                  | string
+                  | null,
+            )
+            .filter(
+              (id): id is string =>
+                Boolean(id),
+            ),
+        ),
+      );
 
       const jurisdictionMap =
         new Map<string, string>();
 
-      if (
-        jurisdictionIds.length > 0
-      ) {
+      if (jurisdictionIds.length > 0) {
         const {
           data: jurisdictions,
-          error:
-            jurisdictionError,
+          error: jurisdictionError,
         } = await supabase
           .from("jurisdictions")
           .select("id, name")
-          .in(
-            "id",
-            jurisdictionIds,
-          );
+          .in("id", jurisdictionIds);
 
         if (jurisdictionError) {
           console.error(
@@ -265,13 +239,11 @@ export const getLeaders = cache(
 export async function getLeader(
   slug: string,
 ) {
-  const leaders =
-    await getLeaders();
+  const leaders = await getLeaders();
 
   return (
     leaders.find(
-      (leader) =>
-        leader.slug === slug,
+      (leader) => leader.slug === slug,
     ) ?? null
   );
 }
@@ -309,17 +281,98 @@ const EMPTY_CONTENT: LeaderContent = {
   events: [],
 };
 
+/**
+ * Resolve the leaders linked to the authenticated user.
+ *
+ * IMPORTANT:
+ * The leaders table does NOT contain profile_id.
+ *
+ * Account linking is handled through:
+ *
+ * profiles.email
+ *      ↓
+ * leader_account_provisioning.email
+ *      ↓
+ * leader_account_provisioning.leader_id
+ *      ↓
+ * leaders.id
+ */
 export async function getLinkedLeaders(
   userId: string,
 ): Promise<Leader[]> {
   const supabase = await createServerClient();
 
-  const { data, error } = await supabase
+  /**
+   * 1. Get the authenticated user's profile email.
+   */
+  const {
+    data: profile,
+    error: profileError,
+  } = await supabase
+    .from("profiles")
+    .select("email")
+    .eq("id", userId)
+    .maybeSingle();
+
+  if (profileError) {
+    throw new Error(profileError.message);
+  }
+
+  if (!profile?.email) {
+    return [];
+  }
+
+  /**
+   * 2. Resolve the user's email through the
+   * leader account provisioning table.
+   *
+   * Only active account links should grant
+   * leader dashboard access.
+   */
+  const {
+    data: provisioning,
+    error: provisioningError,
+  } = await supabase
+    .from("leader_account_provisioning")
+    .select("leader_id")
+    .eq("email", profile.email)
+    .eq("status", "active");
+
+  if (provisioningError) {
+    throw new Error(
+      provisioningError.message,
+    );
+  }
+
+  const leaderIds = Array.from(
+    new Set(
+      (provisioning ?? [])
+        .map((row) => row.leader_id)
+        .filter(
+          (id): id is string =>
+            Boolean(id),
+        ),
+    ),
+  );
+
+  /**
+   * No active leader account is linked
+   * to this user.
+   */
+  if (leaderIds.length === 0) {
+    return [];
+  }
+
+  /**
+   * 3. Load the actual leader records.
+   */
+  const {
+    data,
+    error,
+  } = await supabase
     .from("leaders")
-    .select(
-      "id, slug, name, role, level, level_label, office, jurisdiction_id, constituency, summary, biography, service, sources, image_url, is_active, sort_order",
-    )
-    .eq("profile_id", userId)
+    .select(LEADER_FIELDS)
+    .in("id", leaderIds)
     .eq("is_active", true)
     .order("sort_order")
     .order("name");
@@ -328,22 +381,34 @@ export async function getLinkedLeaders(
     throw new Error(error.message);
   }
 
-  const rows = (data ?? []) as Record<string, unknown>[];
+  const rows =
+    (data ?? []) as Record<
+      string,
+      unknown
+    >[];
 
-  const jurisdictionIds = Array.from(
-    new Set(
-      rows
-        .map(
-          (row) =>
-            row.jurisdiction_id as string | null,
-        )
-        .filter(
-          (id): id is string => Boolean(id),
-        ),
-    ),
-  );
+  /**
+   * 4. Resolve jurisdiction IDs to names.
+   */
+  const jurisdictionIds =
+    Array.from(
+      new Set(
+        rows
+          .map(
+            (row) =>
+              row.jurisdiction_id as
+                | string
+                | null,
+          )
+          .filter(
+            (id): id is string =>
+              Boolean(id),
+          ),
+      ),
+    );
 
-  const jurisdictionMap = new Map<string, string>();
+  const jurisdictionMap =
+    new Map<string, string>();
 
   if (jurisdictionIds.length > 0) {
     const {
@@ -360,7 +425,10 @@ export async function getLinkedLeaders(
       );
     }
 
-    for (const jurisdiction of jurisdictions ?? []) {
+    for (
+      const jurisdiction of
+        jurisdictions ?? []
+    ) {
       jurisdictionMap.set(
         jurisdiction.id,
         jurisdiction.name,
@@ -368,27 +436,45 @@ export async function getLinkedLeaders(
     }
   }
 
-  return rows.map((row) =>
-    normalize(
+  /**
+   * 5. Normalize database records into
+   * the application's Leader type.
+   */
+  return rows.map((row) => {
+    const jurisdictionId =
+      row.jurisdiction_id as
+        | string
+        | null;
+
+    return normalize(
       row,
-      row.jurisdiction_id
+      jurisdictionId
         ? jurisdictionMap.get(
-            row.jurisdiction_id as string,
+            jurisdictionId,
           ) ?? null
         : null,
-    ),
-  );
+    );
+  });
 }
 
-export async function requireLeader(next = "/leader") {
+export async function requireLeader(
+  next = "/leader",
+) {
   const user = await requireUser(next);
-  const leaders = await getLinkedLeaders(user.id);
+
+  const leaders =
+    await getLinkedLeaders(user.id);
 
   if (!leaders.length) {
-    redirect("/dashboard?denied=leader");
+    redirect(
+      "/dashboard?denied=leader",
+    );
   }
 
-  return { user, leaders };
+  return {
+    user,
+    leaders,
+  };
 }
 
 /**
@@ -413,10 +499,7 @@ export async function getLeaderContent(
       .select(
         "content_type, content_id, leader_id, role",
       )
-      .eq(
-        "leader_id",
-        leaderId,
-      );
+      .eq("leader_id", leaderId);
 
     if (
       error ||
@@ -431,20 +514,16 @@ export async function getLeaderContent(
 
     async function load<
       T extends { id: string },
-    >(
-      type: ContentType,
-    ) {
-      const ids =
-        rows
-          .filter(
-            (row) =>
-              row.content_type ===
-              type,
-          )
-          .map(
-            (row) =>
-              row.content_id,
-          );
+    >(type: ContentType) {
+      const ids = rows
+        .filter(
+          (row) =>
+            row.content_type === type,
+        )
+        .map(
+          (row) =>
+            row.content_id,
+        );
 
       if (ids.length === 0) {
         return [] as (
@@ -461,9 +540,7 @@ export async function getLeaderContent(
         data,
         error,
       } = await supabase
-        .from(
-          CONTENT_TABLE[type],
-        )
+        .from(CONTENT_TABLE[type])
         .select(
           CONTENT_FIELDS[type],
         )
@@ -482,30 +559,24 @@ export async function getLeaderContent(
         return [];
       }
 
-      const roles =
-        new Map(
-          rows
-            .filter(
-              (row) =>
-                row.content_type ===
-                type,
-            )
-            .map(
-              (row) => [
-                row.content_id,
-                row.role,
-              ],
-            ),
-        );
+      const roles = new Map(
+        rows
+          .filter(
+            (row) =>
+              row.content_type === type,
+          )
+          .map((row) => [
+            row.content_id,
+            row.role,
+          ]),
+      );
 
       return (
         (data ?? []) as unknown as T[]
       ).map((item) => ({
         ...item,
-
         collaboration:
-          roles.get(item.id) ??
-          "lead",
+          roles.get(item.id) ?? "lead",
       }));
     }
 
@@ -515,18 +586,9 @@ export async function getLeaderContent(
       projects,
       events,
     ] = await Promise.all([
-      load<Programme>(
-        "programme",
-      ),
-
-      load<Opportunity>(
-        "opportunity",
-      ),
-
-      load<Project>(
-        "project",
-      ),
-
+      load<Programme>("programme"),
+      load<Opportunity>("opportunity"),
+      load<Project>("project"),
       load<Event>("event"),
     ]);
 
@@ -564,14 +626,8 @@ export async function getContentLeaders(
       .select(
         "content_type, content_id, leader_id, role",
       )
-      .eq(
-        "content_type",
-        type,
-      )
-      .eq(
-        "content_id",
-        contentId,
-      );
+      .eq("content_type", type)
+      .eq("content_id", contentId);
 
     if (
       error ||
@@ -584,24 +640,19 @@ export async function getContentLeaders(
     const leaders =
       await getLeaders();
 
-    const byId =
-      new Map(
-        leaders.map(
-          (leader) => [
-            leader.id,
-            leader,
-          ],
-        ),
-      );
+    const byId = new Map(
+      leaders.map((leader) => [
+        leader.id,
+        leader,
+      ]),
+    );
 
     return (
       data as ContentLeader[]
     )
       .map((row) => {
         const leader =
-          byId.get(
-            row.leader_id,
-          );
+          byId.get(row.leader_id);
 
         if (!leader) {
           return null;
