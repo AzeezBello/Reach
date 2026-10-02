@@ -1,21 +1,18 @@
 import "server-only";
 
 import { createClient } from "@supabase/supabase-js";
+
 import { sendWhatsAppText } from "@/lib/whatsapp";
 
 const supabaseUrl = process.env.SUPABASE_URL;
-
-const serviceRoleKey =
-  process.env.SUPABASE_SERVICE_ROLE_KEY;
+const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
 if (!supabaseUrl) {
   throw new Error("SUPABASE_URL is missing");
 }
 
 if (!serviceRoleKey) {
-  throw new Error(
-    "SUPABASE_SERVICE_ROLE_KEY is missing",
-  );
+  throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing");
 }
 
 export const adminSupabase = createClient(
@@ -89,19 +86,21 @@ async function resolveOrganization(
     );
   }
 
-  const { data: fallback, error: fallbackError } =
-    await adminSupabase
-      .from("organizations")
-      .select(
-        `
-          id,
-          name,
-          whatsapp_phone_number_id
-        `,
-      )
-      .eq("id", defaultOrganization)
-      .eq("is_active", true)
-      .single();
+  const {
+    data: fallback,
+    error: fallbackError,
+  } = await adminSupabase
+    .from("organizations")
+    .select(
+      `
+        id,
+        name,
+        whatsapp_phone_number_id
+      `,
+    )
+    .eq("id", defaultOrganization)
+    .eq("is_active", true)
+    .single();
 
   if (fallbackError) {
     throw fallbackError;
@@ -110,7 +109,9 @@ async function resolveOrganization(
   return fallback;
 }
 
-async function findResidentByPhone(phone: string) {
+async function findResidentByPhone(
+  phone: string,
+) {
   const normalized = normalizePhone(phone);
 
   const candidates = [
@@ -151,20 +152,26 @@ async function getOrCreateConversation({
   phone: string;
   residentId?: string | null;
 }) {
-  const storedPhone = formatPhoneForStorage(phone);
+  const storedPhone =
+    formatPhoneForStorage(phone);
 
-  const { data: existing, error } =
-    await adminSupabase
-      .from("whatsapp_conversations")
-      .select("*")
-      .eq("organization_id", organizationId)
-      .eq("phone_number", storedPhone)
-      .eq("status", "open")
-      .order("created_at", {
-        ascending: false,
-      })
-      .limit(1)
-      .maybeSingle();
+  const {
+    data: existing,
+    error,
+  } = await adminSupabase
+    .from("whatsapp_conversations")
+    .select("*")
+    .eq(
+      "organization_id",
+      organizationId,
+    )
+    .eq("phone_number", storedPhone)
+    .eq("status", "open")
+    .order("created_at", {
+      ascending: false,
+    })
+    .limit(1)
+    .maybeSingle();
 
   if (error) {
     throw error;
@@ -179,8 +186,10 @@ async function getOrCreateConversation({
         .from("whatsapp_conversations")
         .update({
           resident_id: residentId,
-          last_message_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
+          last_message_at:
+            new Date().toISOString(),
+          updated_at:
+            new Date().toISOString(),
         })
         .eq("id", existing.id);
     }
@@ -188,18 +197,21 @@ async function getOrCreateConversation({
     return existing;
   }
 
-  const { data, error: insertError } =
-    await adminSupabase
-      .from("whatsapp_conversations")
-      .insert({
-        organization_id: organizationId,
-        resident_id: residentId ?? null,
-        phone_number: storedPhone,
-        status: "open",
-        last_message_at: new Date().toISOString(),
-      })
-      .select("*")
-      .single();
+  const {
+    data,
+    error: insertError,
+  } = await adminSupabase
+    .from("whatsapp_conversations")
+    .insert({
+      organization_id: organizationId,
+      resident_id: residentId ?? null,
+      phone_number: storedPhone,
+      status: "open",
+      last_message_at:
+        new Date().toISOString(),
+    })
+    .select("*")
+    .single();
 
   if (insertError) {
     throw insertError;
@@ -232,20 +244,22 @@ async function storeIncomingMessage({
     };
   }
 
-  const { data, error } =
-    await adminSupabase
-      .from("whatsapp_messages")
-      .insert({
-        conversation_id: conversationId,
-        direction: "inbound",
-        provider_message_id:
-          message.messageId,
-        message_type: message.type,
-        body: message.body || null,
-        status: "received",
-      })
-      .select("id")
-      .single();
+  const {
+    data,
+    error,
+  } = await adminSupabase
+    .from("whatsapp_messages")
+    .insert({
+      conversation_id: conversationId,
+      direction: "inbound",
+      provider_message_id:
+        message.messageId,
+      message_type: message.type,
+      body: message.body || null,
+      status: "received",
+    })
+    .select("id")
+    .single();
 
   if (error) {
     throw error;
@@ -264,9 +278,13 @@ async function findRoute({
   organizationId: string;
   category: string;
 }) {
-  const normalized = normalizeCategory(category);
+  const normalized =
+    normalizeCategory(category);
 
-  const { data, error } = await adminSupabase
+  const {
+    data,
+    error,
+  } = await adminSupabase
     .from("service_routes")
     .select(
       `
@@ -284,7 +302,10 @@ async function findRoute({
         )
       `,
     )
-    .eq("organization_id", organizationId)
+    .eq(
+      "organization_id",
+      organizationId,
+    )
     .eq("is_active", true)
     .order("priority", {
       ascending: true,
@@ -328,7 +349,9 @@ function parseRequestMessage(body: string) {
   const lower = trimmed.toLowerCase();
 
   if (
-    ["hi", "hello", "hey", "start"].includes(lower)
+    ["hi", "hello", "hey", "start"].includes(
+      lower,
+    )
   ) {
     return {
       type: "greeting" as const,
@@ -336,7 +359,9 @@ function parseRequestMessage(body: string) {
   }
 
   if (
-    ["help", "menu", "options"].includes(lower)
+    ["help", "menu", "options"].includes(
+      lower,
+    )
   ) {
     return {
       type: "help" as const,
@@ -356,7 +381,9 @@ function parseRequestMessage(body: string) {
   }
 
   if (lower.startsWith("request ")) {
-    const content = trimmed.substring(8).trim();
+    const content = trimmed
+      .substring(8)
+      .trim();
 
     const separator =
       content.indexOf(":");
@@ -403,34 +430,36 @@ async function createReachRequest({
     category,
   });
 
-  const { data: request, error } =
-    await adminSupabase
-      .from("requests")
-      .insert({
-        organization_id: organizationId,
-        resident_id: residentId ?? null,
+  const {
+    data: request,
+    error,
+  } = await adminSupabase
+    .from("requests")
+    .insert({
+      organization_id: organizationId,
+      resident_id: residentId ?? null,
+      category,
+      subject: `WhatsApp Request: ${category}`,
+      description,
+      status: "submitted",
+      assigned_office_id:
+        route?.office_id ?? null,
+      routed_at: route
+        ? new Date().toISOString()
+        : null,
+    })
+    .select(
+      `
+        id,
+        reference_no,
         category,
-        subject: `WhatsApp Request: ${category}`,
+        subject,
         description,
-        status: "submitted",
-        assigned_office_id:
-          route?.office_id ?? null,
-        routed_at: route
-          ? new Date().toISOString()
-          : null,
-      })
-      .select(
-        `
-          id,
-          reference_no,
-          category,
-          subject,
-          description,
-          status,
-          assigned_office_id
-        `,
-      )
-      .single();
+        status,
+        assigned_office_id
+      `,
+    )
+    .single();
 
   if (error) {
     throw error;
@@ -453,19 +482,21 @@ async function createNotification({
   title: string;
   message: string;
 }) {
-  const { data, error } =
-    await adminSupabase
-      .from("notifications")
-      .insert({
-        organization_id: organizationId,
-        resident_id: residentId,
-        channel: "whatsapp",
-        title,
-        message,
-        status: "queued",
-      })
-      .select("id")
-      .single();
+  const {
+    data,
+    error,
+  } = await adminSupabase
+    .from("notifications")
+    .insert({
+      organization_id: organizationId,
+      resident_id: residentId,
+      channel: "whatsapp",
+      title,
+      message,
+      status: "queued",
+    })
+    .select("id")
+    .single();
 
   if (error) {
     throw error;
@@ -496,20 +527,22 @@ async function sendAndRecordWhatsApp({
   const providerMessageId =
     result.messages?.[0]?.id ?? null;
 
-  const { data: stored, error } =
-    await adminSupabase
-      .from("whatsapp_messages")
-      .insert({
-        conversation_id: conversationId,
-        direction: "outbound",
-        provider_message_id:
-          providerMessageId,
-        message_type: "text",
-        body: message,
-        status: "sent",
-      })
-      .select("id")
-      .single();
+  const {
+    data: stored,
+    error,
+  } = await adminSupabase
+    .from("whatsapp_messages")
+    .insert({
+      conversation_id: conversationId,
+      direction: "outbound",
+      provider_message_id:
+        providerMessageId,
+      message_type: "text",
+      body: message,
+      status: "sent",
+    })
+    .select("id")
+    .single();
 
   if (error) {
     console.error(
@@ -564,8 +597,10 @@ async function statusLookup({
     );
   }
 
-  const { data, error } =
-    await query.maybeSingle();
+  const {
+    data,
+    error,
+  } = await query.maybeSingle();
 
   if (error) {
     throw error;
@@ -589,7 +624,9 @@ function helpMessage() {
   ].join("\n");
 }
 
-function greetingMessage(organizationName: string) {
+function greetingMessage(
+  organizationName: string,
+) {
   return [
     `Welcome to *${organizationName} Resident Services*.`,
     "",
@@ -608,13 +645,16 @@ export async function processIncomingWhatsAppMessage(
     );
 
   const resident =
-    await findResidentByPhone(message.from);
+    await findResidentByPhone(
+      message.from,
+    );
 
   const conversation =
     await getOrCreateConversation({
       organizationId: organization.id,
       phone: message.from,
-      residentId: resident?.id ?? null,
+      residentId:
+        resident?.id ?? null,
     });
 
   const stored =
@@ -646,7 +686,8 @@ export async function processIncomingWhatsAppMessage(
     await sendAndRecordWhatsApp({
       organizationId: organization.id,
       phone: message.from,
-      phoneNumberId: message.phoneNumberId,
+      phoneNumberId:
+        message.phoneNumberId,
       conversationId: conversation.id,
       message: greetingMessage(
         organization.name,
@@ -663,7 +704,8 @@ export async function processIncomingWhatsAppMessage(
     await sendAndRecordWhatsApp({
       organizationId: organization.id,
       phone: message.from,
-      phoneNumberId: message.phoneNumberId,
+      phoneNumberId:
+        message.phoneNumberId,
       conversationId: conversation.id,
       message: helpMessage(),
     });
@@ -677,7 +719,8 @@ export async function processIncomingWhatsAppMessage(
   if (parsed.type === "status") {
     const request =
       await statusLookup({
-        organizationId: organization.id,
+        organizationId:
+          organization.id,
         reference:
           parsed.reference || "",
         residentId:
@@ -689,14 +732,18 @@ export async function processIncomingWhatsAppMessage(
           `*Request ${request.reference_no}*`,
           "",
           `Category: ${request.category}`,
-          `Status: ${request.status.replaceAll("_", " ")}`,
+          `Status: ${request.status.replaceAll(
+            "_",
+            " ",
+          )}`,
         ].join("\n")
       : "I couldn't find that request. Please check the reference number and try again.";
 
     await sendAndRecordWhatsApp({
       organizationId: organization.id,
       phone: message.from,
-      phoneNumberId: message.phoneNumberId,
+      phoneNumberId:
+        message.phoneNumberId,
       conversationId: conversation.id,
       message: response,
     });
@@ -717,7 +764,8 @@ export async function processIncomingWhatsAppMessage(
       residentId:
         resident?.id ?? null,
       category: parsed.category,
-      description: parsed.description,
+      description:
+        parsed.description,
     });
 
     let response = [
@@ -725,12 +773,26 @@ export async function processIncomingWhatsAppMessage(
       "",
       `Reference: *${request.reference_no}*`,
       `Category: ${request.category}`,
-      `Status: Submitted`,
+      "Status: Submitted",
     ];
 
-    if (route?.offices) {
+    /*
+     * Supabase nested relationships may be
+     * returned as an array depending on the
+     * relationship cardinality.
+     *
+     * Normalize the value before accessing
+     * the office name.
+     */
+    const assignedOffice = Array.isArray(
+      route?.offices,
+    )
+      ? route.offices[0]
+      : route?.offices;
+
+    if (assignedOffice) {
       response.push(
-        `Assigned office: ${route.offices.name}`,
+        `Assigned office: ${assignedOffice.name}`,
       );
     } else {
       response.push(
@@ -746,24 +808,29 @@ export async function processIncomingWhatsAppMessage(
     await sendAndRecordWhatsApp({
       organizationId: organization.id,
       phone: message.from,
-      phoneNumberId: message.phoneNumberId,
+      phoneNumberId:
+        message.phoneNumberId,
       conversationId: conversation.id,
-      message: response.join("\n"),
+      message:
+        response.join("\n"),
     });
 
     if (resident?.id) {
       const notification =
         await createNotification({
-          organizationId: organization.id,
+          organizationId:
+            organization.id,
           residentId: resident.id,
-          title: "WhatsApp request received",
+          title:
+            "WhatsApp request received",
           message: `Your request ${request.reference_no} has been received.`,
         });
 
       await adminSupabase
         .from("notification_deliveries")
         .insert({
-          notification_id: notification.id,
+          notification_id:
+            notification.id,
           channel: "whatsapp",
           provider: "meta",
           provider_message_id:
@@ -779,7 +846,8 @@ export async function processIncomingWhatsAppMessage(
       handled: true,
       type: parsed.type,
       requestId: request.id,
-      referenceNo: request.reference_no,
+      referenceNo:
+        request.reference_no,
       officeId:
         route?.office_id ?? null,
     };

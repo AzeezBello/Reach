@@ -1,6 +1,6 @@
 import { cache } from "react";
 
-import { staticLeaders } from "@/lib/leadership";
+// import { staticLeaders } from "@/lib/leadership";
 import { createClient } from "@/lib/supabase/server";
 import type {
   CollaborationRole,
@@ -67,8 +67,11 @@ function normalize(row: Record<string, unknown>): Leader {
 }
 
 /**
- * Active leadership profiles. Falls back to the built-in profiles when the
- * `leaders` table has not been migrated or seeded yet.
+ * Active leadership profiles from Supabase.
+ *
+ * Supabase is the single source of truth for leadership content.
+ * We intentionally do not fall back to a local JSON dataset so that
+ * production cannot silently serve stale leadership information.
  */
 export const getLeaders = cache(async (): Promise<Leader[]> => {
   try {
@@ -81,13 +84,13 @@ export const getLeaders = cache(async (): Promise<Leader[]> => {
       .order("sort_order")
       .order("name");
 
-    if (error || !data || data.length === 0) {
-      return staticLeaders;
+    if (error || !data) {
+      return [];
     }
 
     return (data as Record<string, unknown>[]).map(normalize);
   } catch {
-    return staticLeaders;
+    return [];
   }
 });
 

@@ -68,11 +68,13 @@ export async function POST(
     let sent = 0;
     let failed = 0;
 
-    for (const delivery of
-      deliveries ?? []) {
+    for (const delivery of deliveries ?? []) {
       try {
-        const notification =
-          delivery.notifications;
+        const notification = Array.isArray(
+          delivery.notifications,
+        )
+          ? delivery.notifications[0]
+          : delivery.notifications;
 
         if (!notification) {
           continue;
@@ -110,8 +112,7 @@ export async function POST(
 
         if (
           !resident?.phone ||
-          !organization
-            ?.whatsapp_phone_number_id
+          !organization?.whatsapp_phone_number_id
         ) {
           throw new Error(
             "Resident phone or WhatsApp phone number ID missing",
@@ -128,8 +129,7 @@ export async function POST(
           });
 
         const providerMessageId =
-          result.messages?.[0]?.id ??
-          null;
+          result.messages?.[0]?.id ?? null;
 
         await adminSupabase
           .from("notification_deliveries")
