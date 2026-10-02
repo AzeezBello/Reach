@@ -309,20 +309,75 @@ const EMPTY_CONTENT: LeaderContent = {
   events: [],
 };
 
-export async function getLinkedLeaders(userId: string): Promise<Leader[]> {
+export async function getLinkedLeaders(
+  userId: string,
+): Promise<Leader[]> {
   const supabase = await createServerClient();
+
   const { data, error } = await supabase
     .from("leaders")
     .select(
-      "id, slug, name, role, level, level_label, office, jurisdiction, constituency, summary, biography, service, sources, image_url, is_active, sort_order",
+      "id, slug, name, role, level, level_label, office, jurisdiction_id, constituency, summary, biography, service, sources, image_url, is_active, sort_order",
     )
     .eq("profile_id", userId)
     .eq("is_active", true)
     .order("sort_order")
     .order("name");
 
-  if (error) throw new Error(error.message);
-  return (data ?? []) as Leader[];
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const rows = (data ?? []) as Record<string, unknown>[];
+
+  const jurisdictionIds = Array.from(
+    new Set(
+      rows
+        .map(
+          (row) =>
+            row.jurisdiction_id as string | null,
+        )
+        .filter(
+          (id): id is string => Boolean(id),
+        ),
+    ),
+  );
+
+  const jurisdictionMap = new Map<string, string>();
+
+  if (jurisdictionIds.length > 0) {
+    const {
+      data: jurisdictions,
+      error: jurisdictionError,
+    } = await supabase
+      .from("jurisdictions")
+      .select("id, name")
+      .in("id", jurisdictionIds);
+
+    if (jurisdictionError) {
+      throw new Error(
+        jurisdictionError.message,
+      );
+    }
+
+    for (const jurisdiction of jurisdictions ?? []) {
+      jurisdictionMap.set(
+        jurisdiction.id,
+        jurisdiction.name,
+      );
+    }
+  }
+
+  return rows.map((row) =>
+    normalize(
+      row,
+      row.jurisdiction_id
+        ? jurisdictionMap.get(
+            row.jurisdiction_id as string,
+          ) ?? null
+        : null,
+    ),
+  );
 }
 
 export async function requireLeader(next = "/leader") {
