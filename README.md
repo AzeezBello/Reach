@@ -1,45 +1,55 @@
-
 # REACH
 
-### Residents Engagement, Access, Communication & Help
+## Residents Engagement, Access, Communication & Help
 
-**REACH** is a digital civic office platform that connects residents with public-service offices, programmes, opportunities, community projects, and service-request workflows through a single digital experience.
+**REACH** is a multi-tenant digital civic-service platform that connects residents with public-service offices, programmes, opportunities, community projects, service requests, and digital constituency/office services.
 
-REACH is designed as a **multi-tenant platform**. A single codebase can power multiple civic offices, constituencies, jurisdictions, agencies, or community organizations while keeping their data and branding logically separated.
+REACH is designed to provide a common platform that can power multiple:
 
----
+* Public offices
+* Constituency offices
+* Government jurisdictions
+* Local government offices
+* Community organizations
+* Public agencies
 
-## Overview
-
-REACH transforms the traditional physical constituency/public office into a digital service platform.
-
-Residents can:
-
-* Discover available programmes
-* Find scholarships, jobs, training, grants, and other opportunities
-* Submit community and service requests
-* Track submitted requests
-* View public/community projects
-* Access their digital civic office
-* Create an account and securely sign in
-* Use a personal dashboard to follow requests, applications and notifications
-* Receive future communications through WhatsApp and other channels
-
-Administrators and staff can manage:
-
-* Residents
-* Service requests
-* Programmes
-* Opportunities
-* Community projects
-* Office staff
-* Jurisdictions
-* Notifications
-* Operational activity and audit records
+The first deployment is **FKL Connect**, powered by the REACH platform.
 
 ---
 
-# Product Architecture
+# 1. Product Vision
+
+REACH transforms the traditional physical public office into a digital service platform.
+
+Instead of requiring residents to understand which government office handles a particular problem, REACH is designed around the resident's need:
+
+```text
+Resident
+   │
+   ▼
+Describe a problem or need
+   │
+   ▼
+REACH identifies the relevant service
+   │
+   ▼
+REACH identifies the responsible office
+   │
+   ▼
+Request is routed
+   │
+   ▼
+Office processes request
+   │
+   ▼
+Resident tracks progress
+```
+
+The long-term goal is a **REACH Network** connecting residents with relevant public-service organizations across multiple jurisdictions.
+
+---
+
+# 2. Product Architecture
 
 ```text
 REACH
@@ -48,10 +58,12 @@ REACH
 │   ├── Organizations
 │   ├── Jurisdictions
 │   ├── Offices
-│   └── Users / Roles
+│   ├── Users
+│   └── Roles
 │
 ├── Civic Services
 │   ├── Requests
+│   ├── Request Routing
 │   ├── Request Tracking
 │   ├── Programmes
 │   ├── Opportunities
@@ -62,21 +74,31 @@ REACH
 │   ├── Profile
 │   ├── Dashboard
 │   ├── Applications
-│   └── Requests
+│   ├── Requests
+│   └── Notifications
+│
+├── Leadership
+│   ├── Public Profiles
+│   ├── Service Records
+│   ├── Content Credits
+│   └── Account Provisioning
 │
 └── Administration
+    ├── Platform Administration
+    ├── Organization Administration
     ├── Office Dashboard
     ├── Staff
     ├── Requests
     ├── Programmes
-    ├── Projects
     ├── Opportunities
+    ├── Projects
+    ├── Leadership
     └── Analytics
 ```
 
 ---
 
-# Core Concepts
+# 3. Core Concepts
 
 ## Organization
 
@@ -87,173 +109,281 @@ Examples:
 * Civic office
 * Constituency office
 * Public agency
+* Local government
 * Community organization
-* Local government office
 
-Each organization can have its own:
+Organizations can have:
 
 * Name
+* Slug
 * Logo
 * Description
 * Brand colors
 * Contact information
-* WhatsApp number
 * Website
+* WhatsApp contact
+* Active/inactive status
+
+Every organization-owned record should be scoped using:
+
+```text
+organization_id
+```
 
 ---
 
 ## Jurisdiction
 
-A jurisdiction defines the geographic or administrative area served by an office.
+A jurisdiction represents the geographic or administrative area served by an organization or office.
 
 Supported jurisdiction types include:
 
-* State
-* Senatorial District
-* Federal Constituency
-* State Constituency
-* LGA
-* LCDA
-* Ward
-* Community
+```text
+state
+senatorial_district
+federal_constituency
+state_constituency
+lga
+lcda
+ward
+community
+```
 
-Jurisdictions can have parent/child relationships, allowing REACH to model government and community structures.
+Jurisdictions can have parent/child relationships.
+
+Example:
+
+```text
+Lagos State
+    │
+    └── Lagos Central Senatorial District
+          │
+          └── Surulere Federal Constituency
+                │
+                ├── Surulere LGA
+                │
+                └── Itire-Ikate LCDA
+```
 
 ---
 
 ## Office
 
-An organization can operate one or more offices.
+An office represents the operational service point responsible for residents or a jurisdiction.
 
 Supported office types include:
 
-* Governor
-* Senator
-* House of Representatives
-* House of Assembly
-* LGA
-* LCDA
-* Councillor
-* Public Agency
-* Community Office
-* Other
+```text
+governor
+senator
+house_of_representatives
+house_of_assembly
+lga
+lcda
+councillor
+public_agency
+community_office
+other
+```
 
 ---
 
-# Current Features
+# 4. Current Features
 
 ## Public Civic Portal
 
-The public-facing REACH application provides:
+The public REACH experience currently supports:
 
 * Organization branding
 * Jurisdiction information
 * Programme discovery
 * Opportunity discovery
 * Project discovery
-* Service-request entry points
+* Events
+* Leadership profiles
+* Civic request submission
 * Resident authentication
-* Breadcrumbs, canonical URLs, Open Graph share images and JSON-LD structured data on every page
-* `sitemap.xml`, `robots.txt` and `llms.txt` generated from live content
+* Request tracking
+* Responsive mobile/desktop UI
+* SEO metadata
+* Canonical URLs
+* Open Graph metadata
+* JSON-LD structured data
+* `sitemap.xml`
+* `robots.txt`
+* `llms.txt`
 
 ---
 
-## Brand & Media
+# 5. Homepage
 
-The app is branded **REACH** in the header, footer, page titles and share image; the tenant (FKL Connect) is named in the footer, metadata and structured data. The identity uses a leaf-green primary, a gold accent and a deep green-black "ink" for dark sections. The palette lives in `app/globals.css` as Tailwind theme tokens (`brand-*`, `gold-*`, `ink`).
-
-Brand assets live in `public/brand/`:
+The homepage is structured around the resident journey:
 
 ```text
-public/brand/logo.svg          Horizontal logo for light backgrounds
-public/brand/logo-white.svg    Horizontal logo for dark backgrounds
-public/brand/logo-mark.svg     Square mark (also used as the favicon via app/icon.svg)
+Hero
+  ↓
+Quick Actions
+  ↓
+Service Discovery
+  ↓
+How REACH Works
+  ↓
+Community Media
+  ↓
+Programmes
+  ↓
+Opportunities
+  ↓
+Projects
+  ↓
+Events
+  ↓
+Leadership
+  ↓
+Request Help
 ```
 
-Photos and videos in `public/images` and `public/videos` keep their original export names. `lib/media.ts` assigns each one a role and alt text, so pages never reference raw filenames. Videos only download when a resident taps play; the hero clip auto-plays muted on larger screens unless the visitor prefers reduced motion or reduced data.
-
-The social share image is generated at build time from `app/opengraph-image.tsx`.
+The homepage is intentionally designed to prioritize **services and resident actions** rather than administrative information.
 
 ---
 
-## Resident Dashboard
+# 6. Civic Requests
 
-Signed-in residents have a dashboard at `/dashboard` showing:
+Residents can submit requests to public-service offices.
 
-* Request statistics (submitted, open, resolved)
-* Recent requests with links to a per-request page (`/requests/[id]`) that shows the status timeline from `request_updates`
+Example request categories:
+
+* Roads
+* Drainage
+* Street lighting
+* Water
+* Waste management
+* Education
+* Healthcare
+* Employment
+* Business
+* Welfare
+* Documentation
+* Other
+
+A request contains:
+
+```text
+reference_no
+resident_id
+organization_id
+jurisdiction_id
+assigned_office_id
+category
+subject
+description
+status
+staff_notes
+created_at
+updated_at
+```
+
+Request statuses:
+
+```text
+submitted
+under_review
+in_progress
+resolved
+closed
+```
+
+---
+
+# 7. Intelligent Request Routing
+
+REACH contains the foundation for a service-routing system.
+
+The intended flow is:
+
+```text
+Resident describes problem
+          │
+          ▼
+Service directory
+          │
+          ▼
+Problem classification
+          │
+          ▼
+Jurisdiction detection
+          │
+          ▼
+Responsible office
+          │
+          ▼
+Request creation
+          │
+          ▼
+Office workflow
+```
+
+The platform currently includes service directory and routing infrastructure.
+
+The long-term objective is a **"Who Handles This?"** system that removes the need for residents to know which government level or office is responsible for their issue.
+
+---
+
+# 8. Request Status Workflow
+
+Protected request status changes are handled through the database function:
+
+```text
+update_request_status()
+```
+
+The workflow atomically:
+
+1. Validates the authenticated user.
+2. Checks the user's role.
+3. Checks office access where required.
+4. Locks the request.
+5. Updates the request status.
+6. Updates `updated_at`.
+7. Creates a `request_updates` timeline entry.
+
+This prevents the application from separately updating the request and timeline in a way that could leave inconsistent state.
+
+---
+
+# 9. Resident Dashboard
+
+Authenticated residents use:
+
+```text
+/dashboard
+```
+
+The dashboard provides:
+
+* Request statistics
+* Recent requests
+* Request history
+* Request status
+* Request timelines
 * Programme applications
-* Events the resident has RSVPed to
-* Notifications sent to the resident
-* An editable profile (full name and phone number)
+* Events/RSVPs
+* Notifications
+* Profile information
 
----
-
-## Superadmin Console
-
-Platform administrators manage every tenant from `/superadmin`:
-
-The platform console uses its own responsive administration shell, separate from the resident and office dashboard navigation.
-
-| Page | What it does |
-| --- | --- |
-| `/superadmin` | Platform-wide counts and the latest requests |
-| `/superadmin/organizations` | List, create, activate and deactivate organizations; edit branding and contact details |
-| `/superadmin/jurisdictions` | List and create jurisdictions, including parent/child nesting |
-| `/superadmin/offices` | List, create, activate and deactivate offices |
-| `/superadmin/staff` | Attach resident accounts to offices as staff or admin |
-| `/superadmin/members` | Assign existing accounts to organizations, update membership roles and remove memberships |
-| `/superadmin/leader-accounts` | Link existing REACH accounts or invite leaders by verified email; invitees set their own password |
-| `/superadmin/leaders` | Add, edit, publish and archive leadership profiles; link leaders to programmes, opportunities, projects and events |
-| `/superadmin/requests` | Update request status, post a note to the resident's timeline and keep internal staff notes |
-
-Access is granted to accounts whose `profiles.role` is `admin` or `superadmin`. Every page and server action re-checks the role; row-level security must also allow these operations for the role.
-
-Residents use `/dashboard`, office staff use the separate `/office` workspace, and accounts linked to an active leadership profile use `/leader`. Each workspace has its own navigation and access checks. Leader invitations require a valid server-side `SUPABASE_SERVICE_ROLE_KEY` and an allowed Supabase redirect URL; invitees choose their own password.
-
----
-
-## Events
-
-Offices publish dated activities such as **Acada Carnival**, community fitness days and town halls.
-
-Event records contain:
-
-* Title, slug, summary, description, category
-* Venue and location
-* Start and end time
-* Registration URL and capacity
-* Status (`draft`, `published`, `cancelled`)
-* Image and a featured flag
-
-Signed-in residents can RSVP from the event page; the attendee count is shown publicly without exposing who is attending. Events appear on the homepage, at `/events`, in the sitemap, in `llms.txt`, and on the resident dashboard.
-
----
-
-## Leadership Profiles & Collaborations
-
-Public office holders connected to the community have profile pages at `/leadership/[slug]` with biography, public-service record and official reference sources.
-
-Profiles live in the `leaders` table and are grouped by level (`federal`, `state`, `local`). The `20261002020000_refresh_leader_profiles.sql` migration upserts ten current Surulere-area profiles with source links while preserving account and content relationships. Add or edit successors from `/superadmin/leaders`, and archive outgoing leaders without deleting their history.
-
-Programmes, opportunities, projects and events are linked to leaders through `content_leaders`:
+Request detail pages provide the request timeline using:
 
 ```text
-content_type   programme | opportunity | project | event
-content_id     the item's id
-leader_id      the leader
-role           lead | partner
+request_updates
 ```
-
-An item with a single `lead` is an individual initiative. An item with a `lead` plus one or more `partner` rows is a **joint collaboration**. Detail pages show a "Led by" or "Joint collaboration" panel, and each leader's profile lists everything they are involved in.
 
 ---
 
-## Programmes
+# 10. Programmes
 
 Organizations can publish programmes and initiatives.
 
-Programme information includes:
+Programme fields include:
 
 * Title
 * Slug
@@ -268,7 +398,7 @@ Programme information includes:
 * Status
 * Image
 
-Supported programme statuses:
+Supported statuses:
 
 ```text
 draft
@@ -278,13 +408,21 @@ completed
 archived
 ```
 
+Future programme functionality includes:
+
+* Applications
+* Eligibility requirements
+* Application review
+* Application status
+* Applicant communication
+* Capacity management
+* Application analytics
+
 ---
 
-## Opportunities
+# 11. Opportunities
 
-REACH provides an opportunities hub for residents.
-
-Opportunity categories include:
+The Opportunities Hub allows residents to discover opportunities such as:
 
 * Scholarships
 * Jobs
@@ -292,27 +430,37 @@ Opportunity categories include:
 * Grants
 * Internships
 * Business support
-* Other
+* Other opportunities
 
-Opportunity records can contain:
+Opportunity records contain:
 
-* Title
-* Organization
-* Type
-* Summary
-* Description
-* Application URL
-* Deadline
-* Location
-* Status
+```text
+title
+organization
+type
+summary
+description
+application_url
+deadline
+location
+status
+image_url
+```
+
+Future functionality will include:
+
+* Application tracking
+* Saved opportunities
+* Deadline notifications
+* Personalized opportunity discovery
 
 ---
 
-## Community Projects
+# 12. Community Projects
 
-Public projects can be published and tracked through REACH.
+REACH supports public/community project records.
 
-Project information includes:
+Project fields include:
 
 * Title
 * Category
@@ -332,132 +480,541 @@ ongoing
 completed
 ```
 
-Future versions will extend this into a full project-tracking system with:
+Planned project-tracking functionality includes:
 
-* Project timelines
 * Milestones
 * Progress updates
-* Project photos
+* Project galleries
 * Geographic mapping
 * Beneficiary information
-* Completion reporting
+* Completion reports
+* Project timelines
 
 ---
 
-# Civic Requests
+# 13. Events
 
-Residents can submit requests to the appropriate civic office.
+Organizations can publish community events.
 
-Example categories include:
+Events contain:
 
-* Roads
-* Drainage
-* Street lighting
-* Water
-* Waste management
-* Education
-* Healthcare
-* Employment
-* Business
-* Welfare
-* Documentation
-* Other
-
-Each request contains:
-
-* Reference number
-* Resident
-* Organization
-* Jurisdiction
-* Category
-* Subject
+* Title
+* Slug
+* Summary
 * Description
+* Category
+* Venue
+* Location
+* Start time
+* End time
+* Registration URL
+* Capacity
 * Status
-* Staff notes
-* Created date
-* Updated date
+* Image
+* Featured flag
 
-Request statuses:
+Supported statuses:
 
 ```text
-submitted
-under_review
-in_progress
-resolved
-closed
+draft
+published
+cancelled
+```
+
+Residents can RSVP to published events.
+
+---
+
+# 14. Leadership
+
+REACH supports public leadership profiles.
+
+Leadership records include:
+
+```text
+id
+organization_id
+jurisdiction_id
+office_id
+slug
+name
+role
+level
+level_label
+office
+constituency
+summary
+biography
+service
+sources
+image_url
+is_active
+sort_order
+```
+
+Leadership levels currently include:
+
+```text
+federal
+state
+local
+```
+
+Public leadership pages provide:
+
+* Biography
+* Office
+* Jurisdiction
+* Constituency
+* Public-service information
+* Source links
+* Related programmes
+* Related opportunities
+* Related projects
+* Related events
+
+---
+
+# 15. Leadership Content Collaboration
+
+Leaders can be associated with public content through:
+
+```text
+content_leaders
+```
+
+Relationship structure:
+
+```text
+content_type
+content_id
+leader_id
+role
+```
+
+Supported content types:
+
+```text
+programme
+opportunity
+project
+event
+```
+
+Supported collaboration roles:
+
+```text
+lead
+partner
+```
+
+This allows REACH to represent:
+
+```text
+Leader
+   │
+   ├── Programme
+   ├── Opportunity
+   ├── Project
+   └── Event
+```
+
+and:
+
+```text
+Programme
+   │
+   ├── Lead Leader
+   └── Partner Leader
 ```
 
 ---
 
-# Resident Authentication
+# 16. Leader Account Provisioning
 
-REACH uses Supabase Authentication.
+Leadership profiles and authentication accounts are intentionally separated.
+
+The `leaders` table **does not contain `profile_id`**.
+
+Instead, account linking uses:
+
+```text
+profiles.email
+       │
+       ▼
+leader_account_provisioning.email
+       │
+       ▼
+leader_account_provisioning.leader_id
+       │
+       ▼
+leaders.id
+```
+
+This is important because a public leadership profile is not inherently an authentication account.
+
+The provisioning table contains:
+
+```text
+leader_id
+email
+status
+created_at
+updated_at
+```
+
+Typical provisioning states include:
+
+```text
+pending
+active
+```
+
+A leader receives dashboard access only when the provisioning record is associated with the authenticated account and has the appropriate active status.
+
+The application does **not** create fake authentication users.
+
+When real leader emails are available, the intended process is:
+
+```text
+Add verified email
+        ↓
+Update provisioning record
+        ↓
+Invite/authenticate account
+        ↓
+User creates password
+        ↓
+Account becomes active
+        ↓
+Leader dashboard access
+```
+
+Service-role credentials must remain server-side.
+
+---
+
+# 17. Authentication
+
+REACH uses Supabase Authentication with the Next.js SSR integration.
 
 Residents can:
 
-* Create an account
+* Register
 * Sign in
+* Sign out
 * Maintain their profile
 * Submit requests
-* View their requests
+* View requests
 * Apply for programmes
-* Receive future notifications
+* RSVP to events
 
-Authentication uses the Supabase SSR integration for Next.js.
+Administrative and leadership access is separately protected.
 
 ---
 
-# Multi-Tenant Architecture
+# 18. Roles
 
-REACH is designed around tenant isolation.
+The application/database role model supports:
 
 ```text
-Organization
-      │
-      ├── Offices
-      │      │
-      │      └── Jurisdiction
-      │
-      ├── Programmes
-      │
-      ├── Opportunities
-      │
-      ├── Projects
-      │
-      └── Requests
+resident
+staff
+admin
+superadmin
+org_admin
+office_admin
 ```
 
-Content is associated with an organization through:
+### Resident
+
+Residents can:
+
+* Manage their profile
+* Submit requests
+* View their own requests
+* Track request progress
+* Participate in available programmes/events
+
+### Staff
+
+Staff can operate within assigned offices and process resident requests.
+
+### Office Admin
+
+Office administrators manage operational activity within their office.
+
+### Organization Admin
+
+Organization administrators manage their organization's content and operational configuration.
+
+### Admin
+
+Platform administrators can manage broader platform operations.
+
+### Superadmin
+
+Superadmins have platform-level administration access.
+
+Protected access should always be enforced at both:
+
+```text
+Application layer
++
+Database/RLS layer
+```
+
+---
+
+# 19. Administration
+
+The platform administration area is available under:
+
+```text
+/superadmin
+```
+
+Current administration areas include:
+
+```text
+/superadmin
+/superadmin/organizations
+/superadmin/jurisdictions
+/superadmin/offices
+/superadmin/leaders
+/superadmin/leader-accounts
+/superadmin/members
+/superadmin/routing
+/superadmin/requests
+/superadmin/whatsapp
+```
+
+The resident workspace is:
+
+```text
+/dashboard
+```
+
+The office workspace is:
+
+```text
+/office
+```
+
+The leadership workspace is:
+
+```text
+/leader
+```
+
+---
+
+# 20. Multi-Tenant Architecture
+
+REACH is designed as a multi-tenant platform.
+
+Conceptually:
+
+```text
+REACH
+ │
+ ├── Organization A
+ │     ├── Offices
+ │     ├── Jurisdictions
+ │     ├── Programmes
+ │     ├── Opportunities
+ │     ├── Projects
+ │     └── Requests
+ │
+ ├── Organization B
+ │     ├── Offices
+ │     ├── Jurisdictions
+ │     ├── Programmes
+ │     ├── Opportunities
+ │     ├── Projects
+ │     └── Requests
+ │
+ └── Organization C
+```
+
+Tenant-owned data should be scoped using:
 
 ```text
 organization_id
 ```
 
-Geographic responsibility is associated through:
+Geographic responsibility should be scoped using:
 
 ```text
 jurisdiction_id
 ```
 
-This allows the platform to eventually support:
-
-```text
-reach.example.com
-```
-
-or tenant-specific deployments such as:
-
-```text
-fkl.reach.example.com
-office.reach.example.com
-lagos.reach.example.com
-```
-
-without requiring a separate application for every organization.
+This allows multiple civic offices to operate on the same platform architecture.
 
 ---
 
-# Technology Stack
+# 21. FKL Connect
+
+The first REACH deployment is:
+
+```text
+Organization:
+FKL Connect
+
+Slug:
+fkl-connect
+
+Jurisdiction:
+Surulere Federal Constituency
+
+Office:
+FKL Connect Digital Constituency Office
+```
+
+REACH remains the underlying platform.
+
+FKL Connect is the first tenant/deployment.
+
+This distinction allows future organizations to use the same application without turning REACH into a single-office product.
+
+---
+
+# 22. Security & RLS
+
+REACH uses Supabase PostgreSQL Row Level Security.
+
+Security principles:
+
+* Residents can access their own protected records.
+* Staff can access records assigned to their authorized offices.
+* Organization administrators are scoped to their organization.
+* Platform administrators have broader access.
+* Public content is readable only where appropriate.
+* Tenant boundaries must be enforced through organization ownership.
+* Service-role credentials must never reach client-side code.
+* Protected server actions must authenticate the user.
+* Database functions must use explicit authorization checks.
+* Security-definer functions must use a controlled `search_path`.
+
+Important protected database functions currently include:
+
+```text
+find_service_for_request()
+create_routed_request()
+update_request_status()
+```
+
+These functions are restricted from anonymous/public execution and are available to authenticated users where appropriate.
+
+---
+
+# 23. Database
+
+REACH uses:
+
+```text
+PostgreSQL
++
+Supabase
++
+Supabase Auth
++
+Row Level Security
+```
+
+Major entities include:
+
+```text
+profiles
+organizations
+jurisdictions
+offices
+office_members
+
+requests
+request_updates
+service_directory
+service_routes
+
+programmes
+programme_applications
+
+opportunities
+
+projects
+project_updates
+
+events
+event_rsvps
+
+leaders
+content_leaders
+leader_account_provisioning
+
+notifications
+audit_logs
+```
+
+---
+
+# 24. Database Relationships
+
+High-level relationship:
+
+```text
+organizations
+      │
+      ├── offices
+      │      │
+      │      └── office_members
+      │
+      ├── jurisdictions
+      │
+      ├── programmes
+      │
+      ├── opportunities
+      │
+      ├── projects
+      │
+      ├── events
+      │
+      ├── leaders
+      │
+      └── requests
+              │
+              └── profiles
+```
+
+Leadership:
+
+```text
+leaders
+   │
+   └── content_leaders
+          │
+          ├── programmes
+          ├── opportunities
+          ├── projects
+          └── events
+```
+
+Leader authentication:
+
+```text
+profiles
+   │
+   │ email
+   ▼
+leader_account_provisioning
+   │
+   │ leader_id
+   ▼
+leaders
+```
+
+---
+
+# 25. Technology Stack
 
 ## Frontend
 
@@ -470,14 +1027,16 @@ without requiring a separate application for every organization.
 ## Backend
 
 * Next.js App Router
-* Next.js Route Handlers
-* Supabase
+* Route Handlers
+* Server Components
+* Server Actions where appropriate
 
 ## Database
 
 * PostgreSQL
-* Supabase Row Level Security
+* Supabase
 * Supabase Auth
+* Supabase RLS
 
 ## Deployment
 
@@ -485,79 +1044,101 @@ without requiring a separate application for every organization.
 
 ## Repository
 
-GitHub:
-
 ```text
 https://github.com/AzeezBello/Reach
 ```
 
 ---
 
-# Project Structure
+# 26. Project Structure
 
 ```text
 reach/
 │
 ├── app/
-│   ├── api/tenant/route.ts          Public tenant JSON endpoint
-│   ├── auth/signout/route.ts        Sign-out handler
-│   ├── dashboard/                   Resident dashboard + profile action
-│   ├── events/                      Events index, detail and RSVP action
-│   ├── leadership/                  Leadership index and profiles
-│   ├── llms.txt/route.ts            llms.txt for AI crawlers
-│   ├── login/                       Sign in / create account
-│   ├── opportunities/               Opportunities index and detail
-│   ├── programmes/                  Programmes index and detail
-│   ├── projects/                    Projects index and detail
-│   ├── requests/                    My requests, new request, request detail
-│   ├── superadmin/                  Platform console + server actions
-│   ├── error.tsx · not-found.tsx    Error and 404 pages
-│   ├── icon.svg                     Favicon
-│   ├── opengraph-image.tsx          Generated social share image
-│   ├── robots.ts · sitemap.ts       Crawler files
-│   ├── layout.tsx · page.tsx        Root layout and homepage
-│   └── globals.css                  Tailwind theme tokens
+│   ├── (site)/
+│   │   ├── page.tsx
+│   │   ├── login/
+│   │   ├── requests/
+│   │   ├── programmes/
+│   │   ├── opportunities/
+│   │   ├── projects/
+│   │   ├── events/
+│   │   └── leadership/
+│   │
+│   ├── (dashboard)/
+│   │   ├── dashboard/
+│   │   ├── office/
+│   │   └── superadmin/
+│   │
+│   ├── api/
+│   │   ├── requests/
+│   │   ├── service-directory/
+│   │   └── tenant/
+│   │
+│   ├── auth/
+│   ├── llms.txt/
+│   ├── opengraph-image.tsx
+│   ├── robots.ts
+│   ├── sitemap.ts
+│   ├── icon.svg
+│   ├── layout.tsx
+│   └── globals.css
 │
 ├── components/
-│   ├── header.tsx · nav.tsx · footer.tsx
-│   ├── page-hero.tsx · breadcrumbs.tsx · json-ld.tsx
-│   ├── content-card.tsx · detail.tsx · media.tsx · video-player.tsx
-│   ├── leaders-panel.tsx            "Led by" / joint collaboration credits
-│   ├── request-form.tsx · auth-form.tsx · action-form.tsx
-│   ├── admin.tsx · admin-nav.tsx    Dashboard and console building blocks
-│   └── ui.tsx                       Buttons, badges, section headers
+│   ├── header.tsx
+│   ├── footer.tsx
+│   ├── nav.tsx
+│   ├── breadcrumbs.tsx
+│   ├── page-hero.tsx
+│   ├── content-card.tsx
+│   ├── leaders-panel.tsx
+│   ├── request-form.tsx
+│   ├── jurisdiction-selector.tsx
+│   ├── auth-form.tsx
+│   ├── admin.tsx
+│   ├── admin-nav.tsx
+│   ├── dashboard-sidebar.tsx
+│   └── ui.tsx
 │
 ├── lib/
-│   ├── reach.ts                     Public data access (tenant, content, session)
-│   ├── admin.ts                     Dashboard and superadmin data access + guards
-│   ├── leaders.ts                   Database-backed leadership profiles and collaborations
-│   ├── seo.ts                       Canonical URLs and JSON-LD schemas
-│   ├── media.ts                     Curated photos, videos and alt text
-│   ├── format.ts · navigation.ts · config.ts · types.ts · leadership.ts
-│   └── supabase/                    Browser and server clients
+│   ├── reach.ts
+│   ├── admin.ts
+│   ├── leaders.ts
+│   ├── leadership.ts
+│   ├── navigation.ts
+│   ├── seo.ts
+│   ├── media.ts
+│   ├── format.ts
+│   ├── config.ts
+│   ├── types.ts
+│   └── supabase/
+│       ├── server.ts
+│       └── public.ts
 │
-├── proxy.ts                         Session refresh on navigation
-├── supabase/
-│   ├── migrations/                  Versioned schema and policies
-│   ├── seed.sql                     Leaders, collaborations and events for FKL Connect
-│   └── config.toml
 ├── public/
-│   ├── brand/                       Logo files
-│   ├── images/                      Community photos (+ images/leaders/ portraits)
-│   └── videos/                      Community videos
+│   ├── brand/
+│   ├── images/
+│   │   └── leaders/
+│   └── videos/
 │
+├── supabase/
+│   ├── migrations/
+│   ├── seed.sql
+│   └── config.toml
+│
+├── proxy.ts
 ├── next.config.ts
 ├── package.json
-├── postcss.config.mjs
 ├── tsconfig.json
 └── README.md
 ```
 
 ---
 
-# Environment Variables
+# 27. Environment Variables
 
-The application requires the following public Supabase configuration:
+Required public configuration:
 
 ```env
 NEXT_PUBLIC_SUPABASE_URL=
@@ -565,163 +1146,29 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
 NEXT_PUBLIC_SITE_URL=
 ```
 
-`NEXT_PUBLIC_SITE_URL` is the public origin (for example `https://reach-eta-two.vercel.app`) used for canonical URLs, the sitemap and share images. These values should be configured through the deployment environment.
+For server-side administrative operations, a service-role/secret key may be required by specific trusted server workflows.
+
+It must **never** be exposed through:
+
+* Client components
+* Browser JavaScript
+* Public environment variables
+* Git
+* Source control
+* API responses
 
 For Vercel:
 
 ```text
-Project
+Vercel
+→ Project
 → Settings
 → Environment Variables
 ```
 
-Do **not** expose Supabase service-role or secret keys in browser/client code.
-
 ---
 
-# Supabase Database
-
-## Migrations
-
-The schema is versioned in `supabase/migrations/` and applied with the Supabase CLI:
-
-```bash
-supabase link --project-ref <project-ref>
-supabase db push                       # applies every migration
-supabase db execute --file supabase/seed.sql   # leaders, collaborations and events for FKL Connect
-```
-
-| File | Contents |
-| --- | --- |
-| `20260930000001_baseline.sql` | All core tables, the profile trigger on `auth.users`, request reference numbers (`REACH-000001`), indexes |
-| `20260930000002_leaders.sql` | `leaders` and `content_leaders` |
-| `20260930000003_policies.sql` | Row-level security for every table, plus the `is_platform_admin()` and `is_office_staff()` helpers |
-| `20260930000004_events.sql` | `events`, `event_rsvps`, the public `event_rsvp_count()` function and event policies |
-
-Every statement is idempotent (`create table if not exists`, `drop policy if exists`), so the files can be applied to the existing project without touching data that is already there.
-
-The current database includes the following major entities:
-
-```text
-profiles
-requests
-programmes
-programme_applications
-opportunities
-projects
-events
-event_rsvps
-leaders
-content_leaders
-
-organizations
-jurisdictions
-offices
-office_members
-
-request_updates
-project_updates
-notifications
-audit_logs
-```
-
----
-
-# Database Relationships
-
-Conceptually:
-
-```text
-organizations
-      │
-      ├──────────────┐
-      │              │
-      ▼              ▼
-   offices       programmes
-      │
-      ▼
-jurisdictions
-
-organizations
-      │
-      ├── opportunities
-      ├── projects
-      └── requests
-              │
-              ▼
-           profiles
-```
-
----
-
-# Roles
-
-The current application defines:
-
-```text
-resident
-staff
-admin
-```
-
-Accounts with the `admin` (or `superadmin`) role in `profiles.role` can open the platform console at `/superadmin`.
-
-### Resident
-
-Residents can:
-
-* Manage their account
-* Submit requests
-* Track their requests
-* Apply for programmes
-
-### Staff
-
-Staff members can eventually:
-
-* Review requests
-* Update request statuses
-* Add internal notes
-* Manage programmes
-* Manage opportunities
-* Manage projects
-* Communicate with residents
-
-### Admin
-
-Administrators can manage:
-
-* Organization settings
-* Offices
-* Jurisdictions
-* Staff
-* Programmes
-* Opportunities
-* Projects
-* Requests
-* System activity
-
----
-
-# Security
-
-REACH uses Supabase Row Level Security (RLS).
-
-Security principles include:
-
-* Residents can access their own profile
-* Residents can access their own requests
-* Residents can access their own applications
-* Public users can access published public content
-* Administrative records should remain restricted
-* Tenant-specific records should be isolated by organization
-* Service-role credentials must never be exposed to the browser
-
-The platform should always use ownership and organization predicates when implementing protected data access.
-
----
-
-# Local Development
+# 28. Local Development
 
 Clone the repository:
 
@@ -755,7 +1202,7 @@ NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
-Start the development server:
+Run development:
 
 ```bash
 npm run dev
@@ -769,285 +1216,397 @@ http://localhost:3000
 
 ---
 
-# Production Build
+# 29. Validation Before Deployment
 
-Type-check, then build:
+Before pushing changes:
 
 ```bash
 npm run typecheck
-npm run build
 ```
 
 Then:
 
 ```bash
-npm start
+npm run build
 ```
 
----
+Both should pass before deployment.
 
-# Deployment
+Recommended final check:
 
-REACH is designed for Vercel.
-
-Production deployment flow:
-
-```text
-GitHub
-   │
-   ▼
-Vercel
-   │
-   ▼
-Next.js
-   │
-   ▼
-Supabase
+```bash
+git status
+git diff
 ```
 
-Push changes to `main`:
+Then:
 
 ```bash
 git add .
-git commit -m "your commit message"
+git commit -m "fix: description"
 git push origin main
 ```
 
-Vercel can automatically build and deploy the new commit.
+---
+
+# 30. Supabase Development
+
+Link the project:
+
+```bash
+supabase link --project-ref <project-ref>
+```
+
+Apply migrations:
+
+```bash
+supabase db push
+```
+
+Run seed data where appropriate:
+
+```bash
+supabase db execute --file supabase/seed.sql
+```
+
+Always review migrations before applying destructive schema changes.
 
 ---
 
-# Current Deployment
+# 31. Current Production Deployment
 
-The current REACH deployment is:
+Current deployment:
 
 ```text
 https://reach-eta-two.vercel.app/
 ```
 
----
-
-# Current Tenant
-
-The initial REACH tenant is:
+The production application uses:
 
 ```text
-Organization:
-FKL Connect
-
-Slug:
-fkl-connect
-
-Jurisdiction:
-Surulere Federal Constituency
-
-Office:
-FKL Connect Digital Constituency Office
+Vercel
+    │
+    ▼
+Next.js
+    │
+    ▼
+Supabase
+    │
+    ├── PostgreSQL
+    ├── Auth
+    └── RLS
 ```
-
-This deployment serves as the initial implementation of the broader REACH platform.
 
 ---
 
-# Next Steps
+# 32. Immediate Next Steps
 
-Work that is ready in the codebase but still needs an action on the Supabase project or from the team.
+The following work should be completed in this order.
 
-## 1. Apply the database migrations and seed data
+## Step 1 — Deploy the latest leader-account fix
 
-The `events`, `event_rsvps`, `leaders` and `content_leaders` tables, profile refresh, content links, and row-level security policies are versioned in `supabase/migrations/`. Apply pending migrations before running the seed.
+The current `lib/leaders.ts` must use:
 
-```bash
-supabase link --project-ref <project-ref>
-supabase db push
-supabase db execute --file supabase/seed.sql
+```text
+profiles.email
+        ↓
+leader_account_provisioning.email
+        ↓
+leader_account_provisioning.leader_id
+        ↓
+leaders.id
 ```
 
-The seed loads leadership profiles, collaborations and events. The profile refresh migration links FKL to tenant content, Gbaja to education support and his empowerment event, and FOD to the health, lighting and Acada initiatives. These inserts are safe to rerun.
+It must **not** query:
 
-## 2. Create the first platform administrator
-
-The superadmin console at `/superadmin` is gated on `profiles.role`. Set the role for your own account in the Supabase table editor or with SQL:
-
-```sql
-update public.profiles set role = 'admin' where email = 'you@example.com';
+```text
+leaders.profile_id
 ```
 
-Then sign in and open `/superadmin`. The resident dashboard at `/dashboard` works for any signed-in account.
+because that column does not exist.
 
-## 3. Add the remaining leader photos
-
-Portraits exist for eight leaders in `public/images/leaders/`. Hon. Prince Muiz Dosunmu and Hon. Akeem Olayiwola AbdulRahman show an initials avatar until a photo is added. Drop a portrait into `public/images/leaders/<slug>.jpg`, then set `image_url` on the leader from `/superadmin/leaders` (or in `supabase/seed.sql` and `lib/leadership.ts`).
-
-## 4. Supply the official logo
-
-The SVG logos in `public/brand/` were designed from the brand colours in the photos. If an official REACH or FKL Connect logo exists, replace `logo.svg`, `logo-white.svg`, `logo-mark.svg` and `app/icon.svg` with the same file names and sizes; nothing else needs to change.
-
-## 5. Check content that is not scoped to the tenant
-
-Two older programmes ("Summer with FKL" and "FKL Skills Development Programme") are published but do not appear on the site because their `organization_id` is not the FKL Connect organisation. Update them in Supabase or from the office's content tools.
-
-## 6. Set the production environment
-
-On Vercel, add `NEXT_PUBLIC_SITE_URL` alongside the two Supabase variables so canonical URLs, the sitemap and the share image use the real domain.
-
-## 7. Verify before each release
+After pushing:
 
 ```bash
 npm run typecheck
 npm run build
+git add lib/leaders.ts README.md
+git commit -m "fix: resolve leader accounts through provisioning"
+git push origin main
 ```
 
-Both must pass. The build fails on any TypeScript error, and no browser source maps are emitted in production.
+Then verify the Vercel deployment.
 
 ---
 
-# Product Roadmap
+# 33. Next Step — Verify Leader Account Provisioning
 
-## Phase 1 — Foundation
+Before testing `/leader`, verify:
 
-* [x] Next.js application
-* [x] REACH public homepage
-* [x] Supabase integration
-* [x] Organization model
-* [x] Jurisdiction model
-* [x] Office model
-* [x] Resident authentication
-* [x] Programme discovery
-* [x] Opportunity discovery
-* [x] Project discovery
-* [x] Civic request submission
-* [x] Multi-tenant data model
-* [x] Supabase RLS foundation
-* [x] Vercel deployment
+```sql
+select
+  leader_id,
+  email,
+  status
+from public.leader_account_provisioning
+order by created_at;
+```
 
----
+Pending records should remain pending until the corresponding real account/email is ready.
 
-## Phase 2 — Resident Experience
+For an activated leader:
 
-* [x] Resident dashboard
-* [x] Request history
-* [x] Request detail pages
-* [x] Request status timeline
-* [ ] Programme application workflow
-* [ ] Opportunity application tracking
-* [x] Events with RSVP
-* [x] Leadership profiles with collaborations
-* [x] Resident profile
-* [ ] Notifications
-* [ ] Email notifications
-* [ ] WhatsApp notifications
+```text
+status = active
+```
+
+Then verify:
+
+```text
+Supabase Auth user
+        ↓
+profiles.email
+        ↓
+leader_account_provisioning.email
+        ↓
+leaders.id
+```
 
 ---
 
-## Phase 3 — Civic Office Administration
+# 34. Next Step — Complete Staff & Office Access
 
-* [x] Platform (superadmin) console
-* [ ] Staff dashboard
-* [x] Staff management
-* [x] Request status management
-* [ ] Request assignment
-* [ ] Internal notes
-* [x] Request status workflow
-* [ ] Programme management
-* [ ] Opportunity management
-* [ ] Project management
-* [ ] Media uploads
-* [x] Organization settings
+The next major administration task is to make the office workspace fully operational.
+
+Target workflow:
+
+```text
+Organization
+      │
+      ▼
+Office
+      │
+      ▼
+Office Member
+      │
+      ▼
+Staff User
+      │
+      ▼
+Assigned Requests
+```
+
+Implement:
+
+* Office membership management
+* Staff assignment
+* Office-level permissions
+* Organization-level permissions
+* Request assignment
+* Staff request queue
+* Staff request detail
+* Internal notes
+* Status updates
+* Request timeline
 
 ---
 
-## Phase 4 — Project Tracking
+# 35. Next Step — Request Assignment
 
-* [ ] Project detail pages
-* [ ] Project milestones
-* [ ] Project updates
-* [ ] Progress indicators
-* [ ] Project photo gallery
-* [ ] Location mapping
-* [ ] Beneficiary reporting
-* [ ] Completion reports
+Implement a proper request assignment workflow.
+
+Target:
+
+```text
+Request
+   │
+   ├── organization_id
+   ├── jurisdiction_id
+   ├── assigned_office_id
+   └── assigned_staff_id
+```
+
+The office should see only requests that it is authorized to process.
+
+Administrators should be able to:
+
+* Assign request to office
+* Reassign request
+* Assign staff member
+* Change priority
+* Add internal notes
+* Change status
+* View timeline
 
 ---
 
-## Phase 5 — REACH Intelligence
+# 36. Next Step — Service Directory
 
-### Who Handles This?
-
-A routing engine that determines which office or jurisdiction should handle a resident's request.
+Expand the existing service directory into a complete routing engine.
 
 Example:
 
 ```text
-Resident submits:
+Resident:
+"My street has serious flooding."
 
-"My street has been flooded."
+        ↓
 
-          │
-          ▼
-
-REACH classifies request
-
-          │
-          ▼
+Service Directory
 
 Category:
-Drainage / Infrastructure
+Drainage
 
-          │
-          ▼
+        ↓
 
-Determine jurisdiction
+Jurisdiction
 
-          │
-          ▼
+Surulere
 
-Identify responsible office
+        ↓
 
-          │
-          ▼
+Responsible Office
 
-Route request
+Matched Office
+
+        ↓
+
+Create Request
 ```
 
-This is intended to reduce the common problem of residents not knowing which government or public-service office is responsible for a particular issue.
-
----
-
-# Future REACH Network
-
-The long-term platform can provide a unified civic-service directory.
+The service directory should eventually contain:
 
 ```text
-                 REACH NETWORK
-                       │
-       ┌───────────────┼───────────────┐
-       │               │               │
-     State           LGA          Constituency
-       │               │               │
-      Ward          Community       Public Office
-       │               │               │
-       └───────────────┼───────────────┘
-                       │
-                    Resident
+service
+category
+description
+keywords
+responsible_office
+jurisdiction_type
+priority
+routing_rules
 ```
-
-A resident could identify their location or jurisdiction and discover:
-
-* Relevant public offices
-* Available programmes
-* Opportunities
-* Community projects
-* Service-request channels
-* Contact information
 
 ---
 
-# WhatsApp Integration
+# 37. Next Step — Programme Administration
 
-A future REACH communication layer will integrate WhatsApp for resident communication.
+Build complete CRUD for:
 
-Potential workflows:
+```text
+Programmes
+```
+
+Admin functionality:
+
+* Create programme
+* Edit programme
+* Publish programme
+* Archive programme
+* Upload image
+* Set registration deadline
+* Set capacity
+* Set eligibility
+* View applications
+* Review applications
+* Approve/reject applications
+
+---
+
+# 38. Next Step — Opportunity Administration
+
+Build:
+
+```text
+/superadmin/opportunities
+```
+
+with:
+
+* Create
+* Edit
+* Publish
+* Archive
+* Application URL
+* Deadline
+* Category
+* Organization
+* Location
+* Status
+
+Then add resident:
+
+```text
+Save opportunity
+Track opportunity
+Application status
+Deadline reminder
+```
+
+---
+
+# 39. Next Step — Project Tracking
+
+Expand projects into a transparent project tracker.
+
+Target:
+
+```text
+Project
+ │
+ ├── Overview
+ ├── Location
+ ├── Status
+ ├── Timeline
+ ├── Milestones
+ ├── Updates
+ ├── Photos
+ ├── Beneficiaries
+ └── Completion Report
+```
+
+Future map integration can associate projects with geographic coordinates.
+
+---
+
+# 40. Next Step — Notifications
+
+Build the notification infrastructure.
+
+Supported notification types:
+
+```text
+request_received
+request_status_changed
+request_resolved
+programme_application
+programme_update
+opportunity_deadline
+event_reminder
+project_update
+```
+
+Initial implementation:
+
+```text
+In-app notifications
+```
+
+Then:
+
+```text
+Email
+WhatsApp
+SMS
+```
+
+---
+
+# 41. Next Step — WhatsApp Integration
+
+The planned WhatsApp layer should expose the same REACH service functionality.
+
+Example:
 
 ```text
 Resident
@@ -1058,184 +1617,130 @@ WhatsApp
    ▼
 REACH
    │
+   ├── Find service
    ├── Create request
-   ├── Check request status
-   ├── Discover programmes
-   ├── Find opportunities
-   └── Receive notifications
+   ├── Track request
+   ├── Find programme
+   ├── Find opportunity
+   └── Receive notification
 ```
 
-The platform should preserve the same authorization and tenant boundaries across WhatsApp and the web application.
+The WhatsApp integration must use the same tenant, authorization and request-routing rules as the web application.
 
 ---
 
-# Notifications
+# 42. Next Step — Analytics
 
-The notification system is designed to support:
+Build the administrative analytics layer.
 
-* Request received
-* Request status changed
-* Request resolved
-* Programme application updates
-* Opportunity deadlines
-* Programme announcements
-* Project updates
-
-Future channels:
+## Requests
 
 ```text
-In-app
-Email
+Total requests
+Open requests
+Resolved requests
+Requests by category
+Requests by jurisdiction
+Average resolution time
+```
+
+## Programmes
+
+```text
+Programmes
+Applications
+Participation
+Application status
+```
+
+## Opportunities
+
+```text
+Published opportunities
+Applications
+Upcoming deadlines
+```
+
+## Projects
+
+```text
+Active projects
+Completed projects
+Beneficiaries
+Project locations
+```
+
+---
+
+# 43. Next Step — Mobile Navigation & UX Cleanup
+
+The desktop administration navigation is more complete than the current mobile navigation.
+
+Bring the mobile navigation to parity with:
+
+```text
+Dashboard
+Requests
+Office
+Leadership
+Administration
+Organizations
+Jurisdictions
+Offices
+Leaders
+Leader Accounts
+Members
+Routing
 WhatsApp
-SMS
 ```
+
+Also verify:
+
+* Mobile forms
+* Request status workflow
+* Empty states
+* Loading states
+* Error states
+* Toasts
+* Accessibility
+* Keyboard navigation
+* Touch targets
 
 ---
 
-# Analytics
+# 44. Next Step — Notifications Route
 
-Future administrative analytics will include:
+The dashboard currently references notification functionality.
 
-### Requests
-
-* Requests received
-* Requests by category
-* Requests by jurisdiction
-* Requests by status
-* Average resolution time
-* Open vs resolved requests
-
-### Programmes
-
-* Programme registrations
-* Applications
-* Approval rates
-* Programme participation
-
-### Opportunities
-
-* Published opportunities
-* Application activity
-* Upcoming deadlines
-
-### Projects
-
-* Active projects
-* Completed projects
-* Project locations
-* Beneficiary counts
-
----
-
-# Design Principles
-
-REACH follows several core product principles:
-
-### 1. Service First
-
-The platform focuses on helping residents access information and services.
-
-### 2. Simple
-
-Residents should not need to understand government structures before requesting help.
-
-### 3. Transparent
-
-Where appropriate, requests and projects should provide clear status and progress information.
-
-### 4. Accessible
-
-The platform should work effectively across:
-
-* Mobile phones
-* Tablets
-* Desktop computers
-* Low-bandwidth environments
-
-### 5. Multi-Tenant
-
-Organizations should be able to operate independently on the same platform architecture.
-
-### 6. Secure
-
-Resident data and administrative records must be protected through authentication, authorization, RLS, and tenant isolation.
-
----
-
-# Development Standards
-
-When adding new functionality:
-
-1. Use TypeScript.
-2. Keep components modular.
-3. Keep Supabase queries server-side where appropriate.
-4. Never expose service-role credentials.
-5. Apply RLS to new protected tables.
-6. Scope tenant data using `organization_id`.
-7. Scope geographic data using `jurisdiction_id`.
-8. Validate authenticated users before creating resident-owned records.
-9. Use meaningful commit messages.
-10. Run the production build before pushing.
-
-Recommended workflow:
-
-```bash
-npm install
-npm run build
-git status
-git add .
-git commit -m "feat: description"
-git push origin main
-```
-
----
-
-# Contributing
-
-1. Create a feature branch.
-
-```bash
-git checkout -b feature/my-feature
-```
-
-2. Implement the feature.
-
-3. Test locally.
-
-```bash
-npm run build
-```
-
-4. Commit changes.
-
-```bash
-git add .
-git commit -m "feat: add my feature"
-```
-
-5. Push the branch.
-
-```bash
-git push origin feature/my-feature
-```
-
-6. Open a pull request.
-
----
-
-# License
-
-The license for REACH should be defined by the project owner before public redistribution or commercial reuse.
-
----
-
-# REACH
-
-**Residents Engagement, Access, Communication & Help**
-
-A digital platform for connecting communities with public-service offices, programmes, opportunities, projects, and civic support.
+Create:
 
 ```text
-Discover → Engage → Track → Connect
+/dashboard/notifications
 ```
 
+with:
+
+* Notification list
+* Read/unread state
+* Mark as read
+* Mark all as read
+* Notification filtering
+* Request links
+* Event links
+* Programme links
+
+---
+
+# 45. Next Step — Production QA
+
+Before calling the current phase complete, test the following flows end-to-end.
+
+## Resident
+
+```text
+Register
+  ↓
+Login
+  ↓
+Profile
+```
