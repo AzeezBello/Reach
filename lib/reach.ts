@@ -1,6 +1,7 @@
 import { cache } from "react";
 
 import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 import type {
   Event,
   Jurisdiction,
@@ -48,7 +49,7 @@ function assertOk(error: { message: string } | null) {
  * Wrapped in `cache` so the layout and the page share one lookup per request.
  */
 export const getTenant = cache(async (slug: string = DEFAULT_TENANT_SLUG) => {
-  const supabase = await createClient();
+  const supabase = createPublicClient();
 
   const { data: tenant, error: tenantError } = await supabase
     .from("organizations")
@@ -94,7 +95,7 @@ export const getTenant = cache(async (slug: string = DEFAULT_TENANT_SLUG) => {
 export const getPublicData = cache(
   async (slug: string = DEFAULT_TENANT_SLUG) => {
     const { tenant, jurisdiction } = await getTenant(slug);
-    const supabase = await createClient();
+    const supabase = createPublicClient();
 
     const [programmes, opportunities, projects, events] = await Promise.all([
       supabase
@@ -146,7 +147,7 @@ export const getPublicData = cache(
 
 export async function getProgramme(slug: string) {
   const { tenant } = await getTenant();
-  const supabase = await createClient();
+  const supabase = createPublicClient();
 
   const { data } = await supabase
     .from("programmes")
@@ -161,7 +162,7 @@ export async function getProgramme(slug: string) {
 
 export async function getOpportunity(slug: string) {
   const { tenant } = await getTenant();
-  const supabase = await createClient();
+  const supabase = createPublicClient();
 
   const { data } = await supabase
     .from("opportunities")
@@ -176,7 +177,7 @@ export async function getOpportunity(slug: string) {
 
 export async function getProject(slug: string) {
   const { tenant } = await getTenant();
-  const supabase = await createClient();
+  const supabase = createPublicClient();
 
   const { data } = await supabase
     .from("projects")
@@ -190,7 +191,7 @@ export async function getProject(slug: string) {
 
 export async function getEvent(slug: string) {
   const { tenant } = await getTenant();
-  const supabase = await createClient();
+  const supabase = createPublicClient();
 
   const { data, error } = await supabase
     .from("events")

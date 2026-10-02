@@ -8,9 +8,11 @@ import {
   LayoutDashboard,
   Landmark,
   MapPinned,
+  MessageCircle,
   UserRound,
   Users,
   ShieldCheck,
+  Workflow,
 } from "lucide-react";
 
 const LINKS = [
@@ -22,9 +24,8 @@ const LINKS = [
   { href: "/superadmin/leaders", label: "Leaders", icon: UserRound },
   { href: "/superadmin/requests", label: "Requests", icon: ClipboardList },
   { href: "/superadmin/members", label: "Staff & Roles", icon: Users },
-  { href: "/superadmin/routing", label: "Request Routing", icon: ClipboardList },
-  { href: "/superadmin/whatsapp", label: "WhatsApp", icon: ClipboardList },
-  { href: "/office", label: "Office Dashboard", icon: Building2 },
+  { href: "/superadmin/routing", label: "Request Routing", icon: Workflow },
+  { href: "/superadmin/whatsapp", label: "WhatsApp", icon: MessageCircle },
   { href: "/superadmin/leader-accounts", label: "Leader Accounts", icon: ShieldCheck },
 ];
 
@@ -33,12 +34,10 @@ export function AdminNav() {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Console" className="lg:sticky lg:top-24">
-      <ul className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-1 lg:mx-0 lg:flex-col lg:overflow-visible lg:px-0">
+    <nav aria-label="Platform administration" className="min-w-0 lg:sticky lg:top-24 lg:self-start">
+      <ul className="-mx-4 flex gap-1 overflow-x-auto px-4 pb-2 lg:mx-0 lg:flex-col lg:overflow-visible lg:rounded-xl lg:border lg:border-slate-200 lg:bg-white lg:p-2">
         {LINKS.map((link) => {
-          const active = link.exact
-            ? pathname === link.href
-            : pathname.startsWith(link.href);
+          const active = pathname === link.href || (!link.exact && pathname.startsWith(`${link.href}/`));
           const Icon = link.icon;
 
           return (
@@ -46,7 +45,7 @@ export function AdminNav() {
               <Link
                 href={link.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex items-center gap-2.5 rounded-xl px-3.5 py-2.5 text-sm font-bold whitespace-nowrap transition ${
+                className={`flex min-h-11 items-center gap-2.5 rounded-lg px-3.5 py-2.5 text-sm font-bold whitespace-nowrap transition ${
                   active
                     ? "bg-ink text-white"
                     : "text-slate-600 hover:bg-white hover:text-ink"

@@ -1,6 +1,6 @@
 import { cache } from "react";
 
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/supabase/public";
 
 import type {
   CollaborationRole,
@@ -139,8 +139,7 @@ function normalize(
 export const getLeaders = cache(
   async (): Promise<Leader[]> => {
     try {
-      const supabase =
-        await createClient();
+      const supabase = createPublicClient();
 
       const {
         data,
@@ -319,8 +318,7 @@ export async function getLeaderContent(
   }
 
   try {
-    const supabase =
-      await createClient();
+    const supabase = createPublicClient();
 
     const {
       data: links,
@@ -471,8 +469,7 @@ export async function getContentLeaders(
   contentId: string,
 ): Promise<LeaderCredit[]> {
   try {
-    const supabase =
-      await createClient();
+    const supabase = createPublicClient();
 
     const {
       data,

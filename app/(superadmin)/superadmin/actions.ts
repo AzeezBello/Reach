@@ -469,6 +469,71 @@ export async function setLeaderActive(
   });
 }
 
+export async function linkLeaderAccount(
+  _state: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  return run(async () => {
+    await guard();
+
+    const leaderId = required(formData, "leader_id", "Leader");
+    const email = required(formData, "email", "Email");
+    const profile = await getProfileByEmail(email);
+
+    if (!profile) {
+      throw new Error("No registered account was found with that email.");
+    }
+
+    const supabase = await createClient();
+    const { data: leader, error: leaderError } = await supabase
+      .from("leaders")
+      .select("name, profile_id")
+      .eq("id", leaderId)
+      .maybeSingle();
+
+    if (leaderError) throw new Error(leaderError.message);
+    if (!leader) throw new Error("The selected leadership profile no longer exists.");
+    if (leader.profile_id && leader.profile_id !== profile.id) {
+      throw new Error("This leader already has an account linked. Unlink it first.");
+    }
+
+    const { error } = await supabase
+      .from("leaders")
+      .update({ profile_id: profile.id })
+      .eq("id", leaderId);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/superadmin/leader-accounts");
+    revalidatePath("/superadmin/leaders");
+
+    return `${profile.full_name || email} linked to ${leader.name}.`;
+  });
+}
+
+export async function unlinkLeaderAccount(
+  _state: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  return run(async () => {
+    await guard();
+
+    const leaderId = required(formData, "leader_id", "Leader");
+    const supabase = await createClient();
+    const { error } = await supabase
+      .from("leaders")
+      .update({ profile_id: null })
+      .eq("id", leaderId);
+
+    if (error) throw new Error(error.message);
+
+    revalidatePath("/superadmin/leader-accounts");
+    revalidatePath("/superadmin/leaders");
+
+    return "Leader account unlinked.";
+  });
+}
+
 export async function linkContentToLeader(
   _state: ActionState,
   formData: FormData

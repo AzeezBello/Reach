@@ -193,6 +193,8 @@ Signed-in residents have a dashboard at `/dashboard` showing:
 
 Platform administrators manage every tenant from `/superadmin`:
 
+The platform console uses its own responsive administration shell, separate from the resident and office dashboard navigation.
+
 | Page | What it does |
 | --- | --- |
 | `/superadmin` | Platform-wide counts and the latest requests |
@@ -200,6 +202,8 @@ Platform administrators manage every tenant from `/superadmin`:
 | `/superadmin/jurisdictions` | List and create jurisdictions, including parent/child nesting |
 | `/superadmin/offices` | List, create, activate and deactivate offices |
 | `/superadmin/staff` | Attach resident accounts to offices as staff or admin |
+| `/superadmin/members` | Assign existing accounts to organizations, update membership roles and remove memberships |
+| `/superadmin/leader-accounts` | Link existing REACH accounts to leadership profiles and remove those links; does not create or invite users |
 | `/superadmin/leaders` | Create leadership profiles and link them to programmes, opportunities, projects and events as lead or collaboration partner |
 | `/superadmin/requests` | Update request status, post a note to the resident's timeline and keep internal staff notes |
 
