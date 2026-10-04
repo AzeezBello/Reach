@@ -342,50 +342,102 @@ export async function updateRequestStatus(
   formData: FormData
 ): Promise<ActionState> {
   return run(async () => {
-    const user = await guard();
+    await guard();
 
     const id = required(formData, "id", "Request");
-    const status = oneOf(required(formData, "status", "Status"), REQUEST_STATUSES, "Status");
+
+    const status = oneOf(
+      required(formData, "status", "Status"),
+      REQUEST_STATUSES,
+      "Status"
+    );
+
     const message = optional(formData, "message");
     const staffNotes = optional(formData, "staff_notes");
 
     const supabase = await createClient();
 
-    const { error } = await supabase
-      .from("requests")
-      .update({
-        status,
-        ...(staffNotes !== null && { staff_notes: staffNotes }),
-      })
-      .eq("id", id);
-    if (error) throw new Error(error.message);
+    /*
+     * Update the request status through the hardened RPC.
+     *
+     * This atomically:
+     * - validates the authenticated user
+     * - validates the requested status
+     * - checks the user's role / office access
+     * - locks the request row
+     * - updates requests.status
+     * - creates the request_updates timeline entry
+     */
+    const { data, error } = await supabase.rpc(
+      "update_request_status",
+      {
+        target_request: id,
+        next_status: status,
+        update_message: message,
+      }
+    );
 
-    // The public timeline entry is best-effort: the status change already
-    // succeeded even if the updates table rejects the insert.
-    const { error: updateError } = await supabase.from("request_updates").insert({
-      request_id: id,
-      status,
-      message,
-      author_id: user.id,
-    });
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    if (!data || data.length === 0) {
+      throw new Error(
+        "The request status could not be updated."
+      );
+    }
+
+    /*
+     * Staff notes are separate from the public request timeline.
+     *
+     * Keep this update separate because the current RPC is intentionally
+     * responsible for the status + timeline transaction.
+     */
+    if (staffNotes !== null) {
+      const { error: notesError } = await supabase
+        .from("requests")
+        .update({
+          staff_notes: staffNotes,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", id);
+
+      if (notesError) {
+        throw new Error(
+          `Status was updated, but staff notes could not be saved: ${notesError.message}`
+        );
+      }
+    }
 
     revalidatePath("/superadmin/requests");
     revalidatePath(`/requests/${id}`);
     revalidatePath("/requests");
 
-    return updateError
-      ? `Status set to ${status.replace(/_/g, " ")}. Timeline entry was not saved: ${updateError.message}`
-      : `Status set to ${status.replace(/_/g, " ")}.`;
+    return `Status set to ${status.replace(/_/g, " ")}.`;
   });
 }
 
 /* ------------------------------------------------------------------ */
-/* Leaders & collaborations                                            */
+/* Leaders & collaborations                                           */
 /* ------------------------------------------------------------------ */
 
-const CONTENT_TYPES = ["programme", "opportunity", "project", "event"];
-const LEADERSHIP_LEVELS = ["federal", "state", "local"];
-const COLLABORATION_ROLES = ["lead", "partner"];
+const CONTENT_TYPES = [
+  "programme",
+  "opportunity",
+  "project",
+  "event",
+] as const;
+
+const LEADERSHIP_LEVELS = [
+  "federal",
+  "state",
+  "local",
+] as const;
+
+const COLLABORATION_ROLES = [
+  "lead",
+  "partner",
+] as const;
 
 function lines(formData: FormData, name: string) {
   return text(formData, name)
@@ -396,13 +448,24 @@ function lines(formData: FormData, name: string) {
 
 function parseSources(formData: FormData) {
   return lines(formData, "sources").map((line) => {
-    const [label, url] = line.split("|").map((part) => part.trim());
+    const [label, url] = line
+      .split("|")
+      .map((part) => part.trim());
 
-    if (!label || !url || !/^https?:\/\//.test(url)) {
-      throw new Error(`Sources must be "Label | https://…" per line. Check: ${line}`);
+    if (
+      !label ||
+      !url ||
+      !/^https?:\/\//.test(url)
+    ) {
+      throw new Error(
+        `Sources must be "Label | https://…" per line. Check: ${line}`
+      );
     }
 
-    return { label, url };
+    return {
+      label,
+      url,
+    };
   });
 }
 
@@ -451,9 +514,6 @@ function leaderProfileInput(formData: FormData) {
       "office"
     ),
 
-    /*
-     * Database column is jurisdiction_id.
-     */
     jurisdiction_id: optional(
       formData,
       "jurisdiction_id"
@@ -493,10 +553,9 @@ function leaderProfileInput(formData: FormData) {
       "is_active"
     ),
 
-    sort_order:
-      Number.isNaN(sortOrder)
-        ? 0
-        : sortOrder,
+    sort_order: Number.isNaN(sortOrder)
+      ? 0
+      : sortOrder,
   };
 }
 
@@ -507,18 +566,41 @@ export async function createLeader(
   return run(async () => {
     await guard();
 
-    const organizationId = required(formData, "organization_id", "Organization");
-    const input = leaderProfileInput(formData);
+    const organizationId = required(
+      formData,
+      "organization_id",
+      "Organization"
+    );
 
-    const supabase = await createClient();
+    const input =
+      leaderProfileInput(formData);
+
+    const supabase =
+      await createClient();
+
     const { error } = await supabase
       .from("leaders")
-      .insert({ ...input, organization_id: organizationId });
-    if (error) throw new Error(error.message);
+      .insert({
+        ...input,
+        organization_id: organizationId,
+      });
 
-    revalidatePath("/superadmin/leaders");
-    revalidatePath("/leadership");
-    revalidatePath("/", "layout");
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    revalidatePath(
+      "/superadmin/leaders"
+    );
+
+    revalidatePath(
+      "/leadership"
+    );
+
+    revalidatePath(
+      "/",
+      "layout"
+    );
 
     return `Created the profile for ${input.name}.`;
   });
@@ -531,22 +613,56 @@ export async function updateLeaderProfile(
   return run(async () => {
     await guard();
 
-    const id = required(formData, "id", "Leader");
-    const organizationId = required(formData, "organization_id", "Organization");
-    const input = leaderProfileInput(formData);
-    const supabase = await createClient();
+    const id = required(
+      formData,
+      "id",
+      "Leader"
+    );
+
+    const organizationId = required(
+      formData,
+      "organization_id",
+      "Organization"
+    );
+
+    const input =
+      leaderProfileInput(formData);
+
+    const supabase =
+      await createClient();
+
     const { error } = await supabase
       .from("leaders")
-      .update({ ...input, organization_id: organizationId })
+      .update({
+        ...input,
+        organization_id: organizationId,
+      })
       .eq("id", id);
 
-    if (error) throw new Error(error.message);
+    if (error) {
+      throw new Error(error.message);
+    }
 
-    revalidatePath("/superadmin/leaders");
-    revalidatePath("/superadmin/leader-accounts");
-    revalidatePath("/leadership");
-    revalidatePath(`/leadership/${input.slug}`);
-    revalidatePath("/", "layout");
+    revalidatePath(
+      "/superadmin/leaders"
+    );
+
+    revalidatePath(
+      "/superadmin/leader-accounts"
+    );
+
+    revalidatePath(
+      "/leadership"
+    );
+
+    revalidatePath(
+      `/leadership/${input.slug}`
+    );
+
+    revalidatePath(
+      "/",
+      "layout"
+    );
 
     return `Updated the profile for ${input.name}.`;
   });
@@ -559,164 +675,54 @@ export async function setLeaderActive(
   return run(async () => {
     await guard();
 
-    const id = required(formData, "id", "Leader");
-    const isActive = text(formData, "is_active") === "true";
-    const supabase = await createClient();
-
-    const { error } = await supabase
-      .from("leaders")
-      .update({ is_active: isActive })
-      .eq("id", id);
-    if (error) throw new Error(error.message);
-
-    revalidatePath("/superadmin/leaders");
-    revalidatePath("/leadership");
-    revalidatePath("/", "layout");
-
-    return isActive ? "Profile is now visible." : "Profile is now hidden.";
-  });
-}
-
-export async function linkLeaderAccount(
-  _state: ActionState,
-  formData: FormData
-): Promise<ActionState> {
-  return run(async () => {
-    await guard();
-
-    const leaderId = required(
+    const id = required(
       formData,
-      "leader_id",
+      "id",
       "Leader"
     );
 
-    const email = required(
-      formData,
-      "email",
-      "Email"
-    ).toLowerCase();
-
-    const profile =
-      await getProfileByEmail(email);
-
-    if (!profile) {
-      throw new Error(
-        "No registered account was found with that email."
-      );
-    }
+    const isActive =
+      text(
+        formData,
+        "is_active"
+      ) === "true";
 
     const supabase =
       await createClient();
 
-    const {
-      data: leader,
-      error: leaderError,
-    } = await supabase
+    const { error } = await supabase
       .from("leaders")
-      .select("id, name")
-      .eq("id", leaderId)
-      .maybeSingle();
-
-    if (leaderError) {
-      throw new Error(
-        leaderError.message
-      );
-    }
-
-    if (!leader) {
-      throw new Error(
-        "The selected leadership profile no longer exists."
-      );
-    }
-
-    const {
-      data: existing,
-      error: existingError,
-    } = await supabase
-      .from(
-        "leader_account_provisioning"
-      )
-      .select(
-        "id, leader_id, email, status"
-      )
-      .eq("leader_id", leaderId)
-      .maybeSingle();
-
-    if (existingError) {
-      throw new Error(
-        existingError.message
-      );
-    }
-
-    if (
-      existing &&
-      existing.status === "active"
-    ) {
-      throw new Error(
-        "This leader already has an active account link."
-      );
-    }
-
-    const {
-      error: provisioningError,
-    } = await supabase
-      .from(
-        "leader_account_provisioning"
-      )
-      .upsert(
-        {
-          leader_id: leaderId,
-          email,
-          status: "pending",
-          updated_at: new Date().toISOString(),
-        },
-        {
-          onConflict: "leader_id",
-        }
-      );
-
-    if (provisioningError) {
-      throw new Error(
-        provisioningError.message
-      );
-    }
-
-    /*
-     * If the profile already exists, mark the
-     * provisioning record active.
-     */
-    const {
-      error: activateError,
-    } = await supabase
-      .from(
-        "leader_account_provisioning"
-      )
       .update({
-        status: "active",
-        updated_at:
-          new Date().toISOString(),
+        is_active: isActive,
       })
-      .eq("leader_id", leaderId);
+      .eq("id", id);
 
-    if (activateError) {
-      throw new Error(
-        activateError.message
-      );
+    if (error) {
+      throw new Error(error.message);
     }
-
-    revalidatePath(
-      "/superadmin/leader-accounts"
-    );
 
     revalidatePath(
       "/superadmin/leaders"
     );
 
-    return `${
-      profile.full_name || email
-    } linked to ${leader.name}.`;
+    revalidatePath(
+      "/leadership"
+    );
+
+    revalidatePath(
+      "/",
+      "layout"
+    );
+
+    return isActive
+      ? "Profile is now visible."
+      : "Profile is now hidden.";
   });
 }
+
+/* ------------------------------------------------------------------ */
+/* Leader account management                                          */
+/* ------------------------------------------------------------------ */
 
 export async function unlinkLeaderAccount(
   _state: ActionState,
@@ -768,6 +774,116 @@ export async function unlinkLeaderAccount(
   });
 }
 
+export async function linkLeaderAccount(
+  _state: ActionState,
+  formData: FormData
+): Promise<ActionState> {
+  return run(async () => {
+    await guard();
+
+    const leaderId = required(
+      formData,
+      "leader_id",
+      "Leader"
+    );
+
+    const email = required(
+      formData,
+      "email",
+      "Email"
+    ).toLowerCase();
+
+    if (
+      !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(
+        email
+      )
+    ) {
+      throw new Error(
+        "Enter a valid email address."
+      );
+    }
+
+    /*
+     * profiles has restrictive RLS and users can normally
+     * only see their own profile. This lookup therefore uses
+     * the trusted server-side admin client.
+     */
+    const admin =
+      createAdminClient();
+
+    const {
+      data: profile,
+      error: profileError,
+    } = await admin
+      .from("profiles")
+      .select(
+        "id, full_name, email"
+      )
+      .ilike(
+        "email",
+        email
+      )
+      .maybeSingle();
+
+    if (profileError) {
+      throw new Error(
+        profileError.message
+      );
+    }
+
+    if (!profile) {
+      throw new Error(
+        "No registered account was found with that email."
+      );
+    }
+
+    /*
+     * The account already exists, so mark the leader
+     * provisioning record as active.
+     */
+    const supabase =
+      await createClient();
+
+    const {
+      error,
+    } = await supabase
+      .from(
+        "leader_account_provisioning"
+      )
+      .upsert(
+        {
+          leader_id: leaderId,
+          email,
+          status: "active",
+          updated_at:
+            new Date().toISOString(),
+        },
+        {
+          onConflict:
+            "leader_id",
+        }
+      );
+
+    if (error) {
+      throw new Error(
+        error.message
+      );
+    }
+
+    revalidatePath(
+      "/superadmin/leader-accounts"
+    );
+
+    revalidatePath(
+      "/superadmin/leaders"
+    );
+
+    return `${
+      profile.full_name || email
+    } linked successfully.`;
+  });
+}
+
 export async function inviteLeaderAccount(
   _state: ActionState,
   formData: FormData
@@ -797,38 +913,18 @@ export async function inviteLeaderAccount(
       );
     }
 
-    const supabase =
-      await createClient();
-
-    const {
-      data: leader,
-      error: leaderError,
-    } = await supabase
-      .from("leaders")
-      .select("id, name")
-      .eq("id", leaderId)
-      .maybeSingle();
-
-    if (leaderError) {
-      throw new Error(
-        leaderError.message
-      );
-    }
-
-    if (!leader) {
-      throw new Error(
-        "The selected leadership profile no longer exists."
-      );
-    }
-
     /*
-     * Check whether this email already belongs
-     * to a REACH profile.
+     * Use the admin client for profile lookup because
+     * normal authenticated profile SELECT is restricted
+     * by RLS to the current user's profile.
      */
+    const admin =
+      createAdminClient();
+
     const {
       data: existingProfile,
       error: profileError,
-    } = await supabase
+    } = await admin
       .from("profiles")
       .select(
         "id, full_name, email"
@@ -845,9 +941,12 @@ export async function inviteLeaderAccount(
       );
     }
 
+    const supabase =
+      await createClient();
+
     /*
-     * Existing account:
-     * simply provision/link it.
+     * Existing REACH account:
+     * link it instead of sending another invitation.
      */
     if (existingProfile) {
       const {
@@ -887,33 +986,29 @@ export async function inviteLeaderAccount(
       return `${
         existingProfile.full_name ||
         email
-      } linked to ${leader.name}.`;
+      } linked successfully.`;
     }
 
     /*
      * New account:
-     * send a Supabase Auth invitation.
-     *
-     * The service-role key is used only on
-     * the server through createAdminClient().
+     * send the Supabase Auth invitation using
+     * the trusted server-side admin client.
      */
-    const admin =
-      createAdminClient();
-
     const {
       data: invited,
       error: inviteError,
     } =
-      await admin.auth.admin.inviteUserByEmail(
-        email,
-        {
-          redirectTo:
-            `${SITE_URL}/auth/callback?next=/leader`,
-          data: {
-            leader_id: leaderId,
-          },
-        }
-      );
+      await admin.auth.admin
+        .inviteUserByEmail(
+          email,
+          {
+            redirectTo:
+              `${SITE_URL}/auth/callback?next=/leader`,
+            data: {
+              leader_id: leaderId,
+            },
+          }
+        );
 
     if (inviteError) {
       throw new Error(
@@ -928,14 +1023,14 @@ export async function inviteLeaderAccount(
     }
 
     /*
-     * Store the provisioning record.
+     * Save the provisioning record.
      *
-     * The profile row can be created by your
-     * normal profile trigger after the invited
-     * user accepts the invitation.
+     * The profile is expected to be created by the
+     * application's normal profile creation flow.
      */
     const {
-      error: provisioningError,
+      error:
+        provisioningError,
     } = await supabase
       .from(
         "leader_account_provisioning"
@@ -972,6 +1067,10 @@ export async function inviteLeaderAccount(
   });
 }
 
+/* ------------------------------------------------------------------ */
+/* Content / leader collaborations                                     */
+/* ------------------------------------------------------------------ */
+
 export async function linkContentToLeader(
   _state: ActionState,
   formData: FormData
@@ -979,28 +1078,90 @@ export async function linkContentToLeader(
   return run(async () => {
     await guard();
 
-    const leaderId = required(formData, "leader_id", "Leader");
-    const [contentType, contentId] = required(formData, "content", "Content").split(":");
-    const role = oneOf(required(formData, "role", "Role"), COLLABORATION_ROLES, "Role");
+    const leaderId = required(
+      formData,
+      "leader_id",
+      "Leader"
+    );
 
-    oneOf(contentType ?? "", CONTENT_TYPES, "Content type");
+    const [
+      contentType,
+      contentId,
+    ] = required(
+      formData,
+      "content",
+      "Content"
+    ).split(":");
+
+    const role = oneOf(
+      required(
+        formData,
+        "role",
+        "Role"
+      ),
+      COLLABORATION_ROLES,
+      "Role"
+    );
+
+    oneOf(
+      contentType ?? "",
+      CONTENT_TYPES,
+      "Content type"
+    );
 
     if (!contentId) {
-      throw new Error("Please select an item to link.");
+      throw new Error(
+        "Please select an item to link."
+      );
     }
 
-    const supabase = await createClient();
-    const { error } = await supabase.from("content_leaders").upsert(
-      { content_type: contentType, content_id: contentId, leader_id: leaderId, role },
-      { onConflict: "content_type,content_id,leader_id" }
+    const supabase =
+      await createClient();
+
+    const { error } =
+      await supabase
+        .from(
+          "content_leaders"
+        )
+        .upsert(
+          {
+            content_type:
+              contentType,
+            content_id:
+              contentId,
+            leader_id:
+              leaderId,
+            role,
+          },
+          {
+            onConflict:
+              "content_type,content_id,leader_id",
+          }
+        );
+
+    if (error) {
+      throw new Error(
+        error.message
+      );
+    }
+
+    revalidatePath(
+      "/superadmin/leaders"
     );
-    if (error) throw new Error(error.message);
 
-    revalidatePath("/superadmin/leaders");
-    revalidatePath("/leadership", "layout");
-    revalidatePath(`/${contentType}s`, "layout");
+    revalidatePath(
+      "/leadership",
+      "layout"
+    );
 
-    return role === "lead" ? "Linked as lead." : "Linked as collaboration partner.";
+    revalidatePath(
+      `/${contentType}s`,
+      "layout"
+    );
+
+    return role === "lead"
+      ? "Linked as lead."
+      : "Linked as collaboration partner.";
   });
 }
 
@@ -1011,21 +1172,64 @@ export async function unlinkContentFromLeader(
   return run(async () => {
     await guard();
 
-    const contentType = oneOf(required(formData, "content_type", "Content type"), CONTENT_TYPES, "Content type");
-    const contentId = required(formData, "content_id", "Content");
-    const leaderId = required(formData, "leader_id", "Leader");
+    const contentType = oneOf(
+      required(
+        formData,
+        "content_type",
+        "Content type"
+      ),
+      CONTENT_TYPES,
+      "Content type"
+    );
 
-    const supabase = await createClient();
-    const { error } = await supabase
-      .from("content_leaders")
-      .delete()
-      .eq("content_type", contentType)
-      .eq("content_id", contentId)
-      .eq("leader_id", leaderId);
-    if (error) throw new Error(error.message);
+    const contentId = required(
+      formData,
+      "content_id",
+      "Content"
+    );
 
-    revalidatePath("/superadmin/leaders");
-    revalidatePath("/leadership", "layout");
+    const leaderId = required(
+      formData,
+      "leader_id",
+      "Leader"
+    );
+
+    const supabase =
+      await createClient();
+
+    const { error } =
+      await supabase
+        .from(
+          "content_leaders"
+        )
+        .delete()
+        .eq(
+          "content_type",
+          contentType
+        )
+        .eq(
+          "content_id",
+          contentId
+        )
+        .eq(
+          "leader_id",
+          leaderId
+        );
+
+    if (error) {
+      throw new Error(
+        error.message
+      );
+    }
+
+    revalidatePath(
+      "/superadmin/leaders"
+    );
+
+    revalidatePath(
+      "/leadership",
+      "layout"
+    );
 
     return "Collaboration removed.";
   });
