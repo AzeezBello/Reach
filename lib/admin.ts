@@ -208,11 +208,11 @@ export const getProfile = cache(async (userId: string) => {
 /**
  * Require an authenticated user.
  *
- * getClaims() verifies the access token.
- * getUser() retrieves the current Auth user.
+ * Authentication:
+ *   1. getClaims() verifies the JWT.
+ *   2. getUser() confirms the Auth user still exists.
  *
- * We intentionally do not use getSession() as the authorization
- * mechanism.
+ * Authorization is handled separately using the database profile.
  */
 export async function requireUser(
   next = "/dashboard",
@@ -233,7 +233,8 @@ export async function requireUser(
     );
   }
 
-  const userId = claimsData.claims.sub;
+  const userId =
+    claimsData.claims.sub;
 
   const {
     data: userData,
@@ -257,15 +258,29 @@ export async function requireUser(
 /* Platform administration guards                                     */
 /* ------------------------------------------------------------------ */
 
+/**
+ * Resolve platform-admin access.
+ *
+ * Authentication:
+ *   - Supabase Auth JWT must be valid.
+ *   - Auth user must still exist.
+ *
+ * Authorization:
+ *   - profiles.role must be "admin" or "superadmin".
+ *
+ * The profile lookup uses the normal authenticated client first.
+ * If RLS prevents that lookup, the server-only admin client is used
+ * AFTER Auth identity has already been verified.
+ */
 export const getSuperadminAccess = cache(
   async () => {
-    const supabase = await createClient();
+    const supabase =
+      await createClient();
 
     /*
-     * Step 1:
-     * Verify the authenticated JWT.
-     *
-     * getClaims() is the primary authentication check.
+     * --------------------------------------------------------------
+     * 1. Verify the JWT.
+     * --------------------------------------------------------------
      */
     const {
       data: claimsData,
@@ -277,7 +292,7 @@ export const getSuperadminAccess = cache(
       !claimsData?.claims?.sub
     ) {
       console.error(
-        "[REACH][auth] getClaims failed",
+        "[REACH][superadmin] Invalid authentication claims",
         {
           message:
             claimsError?.message ??
@@ -294,14 +309,13 @@ export const getSuperadminAccess = cache(
       };
     }
 
-    const userId = claimsData.claims.sub;
+    const userId =
+      claimsData.claims.sub;
 
     /*
-     * Step 2:
-     * Get the current authenticated Auth user.
-     *
-     * This confirms that the user still exists in
-     * Supabase Auth and matches the verified JWT subject.
+     * --------------------------------------------------------------
+     * 2. Confirm the current Auth user.
+     * --------------------------------------------------------------
      */
     const {
       data: userData,
@@ -314,10 +328,10 @@ export const getSuperadminAccess = cache(
       userData.user.id !== userId
     ) {
       console.error(
-        "[REACH][auth] getUser failed",
+        "[REACH][superadmin] Auth user validation failed",
         {
           claimsUserId: userId,
-          userId:
+          authUserId:
             userData.user?.id ?? null,
           message:
             userError?.message ??
@@ -334,49 +348,52 @@ export const getSuperadminAccess = cache(
       };
     }
 
-    const user = userData.user;
+    const user =
+      userData.user;
 
     /*
-     * Step 3:
-     * Read the profile through the normal authenticated
-     * Supabase client first.
+     * --------------------------------------------------------------
+     * 3. Load the application profile.
+     * --------------------------------------------------------------
      */
-    let profile = await getProfile(user.id);
+    let profile =
+      await getProfile(user.id);
 
     /*
-     * Production fallback:
+     * --------------------------------------------------------------
+     * 4. RLS fallback.
      *
-     * If the authenticated profile lookup is blocked by
-     * profiles RLS, use the server-only admin client.
-     *
-     * IMPORTANT:
-     * This is only reached AFTER getClaims() and getUser()
-     * have verified the authenticated identity.
-     *
-     * The service-role client never reaches the browser.
+     * This is safe because Auth identity has already been verified.
+     * createAdminClient() is server-only and never exposed to the
+     * browser.
+     * --------------------------------------------------------------
      */
     if (!profile) {
       try {
-        const { createAdminClient } =
-          await import(
-            "@/lib/supabase/admin-client"
-          );
+        const {
+          createAdminClient,
+        } = await import(
+          "@/lib/supabase/admin-client"
+        );
 
         const admin =
           createAdminClient();
 
         const {
           data: adminProfile,
-          error: adminProfileError,
+          error:
+            adminProfileError,
         } = await admin
           .from("profiles")
           .select(PROFILE_FIELDS)
           .eq("id", user.id)
           .maybeSingle();
 
-        if (adminProfileError) {
+        if (
+          adminProfileError
+        ) {
           console.error(
-            "[REACH][auth] Admin profile lookup failed",
+            "[REACH][superadmin] Admin profile lookup failed",
             {
               userId: user.id,
               code:
@@ -392,7 +409,7 @@ export const getSuperadminAccess = cache(
         }
       } catch (error) {
         console.error(
-          "[REACH][auth] Admin profile fallback failed",
+          "[REACH][superadmin] Admin client unavailable",
           {
             userId: user.id,
             message:
@@ -405,15 +422,17 @@ export const getSuperadminAccess = cache(
     }
 
     /*
-     * Step 4:
-     * No profile means no administrative access.
+     * --------------------------------------------------------------
+     * 5. Authenticated user without a REACH profile.
+     * --------------------------------------------------------------
      */
     if (!profile) {
       console.error(
-        "[REACH][auth] Profile not found",
+        "[REACH][superadmin] Profile not found",
         {
           userId: user.id,
-          email: user.email ?? null,
+          email:
+            user.email ?? null,
         },
       );
 
@@ -425,19 +444,22 @@ export const getSuperadminAccess = cache(
     }
 
     /*
-     * Step 5:
-     * Authorization is still based ONLY on the database
-     * profile role.
+     * --------------------------------------------------------------
+     * 6. Database role is the authorization source of truth.
+     * --------------------------------------------------------------
      */
     const allowed =
-      isSuperadminRole(profile.role);
+      isSuperadminRole(
+        profile.role,
+      );
 
     if (!allowed) {
       console.warn(
-        "[REACH][auth] Superadmin access denied",
+        "[REACH][superadmin] Access denied",
         {
           userId: user.id,
-          email: user.email ?? null,
+          email:
+            user.email ?? null,
           role: profile.role,
         },
       );
@@ -452,12 +474,15 @@ export const getSuperadminAccess = cache(
 );
 
 /**
- * Require a platform administrator.
+ * Require platform administration access.
+ *
+ * Both "admin" and "superadmin" are allowed.
  */
 export async function requireSuperadmin(
   next = "/superadmin",
 ) {
-  const access = await getSuperadminAccess();
+  const access =
+    await getSuperadminAccess();
 
   if (!access.user) {
     redirect(
@@ -465,9 +490,15 @@ export async function requireSuperadmin(
     );
   }
 
+  if (!access.profile) {
+    redirect(
+      `/login?next=${encodeURIComponent(next)}&error=profile_missing`,
+    );
+  }
+
   if (!access.allowed) {
     redirect(
-      "/dashboard?denied=superadmin",
+      `/dashboard?denied=superadmin`,
     );
   }
 

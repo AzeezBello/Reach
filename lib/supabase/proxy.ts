@@ -2,7 +2,7 @@ import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
 export async function updateSession(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
+  let response = NextResponse.next({
     request,
   });
 
@@ -16,19 +16,24 @@ export async function updateSession(request: NextRequest) {
         },
 
         setAll(cookiesToSet) {
+          /*
+           * Keep the request cookies in sync so downstream
+           * Server Components see the refreshed session.
+           */
           cookiesToSet.forEach(
             ({ name, value }) => {
-              request.cookies.set(
-                name,
-                value,
-              );
+              request.cookies.set(name, value);
             },
           );
 
-          supabaseResponse =
-            NextResponse.next({
-              request,
-            });
+          /*
+           * Re-create the response with the updated request
+           * cookie state, then forward every Supabase cookie
+           * to the browser.
+           */
+          response = NextResponse.next({
+            request,
+          });
 
           cookiesToSet.forEach(
             ({
@@ -36,7 +41,7 @@ export async function updateSession(request: NextRequest) {
               value,
               options,
             }) => {
-              supabaseResponse.cookies.set(
+              response.cookies.set(
                 name,
                 value,
                 options,
@@ -51,20 +56,19 @@ export async function updateSession(request: NextRequest) {
   /*
    * IMPORTANT:
    *
-   * getClaims() verifies the JWT and refreshes
-   * the session when necessary.
+   * getClaims() validates the JWT and can refresh an
+   * expired/near-expiry session.
    *
-   * Do not replace this with getSession()
-   * for authorization.
+   * Do not use getSession() as the authorization check.
    */
   const {
-    data: claimsData,
+    data,
     error,
   } = await supabase.auth.getClaims();
 
   if (error) {
     console.error(
-      "[REACH][proxy] Supabase claims error",
+      "[REACH][proxy] Supabase auth error",
       {
         message: error.message,
         code: error.code,
@@ -73,16 +77,15 @@ export async function updateSession(request: NextRequest) {
   }
 
   /*
-   * Keep authentication responses private.
-   * This prevents authenticated responses from
-   * being cached and reused across users.
+   * Never allow authenticated pages to be cached and
+   * subsequently served to another user.
    */
-  if (claimsData?.claims?.sub) {
-    supabaseResponse.headers.set(
+  if (data?.claims?.sub) {
+    response.headers.set(
       "Cache-Control",
       "private, no-store",
     );
   }
 
-  return supabaseResponse;
+  return response;
 }

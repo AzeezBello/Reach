@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { type FormEvent, useState } from "react";
 import { AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
 
@@ -14,7 +13,6 @@ const inputClasses =
 type Mode = "signin" | "signup" | "recovery";
 
 export function AuthForm({ next }: { next: string }) {
-  const router = useRouter();
   const [mode, setMode] = useState<Mode>("signin");
   const [signupStep, setSignupStep] = useState<1 | 2>(1);
   const [name, setName] = useState("");
@@ -75,29 +73,87 @@ export function AuthForm({ next }: { next: string }) {
       return;
     }
 
-    const result = mode === "signin"
-      ? await supabase.auth.signInWithPassword({ email, password })
-      : await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: {
-              full_name: name.trim(),
-              home_jurisdiction_id: homeJurisdictionId,
+    if (mode === "signin") {
+      const response =
+        await fetch(
+          "/api/auth/sign-in",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type":
+                "application/json",
             },
+            credentials: "include",
+            body: JSON.stringify({
+              email,
+              password,
+              next,
+            }),
           },
-        });
+        );
+
+      const result =
+        await response.json();
+
+      setLoading(false);
+
+      if (
+        !response.ok ||
+        !result.success
+      ) {
+        setError(
+          result.error ??
+            "Unable to sign in.",
+        );
+        return;
+      }
+
+      /*
+      * Force a real browser navigation after the
+      * server has established the Supabase SSR cookie.
+      *
+      * This guarantees /superadmin receives the new
+      * authentication cookie on the next request.
+      */
+      window.location.assign(
+        result.next ?? next,
+      );
+
+      return;
+    }
+
+    /*
+    * Signup continues to use the browser Supabase
+    * client because it is not the protected-admin
+    * authentication path.
+    */
+    const result =
+      await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            full_name:
+              name.trim(),
+            home_jurisdiction_id:
+              homeJurisdictionId,
+          },
+        },
+      });
 
     setLoading(false);
 
     if (result.error) {
-      setError(result.error.message);
+      setError(
+        result.error.message,
+      );
       return;
     }
 
     if (result.data.session) {
-      router.push(next);
-      router.refresh();
+      window.location.assign(
+        next,
+      );
       return;
     }
 
