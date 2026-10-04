@@ -19,6 +19,7 @@ import {
   getAdminLeaders,
   getContentLinks,
   getOrganizations,
+  getJurisdictions,
   requireSuperadmin,
 } from "@/lib/admin";
 
@@ -42,12 +43,19 @@ export default async function LeadersPage({
   await requireSuperadmin();
   const { edit } = await searchParams;
 
-  const [leaders, content, links, organizations] = await Promise.all([
-    getAdminLeaders(),
-    getAdminContent(),
-    getContentLinks(),
-    getOrganizations(),
-  ]);
+const [
+  leaders,
+  content,
+  links,
+  organizations,
+  jurisdictions,
+] = await Promise.all([
+  getAdminLeaders(),
+  getAdminContent(),
+  getContentLinks(),
+  getOrganizations(),
+  getJurisdictions(),
+]);
 
   const contentMap = new Map(
     content.map((item) => [`${item.type}:${item.id}`, item])
@@ -207,10 +215,25 @@ export default async function LeadersPage({
               defaultValue={editingLeader?.office}
             />
 
-            <Field
+            <SelectField
               label="Jurisdiction"
-              name="jurisdiction"
-              defaultValue={editingLeader?.jurisdiction}
+              name="jurisdiction_id"
+              defaultValue={
+                editingLeader?.jurisdiction
+                  ? jurisdictions.find(
+                      (jurisdiction) =>
+                        jurisdiction.name ===
+                        editingLeader.jurisdiction
+                    )?.id
+                  : undefined
+              }
+              placeholder="Select jurisdiction"
+              options={jurisdictions.map(
+                (jurisdiction) => ({
+                  value: jurisdiction.id,
+                  label: `${jurisdiction.name} — ${jurisdiction.type}`,
+                })
+              )}
             />
 
             <Field

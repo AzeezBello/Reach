@@ -15,33 +15,112 @@ import { Badge } from "@/components/ui";
 import { requireSuperadmin } from "@/lib/admin";
 import { createClient } from "@/lib/supabase/server";
 
-import { inviteLeaderAccount, unlinkLeaderAccount } from "../actions";
+import {
+  inviteLeaderAccount,
+  unlinkLeaderAccount,
+} from "../actions";
 
-export const metadata: Metadata = { title: "Leader accounts" };
+export const metadata: Metadata = {
+  title: "Leader accounts",
+};
 
 export default async function LeaderAccountsPage() {
-  await requireSuperadmin("/superadmin/leader-accounts");
+  await requireSuperadmin(
+    "/superadmin/leader-accounts"
+  );
 
   const supabase = await createClient();
-  const { data: leaders, error } = await supabase
-    .from("leaders")
-    .select("id, name, role, level_label, office, profile_id, created_at")
-    .order("sort_order", { ascending: true })
-    .order("name", { ascending: true });
 
-  if (error) throw new Error(error.message);
+  /*
+   * Load leadership profiles.
+   *
+   * IMPORTANT:
+   * Do not query leaders.profile_id.
+   * Account relationships are stored in
+   * leader_account_provisioning.
+   */
+  const {
+    data: leaders,
+    error: leadersError,
+  } = await supabase
+    .from("leaders")
+    .select(
+      "id, name, role, level_label, office, sort_order, created_at"
+    )
+    .order("sort_order", {
+      ascending: true,
+    })
+    .order("name", {
+      ascending: true,
+    });
+
+  if (leadersError) {
+    throw new Error(
+      leadersError.message
+    );
+  }
 
   const leaderRows = leaders ?? [];
-  const profileIds = [...new Set(leaderRows.map((leader) => leader.profile_id).filter(Boolean))];
-  const { data: profiles } = profileIds.length
+
+  /*
+   * Get provisioning records for all leaders.
+   */
+  const leaderIds = leaderRows.map(
+    (leader) => leader.id
+  );
+
+  const {
+    data: provisioning,
+    error: provisioningError,
+  } = leaderIds.length
     ? await supabase
-        .from("profiles")
-        .select("id, full_name, email")
-        .in("id", profileIds)
-    : { data: [] };
-  const profileMap = new Map((profiles ?? []).map((profile) => [profile.id, profile]));
-  const linkedCount = leaderRows.filter((leader) => leader.profile_id).length;
-  const unlinkedCount = leaderRows.length - linkedCount;
+        .from(
+          "leader_account_provisioning"
+        )
+        .select(
+          "id, leader_id, email, status, created_at, updated_at"
+        )
+        .in(
+          "leader_id",
+          leaderIds
+        )
+    : {
+        data: [],
+        error: null,
+      };
+
+  if (provisioningError) {
+    throw new Error(
+      provisioningError.message
+    );
+  }
+
+  /*
+   * Map provisioning records by leader ID.
+   */
+  const provisioningMap =
+    new Map(
+      (provisioning ?? []).map(
+        (record) => [
+          record.leader_id,
+          record,
+        ]
+      )
+    );
+
+  /*
+   * A leader is considered linked only when the
+   * provisioning record is active.
+   */
+  const linkedCount =
+    (provisioning ?? []).filter(
+      (record) =>
+        record.status === "active"
+    ).length;
+
+  const unlinkedCount =
+    leaderRows.length -
+    linkedCount;
 
   return (
     <div className="space-y-8">
@@ -52,52 +131,125 @@ export default async function LeaderAccountsPage() {
       />
 
       <div className="grid gap-4 sm:grid-cols-3">
-        <StatCard icon={<ShieldCheck size={20} />} label="Linked accounts" value={linkedCount} />
-        <StatCard icon={<Clock size={20} />} label="Unlinked profiles" value={unlinkedCount} />
-        <StatCard icon={<Mail size={20} />} label="Leadership profiles" value={leaderRows.length} />
+        <StatCard
+          icon={<ShieldCheck size={20} />}
+          label="Linked accounts"
+          value={linkedCount}
+        />
+
+        <StatCard
+          icon={<Clock size={20} />}
+          label="Unlinked profiles"
+          value={unlinkedCount}
+        />
+
+        <StatCard
+          icon={<Mail size={20} />}
+          label="Leadership profiles"
+          value={leaderRows.length}
+        />
       </div>
 
-      <Panel title="Account links" text="Only existing accounts can be linked.">
+      <Panel
+        title="Account links"
+        text="Existing REACH accounts can be linked to leadership profiles."
+      >
         <Table
-          head={["Leader", "Office", "Account", "Status", "Action"]}
+          head={[
+            "Leader",
+            "Office",
+            "Account",
+            "Status",
+            "Action",
+          ]}
           rows={leaderRows.length}
           empty="Create a leadership profile before linking an account."
         >
           {leaderRows.map((leader) => {
-            const profile = leader.profile_id ? profileMap.get(leader.profile_id) : null;
+            const account =
+              provisioningMap.get(
+                leader.id
+              );
+
+            const isLinked =
+              account?.status ===
+              "active";
 
             return (
               <tr key={leader.id}>
                 <td className={cell}>
-                  <span className="block font-bold text-ink">{leader.name}</span>
+                  <span className="block font-bold text-ink">
+                    {leader.name}
+                  </span>
+
                   <span className="text-xs text-slate-500">
-                    {[leader.role, leader.level_label].filter(Boolean).join(" · ") || "—"}
+                    {[
+                      leader.role,
+                      leader.level_label,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ") ||
+                      "—"}
                   </span>
                 </td>
-                <td className={cell}>{leader.office ?? "—"}</td>
+
                 <td className={cell}>
-                  {profile ? (
+                  {leader.office ??
+                    "—"}
+                </td>
+
+                <td className={cell}>
+                  {account ? (
                     <>
-                      <span className="block font-semibold text-ink">{profile.full_name || "Unnamed account"}</span>
-                      <span className="text-xs text-slate-500">{profile.email ?? "Email unavailable"}</span>
+                      <span className="block font-semibold text-ink">
+                        {account.email}
+                      </span>
+
+                      <span className="text-xs text-slate-500">
+                        {account.status}
+                      </span>
                     </>
                   ) : (
-                    <span className="text-slate-500">No account linked</span>
+                    <span className="text-slate-500">
+                      No account provisioned
+                    </span>
                   )}
                 </td>
+
                 <td className={cell}>
-                  <Badge tone={profile ? "brand" : "slate"}>{profile ? "Linked" : "Unlinked"}</Badge>
+                  <Badge
+                    tone={
+                      isLinked
+                        ? "brand"
+                        : "slate"
+                    }
+                  >
+                    {isLinked
+                      ? "Linked"
+                      : account
+                        ? "Pending"
+                        : "Unlinked"}
+                  </Badge>
                 </td>
+
                 <td className={cell}>
-                  {leader.profile_id && (
+                  {isLinked && (
                     <ActionForm
-                      action={unlinkLeaderAccount}
+                      action={
+                        unlinkLeaderAccount
+                      }
                       inline
                       variant="outline"
                       submitLabel="Unlink"
                       pendingLabel="Unlinking…"
                     >
-                      <input type="hidden" name="leader_id" value={leader.id} />
+                      <input
+                        type="hidden"
+                        name="leader_id"
+                        value={
+                          leader.id
+                        }
+                      />
                     </ActionForm>
                   )}
                 </td>
@@ -110,19 +262,40 @@ export default async function LeaderAccountsPage() {
       {unlinkedCount > 0 && (
         <Panel
           title="Link or invite a leader"
-          text="Use the leader's verified email address. Existing REACH accounts are linked; new accounts receive a one-time email invitation to set their own password."
+          text="Use the leader's verified email address. Existing REACH accounts are linked; new accounts receive a one-time email invitation to create their own password."
         >
-          <ActionForm action={inviteLeaderAccount} submitLabel="Link / send invitation" resetOnSuccess>
+          <ActionForm
+            action={
+              inviteLeaderAccount
+            }
+            submitLabel="Link / send invitation"
+            resetOnSuccess
+          >
             <div className="grid gap-5 sm:grid-cols-2">
               <SelectField
                 label="Leadership profile"
                 name="leader_id"
                 required
                 options={leaderRows
-                  .filter((leader) => !leader.profile_id)
-                  .map((leader) => ({ value: leader.id, label: leader.name }))}
+                  .filter((leader) => {
+                    const account =
+                      provisioningMap.get(
+                        leader.id
+                      );
+
+                    return (
+                      account?.status !==
+                      "active"
+                    );
+                  })
+                  .map((leader) => ({
+                    value: leader.id,
+                    label:
+                      leader.name,
+                  }))}
                 placeholder="Select a leader"
               />
+
               <Field
                 label="Verified email address"
                 name="email"

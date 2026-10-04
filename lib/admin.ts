@@ -261,6 +261,12 @@ export const getSuperadminAccess = cache(
   async () => {
     const supabase = await createClient();
 
+    /*
+     * Step 1:
+     * Verify the authenticated JWT.
+     *
+     * getClaims() is the primary authentication check.
+     */
     const {
       data: claimsData,
       error: claimsError,
@@ -290,6 +296,13 @@ export const getSuperadminAccess = cache(
 
     const userId = claimsData.claims.sub;
 
+    /*
+     * Step 2:
+     * Get the current authenticated Auth user.
+     *
+     * This confirms that the user still exists in
+     * Supabase Auth and matches the verified JWT subject.
+     */
     const {
       data: userData,
       error: userError,
@@ -323,8 +336,78 @@ export const getSuperadminAccess = cache(
 
     const user = userData.user;
 
-    const profile = await getProfile(user.id);
+    /*
+     * Step 3:
+     * Read the profile through the normal authenticated
+     * Supabase client first.
+     */
+    let profile = await getProfile(user.id);
 
+    /*
+     * Production fallback:
+     *
+     * If the authenticated profile lookup is blocked by
+     * profiles RLS, use the server-only admin client.
+     *
+     * IMPORTANT:
+     * This is only reached AFTER getClaims() and getUser()
+     * have verified the authenticated identity.
+     *
+     * The service-role client never reaches the browser.
+     */
+    if (!profile) {
+      try {
+        const { createAdminClient } =
+          await import(
+            "@/lib/supabase/admin-client"
+          );
+
+        const admin =
+          createAdminClient();
+
+        const {
+          data: adminProfile,
+          error: adminProfileError,
+        } = await admin
+          .from("profiles")
+          .select(PROFILE_FIELDS)
+          .eq("id", user.id)
+          .maybeSingle();
+
+        if (adminProfileError) {
+          console.error(
+            "[REACH][auth] Admin profile lookup failed",
+            {
+              userId: user.id,
+              code:
+                adminProfileError.code,
+              message:
+                adminProfileError.message,
+            },
+          );
+        } else {
+          profile =
+            (adminProfile as Profile | null) ??
+            null;
+        }
+      } catch (error) {
+        console.error(
+          "[REACH][auth] Admin profile fallback failed",
+          {
+            userId: user.id,
+            message:
+              error instanceof Error
+                ? error.message
+                : "Unknown error",
+          },
+        );
+      }
+    }
+
+    /*
+     * Step 4:
+     * No profile means no administrative access.
+     */
     if (!profile) {
       console.error(
         "[REACH][auth] Profile not found",
@@ -341,9 +424,13 @@ export const getSuperadminAccess = cache(
       };
     }
 
-    const allowed = isSuperadminRole(
-      profile.role,
-    );
+    /*
+     * Step 5:
+     * Authorization is still based ONLY on the database
+     * profile role.
+     */
+    const allowed =
+      isSuperadminRole(profile.role);
 
     if (!allowed) {
       console.warn(
