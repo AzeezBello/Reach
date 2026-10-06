@@ -7,6 +7,7 @@ import { PageHero } from "@/components/page-hero";
 import { ButtonLink, Container, EmptyState, SectionHeader } from "@/components/ui";
 import { formatDate, formatTime } from "@/lib/format";
 import { pageArt } from "@/lib/media";
+import { getContentLeadersMap } from "@/lib/leaders";
 import { getPublicData, splitEvents } from "@/lib/reach";
 import type { Event } from "@/lib/types";
 
@@ -34,15 +35,16 @@ function eventMeta(event: Event) {
 }
 
 export default async function EventsPage() {
-  const { tenant, events } = await getPublicData();
+  const { events } = await getPublicData();
   const { upcoming, past } = splitEvents(events);
+  const leaders = await getContentLeadersMap("event", events.map((item) => item.id));
 
   return (
     <>
       <PageHero
         eyebrow="Events"
         title="Events in your community"
-        text={`Acada Carnival, town halls, sports days and outreach events organised by ${tenant.name}. Sign in to let the office know you are attending.`}
+        text="Acada Carnival, town halls, sports days and outreach events organised by the offices and leaders on REACH. Sign in to let the office know you are attending."
         image={pageArt.events}
         breadcrumbs={[{ label: "Events", href: "/events" }]}
       >
@@ -71,6 +73,7 @@ export default async function EventsPage() {
                   ...(event.is_featured ? [{ label: "Featured", tone: "gold" as const }] : []),
                 ]}
                 meta={eventMeta(event)}
+                leaders={leaders.get(event.id) ?? []}
                 cta="Event details"
               />
             ))}
@@ -103,6 +106,7 @@ export default async function EventsPage() {
                   fallbackIcon={<CalendarDays size={28} />}
                   badges={[{ label: "Past event", tone: "slate" }]}
                   meta={eventMeta(event)}
+                  leaders={leaders.get(event.id) ?? []}
                   cta="See details"
                 />
               ))}

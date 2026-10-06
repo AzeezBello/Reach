@@ -7,6 +7,7 @@ import { ButtonLink, Container, EmptyState } from "@/components/ui";
 import { PageHero } from "@/components/page-hero";
 import { formatDate, formatNumber, humanize, statusTone } from "@/lib/format";
 import { pageArt } from "@/lib/media";
+import { getContentLeadersMap } from "@/lib/leaders";
 import { getPublicData } from "@/lib/reach";
 
 export const metadata: Metadata = {
@@ -17,14 +18,15 @@ export const metadata: Metadata = {
 };
 
 export default async function ProjectsPage() {
-  const { tenant, projects } = await getPublicData();
+  const { projects } = await getPublicData();
+  const leaders = await getContentLeadersMap("project", projects.map((item) => item.id));
 
   return (
     <>
       <PageHero
         eyebrow="Community projects"
         title="Projects in your community"
-        text={`Follow infrastructure, environmental and public-space projects being delivered through ${tenant.name}.`}
+        text="Follow infrastructure, environmental and public-space projects being delivered across your community, and see which leaders are behind them."
         image={pageArt.projects}
         breadcrumbs={[{ label: "Projects", href: "/projects" }]}
       >
@@ -86,7 +88,7 @@ export default async function ProjectsPage() {
       <CtaBand
         eyebrow="See what is happening around you"
         title="Report an issue or request assistance."
-        text={`${tenant.name} makes community projects easier to follow, and gives residents a direct way to report problems in their area.`}
+        text="REACH makes community projects easier to follow, and gives residents a direct way to report problems in their area."
       >
         <ButtonLink href="/requests/new" variant="light" arrow>
           Report an issue

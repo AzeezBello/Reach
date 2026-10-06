@@ -2,9 +2,11 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 
+import { LeaderAvatars } from "@/components/leaders-panel";
 import { Badge } from "@/components/ui";
 import { Photo } from "@/components/media";
 import type { Tone } from "@/lib/format";
+import type { LeaderCredit } from "@/lib/types";
 
 export type CardBadge = { label: string; tone?: Tone };
 export type CardMeta = { icon: ReactNode; text: string };
@@ -21,6 +23,7 @@ export function ContentCard({
   fallbackIcon,
   badges = [],
   meta = [],
+  leaders = [],
   cta,
   priority = false,
 }: {
@@ -31,6 +34,8 @@ export function ContentCard({
   fallbackIcon: ReactNode;
   badges?: CardBadge[];
   meta?: CardMeta[];
+  /** Leaders credited on the item; each avatar links to the profile. */
+  leaders?: LeaderCredit[];
   cta: string;
   priority?: boolean;
 }) {
@@ -93,6 +98,8 @@ export function ContentCard({
             ))}
           </div>
         )}
+
+        <LeaderAvatars credits={leaders} />
 
         <span className="mt-auto inline-flex items-center gap-2 pt-5 text-sm font-bold text-brand-700">
           {cta}

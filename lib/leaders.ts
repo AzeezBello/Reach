@@ -608,6 +608,56 @@ export async function getLeaderContent(
   }
 }
 
+function sortCredits(credits: LeaderCredit[]) {
+  return credits.sort((a, b) =>
+    a.role === b.role ? 0 : a.role === "lead" ? -1 : 1,
+  );
+}
+
+/**
+ * Leader credits for many items of one type in a single query,
+ * keyed by content id. Used by listing pages and the homepage.
+ */
+export async function getContentLeadersMap(
+  type: ContentType,
+  contentIds: string[],
+): Promise<Map<string, LeaderCredit[]>> {
+  const map = new Map<string, LeaderCredit[]>();
+
+  if (contentIds.length === 0) return map;
+
+  try {
+    const supabase = createPublicClient();
+
+    const { data, error } = await supabase
+      .from("content_leaders")
+      .select("content_type, content_id, leader_id, role")
+      .eq("content_type", type)
+      .in("content_id", contentIds);
+
+    if (error || !data?.length) return map;
+
+    const leaders = await getLeaders();
+    const byId = new Map(leaders.map((leader) => [leader.id, leader]));
+
+    for (const row of data as ContentLeader[]) {
+      const leader = byId.get(row.leader_id);
+      if (!leader) continue;
+
+      const list = map.get(row.content_id) ?? [];
+      list.push({ leader, role: row.role });
+      map.set(row.content_id, list);
+    }
+
+    for (const list of map.values()) sortCredits(list);
+
+    return map;
+  } catch (error) {
+    console.error("Failed to load content leaders:", error);
+    return map;
+  }
+}
+
 /**
  * Leaders credited on one item.
  */

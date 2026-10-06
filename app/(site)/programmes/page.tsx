@@ -6,6 +6,7 @@ import { ButtonLink, Container, EmptyState } from "@/components/ui";
 import { PageHero } from "@/components/page-hero";
 import { formatDate } from "@/lib/format";
 import { pageArt } from "@/lib/media";
+import { getContentLeadersMap } from "@/lib/leaders";
 import { getPublicData } from "@/lib/reach";
 
 export const metadata: Metadata = {
@@ -16,14 +17,15 @@ export const metadata: Metadata = {
 };
 
 export default async function ProgrammesPage() {
-  const { tenant, programmes } = await getPublicData();
+  const { programmes } = await getPublicData();
+  const leaders = await getContentLeadersMap("programme", programmes.map((item) => item.id));
 
   return (
     <>
       <PageHero
         eyebrow="Programmes & initiatives"
         title="Programmes for residents"
-        text={`Discover education, skills, health and community programmes available through ${tenant.name}.`}
+        text="Education, skills, health and community programmes published on REACH by the offices and leaders serving your community."
         image={pageArt.programmes}
         breadcrumbs={[{ label: "Programmes", href: "/programmes" }]}
       >
@@ -56,6 +58,7 @@ export default async function ProgrammesPage() {
                     text: `Apply by ${formatDate(programme.registration_deadline)}`,
                   },
                 ].filter(Boolean) as { icon: React.ReactNode; text: string }[]}
+                leaders={leaders.get(programme.id) ?? []}
                 cta="View programme"
               />
             ))}

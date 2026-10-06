@@ -235,7 +235,7 @@ export default async function HomePage() {
                   mode="ambient"
                   src={hero.video}
                   poster={hero.poster.src}
-                  title={`${tenant.name} community highlights`}
+                  title="REACH community highlights"
                   className="aspect-[9/16] rounded-[1.5rem]"
                 />
               </div>
@@ -479,7 +479,7 @@ export default async function HomePage() {
           <SectionHeader
             eyebrow="Programmes"
             title="What is available right now?"
-            text={`Programmes and initiatives currently published by ${tenant.name}.`}
+            text="Programmes and initiatives currently published on REACH by the offices and leaders serving your community."
             action={
               <TextLink href="/programmes">
                 View all programmes
@@ -945,8 +945,8 @@ export default async function HomePage() {
                 </h2>
 
                 <p className="mt-4 text-base leading-7 text-brand-100 sm:text-lg">
-                  Submit a service request through{" "}
-                  {tenant.name}. You will receive a
+                  Submit a service request through REACH.
+                  You will receive a
                   reference number that you can use to
                   follow its progress.
                 </p>

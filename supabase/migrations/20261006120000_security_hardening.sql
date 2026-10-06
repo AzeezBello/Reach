@@ -22,6 +22,27 @@
 revoke execute on function public.is_platform_admin() from anon, public;
 grant execute on function public.is_platform_admin() to authenticated;
 
+-- Office staff membership, read from office_members. The hosted project did
+-- not have this helper even though 20260930000003_policies.sql defines it,
+-- so it is (re)created here before the policies that depend on it.
+create or replace function public.is_office_staff(target_organization uuid)
+returns boolean
+language sql
+stable
+security definer
+set search_path = public
+as $$
+  select exists (
+    select 1
+    from public.office_members m
+    join public.offices o on o.id = m.office_id
+    where m.user_id = (select auth.uid()) and o.organization_id = target_organization
+  );
+$$;
+
+revoke execute on function public.is_office_staff(uuid) from anon, public;
+grant execute on function public.is_office_staff(uuid) to authenticated;
+
 -- ---------------------------------------------------------------------------
 -- Sign-up trigger: copy jurisdiction and address from the metadata
 -- ---------------------------------------------------------------------------
@@ -128,7 +149,10 @@ alter table public.requests enable row level security;
 -- Foreign-key indexes for the app's filter and join patterns
 -- ---------------------------------------------------------------------------
 
-create index if not exists profiles_jurisdiction_idx on public.profiles (jurisdiction_id);
+-- profiles.jurisdiction_id is already covered by profiles_jurisdiction_id_idx
+-- from the jurisdiction migration; make sure no duplicate remains.
+create index if not exists profiles_jurisdiction_id_idx on public.profiles (jurisdiction_id);
+drop index if exists public.profiles_jurisdiction_idx;
 
 create index if not exists offices_organization_idx on public.offices (organization_id);
 create index if not exists offices_jurisdiction_idx on public.offices (jurisdiction_id);

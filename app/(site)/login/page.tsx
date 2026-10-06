@@ -64,7 +64,7 @@ export default async function LoginPage({
         <div className="absolute inset-0 -z-10 bg-linear-to-t from-ink via-ink/60 to-ink/20" />
 
         <div className="flex h-full flex-col justify-end p-12 xl:p-16">
-          <Eyebrow tone="light">{tenant.name}</Eyebrow>
+          <Eyebrow tone="light">REACH resident portal</Eyebrow>
 
           <h2 className="mt-3 max-w-md text-4xl font-extrabold tracking-tight text-balance">
             One account for every request, programme and update.

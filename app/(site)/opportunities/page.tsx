@@ -7,6 +7,7 @@ import { ButtonLink, Container, EmptyState } from "@/components/ui";
 import { PageHero } from "@/components/page-hero";
 import { formatDate, humanize } from "@/lib/format";
 import { pageArt } from "@/lib/media";
+import { getContentLeadersMap } from "@/lib/leaders";
 import { getPublicData } from "@/lib/reach";
 
 export const metadata: Metadata = {
@@ -17,14 +18,15 @@ export const metadata: Metadata = {
 };
 
 export default async function OpportunitiesPage() {
-  const { tenant, opportunities } = await getPublicData();
+  const { opportunities } = await getPublicData();
+  const leaders = await getContentLeadersMap("opportunity", opportunities.map((item) => item.id));
 
   return (
     <>
       <PageHero
         eyebrow="Opportunities"
         title="Opportunities for your community"
-        text={`Scholarships, training, business support, jobs and internships available through ${tenant.name}.`}
+        text="Scholarships, training, business support, jobs and internships shared on REACH by the offices and leaders serving your community."
         image={pageArt.opportunities}
         breadcrumbs={[{ label: "Opportunities", href: "/opportunities" }]}
       >
