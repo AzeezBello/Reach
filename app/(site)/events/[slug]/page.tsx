@@ -12,7 +12,7 @@ import {
 import { ActionForm } from "@/components/action-form";
 import { CtaBand, DetailBody, DetailHero } from "@/components/detail";
 import { JsonLd } from "@/components/json-ld";
-import { LeadersPanel } from "@/components/leaders-panel";
+import { LeadersInvolved } from "@/components/leaders-panel";
 import { Badge, ButtonLink, FactRow } from "@/components/ui";
 import { formatDate, formatNumber, formatTime } from "@/lib/format";
 import { getContentLeaders } from "@/lib/leaders";
@@ -196,10 +196,11 @@ export default async function EventDetailPage({ params }: Params) {
               )}
             </div>
 
-            <LeadersPanel credits={credits} />
           </>
         }
-      />
+      >
+        <LeadersInvolved credits={credits} itemLabel="event" />
+      </DetailBody>
 
       <CtaBand
         eyebrow="More from the office"

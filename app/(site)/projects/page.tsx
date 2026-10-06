@@ -69,6 +69,7 @@ export default async function ProjectsPage() {
                     text: `Started ${formatDate(project.start_date)}`,
                   },
                 ].filter(Boolean) as { icon: React.ReactNode; text: string }[]}
+                leaders={leaders.get(project.id) ?? []}
                 cta="View project"
               />
             ))}

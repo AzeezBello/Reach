@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 import { CtaBand, DetailBody, DetailHero } from "@/components/detail";
-import { LeadersPanel } from "@/components/leaders-panel";
+import { LeadersInvolved } from "@/components/leaders-panel";
 import { Badge, ButtonLink, FactRow } from "@/components/ui";
 import { getContentLeaders } from "@/lib/leaders";
 import { formatDate, formatNumber, humanize, statusTone } from "@/lib/format";
@@ -119,7 +119,6 @@ export default async function ProjectDetailPage({ params }: Params) {
               </p>
             </div>
 
-            <LeadersPanel credits={credits} />
           </>
         }
       >
@@ -135,6 +134,8 @@ export default async function ProjectDetailPage({ params }: Params) {
             </div>
           </div>
         )}
+
+        <LeadersInvolved credits={credits} itemLabel="project" />
       </DetailBody>
 
       <CtaBand

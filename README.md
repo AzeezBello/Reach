@@ -852,6 +852,23 @@ every foreign key the app filters by. `event_rsvp_count` and
 `find_service_for_request` intentionally remain callable by anonymous users
 because the public event page and request form use them.
 
+Because `is_platform_admin()` is no longer executable by anon, no policy that
+anonymous visitors hit may call it. Public reads are therefore split into a
+`*_public_read` policy (`to anon, authenticated`, no function call) and a
+`*_admin_read` policy (`to authenticated`). `20261006130000_anon_read_hotfix.sql`
+applies that split to organizations, offices and leaders; run it immediately
+after the hardening migration or public pages fail with "permission denied for
+function is_platform_admin".
+
+## Leader credits on content
+
+Every programme, opportunity, project and event can credit leaders as lead or
+partner (`content_leaders`). Listing cards show stacked avatars under "Led by"
+or "Joint collaboration", detail pages have a "Leaders involved" section, and
+each credit links to the leader's profile, which lists their initiatives in
+return. `supabase/seed/content_leaders.sql` holds the initial credits applied
+on 2026-10-06; edit them from the content editor under "Leaders".
+
 The resident workspace is:
 
 ```text

@@ -9,7 +9,7 @@ import {
 
 import { CtaBand, DetailBody, DetailHero } from "@/components/detail";
 import { JsonLd } from "@/components/json-ld";
-import { LeadersPanel } from "@/components/leaders-panel";
+import { LeadersInvolved } from "@/components/leaders-panel";
 import { Badge, ButtonLink, FactRow } from "@/components/ui";
 import { getContentLeaders } from "@/lib/leaders";
 import { formatDate, formatNumber, humanize, statusTone } from "@/lib/format";
@@ -133,10 +133,11 @@ export default async function ProgrammeDetailPage({ params }: Params) {
               </p>
             </div>
 
-            <LeadersPanel credits={credits} />
           </>
         }
-      />
+      >
+        <LeadersInvolved credits={credits} itemLabel="programme" />
+      </DetailBody>
 
       <CtaBand
         eyebrow="Keep exploring"

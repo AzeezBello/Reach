@@ -110,8 +110,12 @@ begin
   end loop;
 end $$;
 
+-- Public reads must never call is_platform_admin(): anon cannot execute it.
 create policy "organizations_public_read" on public.organizations
-  for select using (is_active or (select public.is_platform_admin()));
+  for select to anon, authenticated using (is_active);
+
+create policy "organizations_admin_read" on public.organizations
+  for select to authenticated using ((select public.is_platform_admin()));
 
 create policy "organizations_admin_write" on public.organizations
   for all to authenticated
@@ -119,7 +123,10 @@ create policy "organizations_admin_write" on public.organizations
   with check ((select public.is_platform_admin()));
 
 create policy "offices_public_read" on public.offices
-  for select using (is_active or (select public.is_platform_admin()));
+  for select to anon, authenticated using (is_active);
+
+create policy "offices_admin_read" on public.offices
+  for select to authenticated using ((select public.is_platform_admin()));
 
 create policy "offices_admin_write" on public.offices
   for all to authenticated

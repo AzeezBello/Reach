@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 
 import { CtaBand, DetailBody, DetailHero } from "@/components/detail";
-import { LeadersPanel } from "@/components/leaders-panel";
+import { LeadersInvolved } from "@/components/leaders-panel";
 import { Badge, ButtonLink, FactRow } from "@/components/ui";
 import { getContentLeaders } from "@/lib/leaders";
 import { formatDate, humanize } from "@/lib/format";
@@ -130,10 +130,11 @@ export default async function OpportunityDetailPage({ params }: Params) {
               </p>
             </div>
 
-            <LeadersPanel credits={credits} />
           </>
         }
-      />
+      >
+        <LeadersInvolved credits={credits} itemLabel="opportunity" />
+      </DetailBody>
 
       <CtaBand
         eyebrow="Need help?"

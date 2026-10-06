@@ -63,6 +63,7 @@ export default async function OpportunitiesPage() {
                     text: `Deadline ${formatDate(opportunity.deadline)}`,
                   },
                 ].filter(Boolean) as { icon: React.ReactNode; text: string }[]}
+                leaders={leaders.get(opportunity.id) ?? []}
                 cta="View opportunity"
               />
             ))}
