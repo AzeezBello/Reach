@@ -89,7 +89,10 @@ export type Profile = {
   role: string | null;
   email: string | null;
   phone: string | null;
-  home_jurisdiction_id: string | null;
+  /** Home area chosen by the resident (jurisdictions.id). */
+  jurisdiction_id: string | null;
+  area: string | null;
+  address: string | null;
   created_at: string | null;
 };
 

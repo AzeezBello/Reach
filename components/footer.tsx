@@ -138,11 +138,18 @@ export function Footer({
           <p>
             © {year} REACH. All rights reserved.
           </p>
-          <p>
-            Powered by{" "}
-            <span className="font-extrabold text-white">{PLATFORM_NAME}</span>{" "}
-            · Residents Engagement, Access, Communication &amp; Help
-          </p>
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            <Link href="/privacy" className="transition hover:text-white">
+              Privacy policy
+            </Link>
+            <Link href="/terms" className="transition hover:text-white">
+              Terms of use
+            </Link>
+            <p>
+              Powered by{" "}
+              <span className="font-extrabold text-white">{PLATFORM_NAME}</span>
+            </p>
+          </div>
         </div>
       </Container>
     </footer>

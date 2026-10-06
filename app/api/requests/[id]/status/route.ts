@@ -245,14 +245,7 @@ export async function PATCH(
         error: membershipError,
       } = await supabase
         .from("office_members")
-        .select(
-          `
-            id,
-            office_id,
-            user_id,
-            role
-          `,
-        )
+        .select("office_id, user_id, role")
         .eq("user_id", userId)
         .eq(
           "office_id",

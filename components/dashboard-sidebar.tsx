@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 import {
+  Bell,
   ClipboardList,
   LayoutDashboard,
   LogOut,
@@ -21,6 +22,11 @@ const LINKS = [
     href: "/dashboard/requests",
     label: "My Requests",
     icon: ClipboardList,
+  },
+  {
+    href: "/dashboard/notifications",
+    label: "Notifications",
+    icon: Bell,
   },
 ];
 

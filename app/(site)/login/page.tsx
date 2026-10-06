@@ -15,6 +15,17 @@ export const metadata: Metadata = {
   robots: { index: false, follow: true },
 };
 
+const ERROR_MESSAGES: Record<string, string> = {
+  profile_missing:
+    "Your account has no REACH profile yet. Sign in again; if this keeps happening, contact the platform administrator.",
+  session_expired: "Your session has expired. Please sign in again.",
+  auth_callback: "That sign-in link is invalid or has expired. Request a new one.",
+};
+
+function describeError(code: string | undefined) {
+  return code ? ERROR_MESSAGES[code] ?? null : null;
+}
+
 /** Only allow same-site redirect targets. */
 function safeNext(value: string | undefined) {
   if (!value || !value.startsWith("/") || value.startsWith("//")) {
@@ -26,9 +37,9 @@ function safeNext(value: string | undefined) {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ next?: string }>;
+  searchParams: Promise<{ next?: string; error?: string }>;
 }) {
-  const [{ next }, user, { tenant }] = await Promise.all([
+  const [{ next, error }, user, { tenant }] = await Promise.all([
     searchParams,
     getCurrentUser(),
     getTenant(),
@@ -76,7 +87,7 @@ export default async function LoginPage({
 
       <section className="flex items-start bg-slate-50 px-4 py-10 sm:px-6 md:py-16 lg:items-center lg:px-12">
         <div className="mx-auto w-full max-w-md">
-          <AuthForm next={target} />
+          <AuthForm next={target} initialError={describeError(error)} />
         </div>
       </section>
     </div>

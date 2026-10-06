@@ -38,7 +38,7 @@ export async function POST(
 
   try {
     const { data: deliveries, error } =
-      await adminSupabase
+      await adminSupabase()
         .from("notification_deliveries")
         .select(
           `
@@ -81,7 +81,7 @@ export async function POST(
         }
 
         const { data: resident } =
-          await adminSupabase
+          await adminSupabase()
             .from("profiles")
             .select(
               `
@@ -96,7 +96,7 @@ export async function POST(
             .single();
 
         const { data: organization } =
-          await adminSupabase
+          await adminSupabase()
             .from("organizations")
             .select(
               `
@@ -131,7 +131,7 @@ export async function POST(
         const providerMessageId =
           result.messages?.[0]?.id ?? null;
 
-        await adminSupabase
+        await adminSupabase()
           .from("notification_deliveries")
           .update({
             status: "sent",
@@ -152,7 +152,7 @@ export async function POST(
       } catch (error) {
         failed++;
 
-        await adminSupabase
+        await adminSupabase()
           .from("notification_deliveries")
           .update({
             status: "failed",

@@ -18,6 +18,7 @@ import { ActionForm } from "@/components/action-form";
 import {
   Field,
   Panel,
+  SelectField,
   StatCard,
   StatusBadge,
 } from "@/components/admin";
@@ -28,8 +29,9 @@ import {
   getResidentDashboard,
   requireUser,
 } from "@/lib/admin";
-import { formatDate, formatTime, initials } from "@/lib/format";
+import { formatDate, formatTime, humanize, initials } from "@/lib/format";
 import { getLinkedLeaders } from "@/lib/leaders";
+import { createClient } from "@/lib/supabase/server";
 
 import { updateProfile } from "./actions";
 
@@ -84,10 +86,18 @@ export default async function DashboardPage({
     searchParams,
   ]);
 
-  const [residentDashboard, linkedLeaders] = await Promise.all([
+  const supabase = await createClient();
+
+  const [residentDashboard, linkedLeaders, jurisdictionsResult] = await Promise.all([
     getResidentDashboard(user.id),
     getLinkedLeaders(user.id),
+    supabase.from("jurisdictions").select("id, name, type").order("type").order("name"),
   ]);
+  const jurisdictions = (jurisdictionsResult.data ?? []) as {
+    id: string;
+    name: string;
+    type: string | null;
+  }[];
   const { profile, requests, applications, notifications, events } = residentDashboard;
 
   const upcomingEvents = events.filter(
@@ -461,6 +471,20 @@ export default async function DashboardPage({
                   hint="Used for WhatsApp and SMS updates when available."
                 />
 
+                {jurisdictions.length > 0 && (
+                  <SelectField
+                    label="Home area"
+                    name="jurisdiction_id"
+                    defaultValue={profile?.jurisdiction_id ?? ""}
+                    placeholder="Select your area"
+                    options={jurisdictions.map((j) => ({
+                      value: j.id,
+                      label: `${j.name}${j.type ? ` · ${humanize(j.type)}` : ""}`,
+                    }))}
+                    hint="Requests are routed to the office that serves your area."
+                  />
+                )}
+
                 <div>
                   <p className="mb-1.5 text-sm font-bold text-ink">
                     Email
@@ -485,6 +509,11 @@ export default async function DashboardPage({
             <Panel
               title="Notifications"
               text="Updates from the office about your requests and programmes."
+              action={
+                <TextLink href="/dashboard/notifications">
+                  All notifications
+                </TextLink>
+              }
             >
               {notifications.length > 0 ? (
                 <ul className="space-y-4">

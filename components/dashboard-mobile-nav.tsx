@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import {
+  Bell,
   Menu,
   X,
   LayoutDashboard,
@@ -22,6 +23,11 @@ const LINKS = [
     href: "/dashboard/requests",
     label: "My Requests",
     icon: ClipboardList,
+  },
+  {
+    href: "/dashboard/notifications",
+    label: "Notifications",
+    icon: Bell,
   },
 ];
 

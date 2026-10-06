@@ -12,7 +12,7 @@ const inputClasses =
 
 type Mode = "signin" | "signup" | "recovery";
 
-export function AuthForm({ next }: { next: string }) {
+export function AuthForm({ next, initialError }: { next: string; initialError?: string | null }) {
   const [mode, setMode] = useState<Mode>("signin");
   const [signupStep, setSignupStep] = useState<1 | 2>(1);
   const [name, setName] = useState("");
@@ -22,7 +22,7 @@ export function AuthForm({ next }: { next: string }) {
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(initialError ?? null);
   const [notice, setNotice] = useState<string | null>(null);
 
   function switchMode(value: Mode) {
@@ -57,11 +57,11 @@ export function AuthForm({ next }: { next: string }) {
     }
 
     setLoading(true);
-    const supabase = createClient({ rememberMe: mode === "signin" && rememberMe });
+    const supabase = createClient();
 
     if (mode === "recovery") {
       const { error: recoveryError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/set-password`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/auth/set-password`,
       });
       setLoading(false);
 
@@ -88,6 +88,7 @@ export function AuthForm({ next }: { next: string }) {
               email,
               password,
               next,
+              remember: rememberMe,
             }),
           },
         );
@@ -135,7 +136,7 @@ export function AuthForm({ next }: { next: string }) {
           data: {
             full_name:
               name.trim(),
-            home_jurisdiction_id:
+            jurisdiction_id:
               homeJurisdictionId,
           },
         },

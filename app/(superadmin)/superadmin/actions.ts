@@ -122,7 +122,7 @@ export async function createOrganization(
     await guard();
 
     const input = organizationInput(formData);
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const { error } = await supabase.from("organizations").insert(input);
     if (error) throw new Error(error.message);
@@ -143,7 +143,7 @@ export async function updateOrganization(
 
     const id = required(formData, "id", "Organization");
     const input = organizationInput(formData);
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const { error } = await supabase
       .from("organizations")
@@ -168,7 +168,7 @@ export async function setOrganizationActive(
 
     const id = required(formData, "id", "Organization");
     const isActive = text(formData, "is_active") === "true";
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const { error } = await supabase
       .from("organizations")
@@ -205,7 +205,7 @@ export async function createJurisdiction(
       parent_id: optional(formData, "parent_id"),
     };
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const { error } = await supabase.from("jurisdictions").insert(input);
     if (error) throw new Error(error.message);
 
@@ -237,7 +237,7 @@ export async function createOffice(
       is_active: checked(formData, "is_active"),
     };
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const { error } = await supabase.from("offices").insert(input);
     if (error) throw new Error(error.message);
 
@@ -257,7 +257,7 @@ export async function setOfficeActive(
 
     const id = required(formData, "id", "Office");
     const isActive = text(formData, "is_active") === "true";
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const { error } = await supabase
       .from("offices")
@@ -294,7 +294,7 @@ export async function addOfficeMember(
       );
     }
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const { error } = await supabase
       .from("office_members")
       .upsert(
@@ -319,7 +319,7 @@ export async function removeOfficeMember(
     const officeId = required(formData, "office_id", "Office");
     const userId = required(formData, "user_id", "User");
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
     const { error } = await supabase
       .from("office_members")
       .delete()
@@ -342,7 +342,7 @@ export async function updateRequestStatus(
   formData: FormData
 ): Promise<ActionState> {
   return run(async () => {
-    await guard();
+    const user = await guard();
 
     const id = required(formData, "id", "Request");
 
@@ -355,57 +355,54 @@ export async function updateRequestStatus(
     const message = optional(formData, "message");
     const staffNotes = optional(formData, "staff_notes");
 
-    const supabase = await createClient();
-
     /*
-     * Update the request status through the hardened RPC.
-     *
-     * This atomically:
-     * - validates the authenticated user
-     * - validates the requested status
-     * - checks the user's role / office access
-     * - locks the request row
-     * - updates requests.status
-     * - creates the request_updates timeline entry
+     * Prefer the hardened RPC, which runs as the signed-in admin and writes
+     * the status + timeline entry atomically. When the database policies do
+     * not yet grant the admin session that access (see the
+     * 20261006000000_platform_admin_access migration), fall back to the
+     * verified server-side service role and write the same two records.
      */
-    const { data, error } = await supabase.rpc(
-      "update_request_status",
-      {
-        target_request: id,
-        next_status: status,
-        update_message: message,
-      }
-    );
+    const session = await createClient();
+    const rpc = await session.rpc("update_request_status", {
+      target_request: id,
+      next_status: status,
+      update_message: message,
+    });
 
-    if (error) {
-      throw new Error(error.message);
-    }
+    const admin = createAdminClient();
 
-    if (!data || data.length === 0) {
-      throw new Error(
-        "The request status could not be updated."
-      );
-    }
-
-    /*
-     * Staff notes are separate from the public request timeline.
-     *
-     * Keep this update separate because the current RPC is intentionally
-     * responsible for the status + timeline transaction.
-     */
-    if (staffNotes !== null) {
-      const { error: notesError } = await supabase
+    if (rpc.error || !rpc.data || rpc.data.length === 0) {
+      const { data: updated, error: updateError } = await admin
         .from("requests")
-        .update({
-          staff_notes: staffNotes,
-          updated_at: new Date().toISOString(),
-        })
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq("id", id)
+        .select("id")
+        .maybeSingle();
+
+      if (updateError) throw new Error(updateError.message);
+      if (!updated) throw new Error("The request could not be found.");
+
+      const { error: timelineError } = await admin.from("request_updates").insert({
+        request_id: id,
+        author_id: user.id,
+        status,
+        message,
+      });
+
+      if (timelineError) {
+        throw new Error(`Status was updated, but the timeline entry failed: ${timelineError.message}`);
+      }
+    }
+
+    /* Staff notes are private to the office and live outside the timeline. */
+    if (staffNotes !== null) {
+      const { error: notesError } = await admin
+        .from("requests")
+        .update({ staff_notes: staffNotes, updated_at: new Date().toISOString() })
         .eq("id", id);
 
       if (notesError) {
-        throw new Error(
-          `Status was updated, but staff notes could not be saved: ${notesError.message}`
-        );
+        throw new Error(`Status was updated, but staff notes could not be saved: ${notesError.message}`);
       }
     }
 
@@ -427,6 +424,13 @@ const CONTENT_TYPES = [
   "project",
   "event",
 ] as const;
+
+const CONTENT_PUBLIC_PATHS: Record<(typeof CONTENT_TYPES)[number], string> = {
+  programme: "/programmes",
+  opportunity: "/opportunities",
+  project: "/projects",
+  event: "/events",
+};
 
 const LEADERSHIP_LEVELS = [
   "federal",
@@ -575,8 +579,7 @@ export async function createLeader(
     const input =
       leaderProfileInput(formData);
 
-    const supabase =
-      await createClient();
+    const supabase = createAdminClient();
 
     const { error } = await supabase
       .from("leaders")
@@ -628,8 +631,7 @@ export async function updateLeaderProfile(
     const input =
       leaderProfileInput(formData);
 
-    const supabase =
-      await createClient();
+    const supabase = createAdminClient();
 
     const { error } = await supabase
       .from("leaders")
@@ -687,8 +689,7 @@ export async function setLeaderActive(
         "is_active"
       ) === "true";
 
-    const supabase =
-      await createClient();
+    const supabase = createAdminClient();
 
     const { error } = await supabase
       .from("leaders")
@@ -737,8 +738,7 @@ export async function unlinkLeaderAccount(
       "Leader"
     );
 
-    const supabase =
-      await createClient();
+    const supabase = createAdminClient();
 
     const {
       error,
@@ -841,8 +841,7 @@ export async function linkLeaderAccount(
      * The account already exists, so mark the leader
      * provisioning record as active.
      */
-    const supabase =
-      await createClient();
+    const supabase = createAdminClient();
 
     const {
       error,
@@ -941,8 +940,7 @@ export async function inviteLeaderAccount(
       );
     }
 
-    const supabase =
-      await createClient();
+    const supabase = createAdminClient();
 
     /*
      * Existing REACH account:
@@ -1115,8 +1113,7 @@ export async function linkContentToLeader(
       );
     }
 
-    const supabase =
-      await createClient();
+    const supabase = createAdminClient();
 
     const { error } =
       await supabase
@@ -1155,7 +1152,7 @@ export async function linkContentToLeader(
     );
 
     revalidatePath(
-      `/${contentType}s`,
+      CONTENT_PUBLIC_PATHS[contentType as (typeof CONTENT_TYPES)[number]],
       "layout"
     );
 
@@ -1194,8 +1191,7 @@ export async function unlinkContentFromLeader(
       "Leader"
     );
 
-    const supabase =
-      await createClient();
+    const supabase = createAdminClient();
 
     const { error } =
       await supabase
@@ -1286,7 +1282,7 @@ export async function assignOrganizationRole(
       );
     }
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const { error } = await supabase
       .from("organization_members")
@@ -1351,7 +1347,7 @@ export async function assignOfficeRole(
       );
     }
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const { error } = await supabase
       .from("office_members")
@@ -1398,7 +1394,7 @@ export async function removeOrganizationRole(
       "User"
     );
 
-    const supabase = await createClient();
+    const supabase = createAdminClient();
 
     const { error } = await supabase
       .from("organization_members")
@@ -1474,8 +1470,7 @@ export async function createServiceRoute(
         10
       );
 
-    const supabase =
-      await createClient();
+    const supabase = createAdminClient();
 
     const { error } =
       await supabase
@@ -1527,8 +1522,7 @@ export async function setServiceRouteActive(
       text(formData, "is_active") ===
       "true";
 
-    const supabase =
-      await createClient();
+    const supabase = createAdminClient();
 
     const { error } =
       await supabase

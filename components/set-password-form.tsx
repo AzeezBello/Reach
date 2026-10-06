@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
 
 import { buttonClasses } from "@/components/ui";
@@ -12,6 +12,12 @@ const inputClasses =
 
 export function SetPasswordForm() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const nextParam = searchParams.get("next");
+  const next =
+    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+      ? nextParam
+      : "/dashboard";
   const [sessionState, setSessionState] = useState<"checking" | "ready" | "invalid">("checking");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -50,7 +56,7 @@ export function SetPasswordForm() {
       return;
     }
 
-    router.replace("/leader");
+    router.replace(next);
     router.refresh();
   }
 

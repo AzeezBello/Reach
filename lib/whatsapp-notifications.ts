@@ -23,7 +23,7 @@ export async function notifyResidentRequestStatus(
   requestId: string,
 ) {
   const { data: request, error } =
-    await adminSupabase
+    await adminSupabase()
       .from("requests")
       .select(
         `
@@ -50,7 +50,7 @@ export async function notifyResidentRequestStatus(
   }
 
   const { data: resident } =
-    await adminSupabase
+    await adminSupabase()
       .from("profiles")
       .select(
         `
@@ -73,7 +73,7 @@ export async function notifyResidentRequestStatus(
   }
 
   const { data: organization } =
-    await adminSupabase
+    await adminSupabase()
       .from("organizations")
       .select(
         `
@@ -124,7 +124,7 @@ export async function notifyResidentRequestStatus(
     result.messages?.[0]?.id ?? null;
 
   const { data: notification } =
-    await adminSupabase
+    await adminSupabase()
       .from("notifications")
       .insert({
         organization_id:
@@ -142,7 +142,7 @@ export async function notifyResidentRequestStatus(
       .single();
 
   if (notification) {
-    await adminSupabase
+    await adminSupabase()
       .from("notification_deliveries")
       .insert({
         notification_id:

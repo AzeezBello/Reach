@@ -23,6 +23,7 @@ export async function updateProfile(
 
   const fullName = text(formData, "full_name");
   const phone = text(formData, "phone");
+  const jurisdictionId = text(formData, "jurisdiction_id");
 
   if (fullName.length < 2) {
     return { ok: false, message: "Please enter your full name." };
@@ -36,6 +37,7 @@ export async function updateProfile(
       full_name: fullName,
       phone: phone || null,
       email: user.email ?? null,
+      ...(formData.has("jurisdiction_id") ? { jurisdiction_id: jurisdictionId || null } : {}),
     },
     { onConflict: "id" }
   );

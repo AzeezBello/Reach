@@ -1,13 +1,21 @@
 import { createServerClient } from "@supabase/ssr";
 import { cookies } from "next/headers";
 
-export async function createClient() {
+type Options = {
+  /** Seconds the auth cookies should live. Defaults to the Supabase default. */
+  cookieMaxAge?: number;
+};
+
+export async function createClient(options: Options = {}) {
   const cookieStore = await cookies();
 
   return createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
     {
+      ...(options.cookieMaxAge
+        ? { cookieOptions: { maxAge: options.cookieMaxAge } }
+        : {}),
       cookies: {
         getAll() {
           return cookieStore.getAll();

@@ -1,3 +1,4 @@
+import type { Metadata } from "next";
 import {
   Shield,
   Users,
@@ -15,16 +16,19 @@ import {
 } from "@/components/admin";
 
 import { getOrganizations, requireSuperadmin } from "@/lib/admin";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin-client";
+import type { Profile } from "@/lib/types";
 import { assignOrganizationRole, removeOrganizationRole } from "../actions";
+
+export const metadata: Metadata = { title: "Organization members" };
+
+type MemberProfile = Pick<Profile, "id" | "full_name" | "email" | "role">;
 
 export default async function MembersPage() {
   await requireSuperadmin("/superadmin/members");
 
-  const [supabase, organizations] = await Promise.all([
-    createClient(),
-    getOrganizations(),
-  ]);
+  const organizations = await getOrganizations();
+  const supabase = createAdminClient();
 
   const { data: members } = await supabase
     .from("organization_members")
@@ -48,7 +52,7 @@ export default async function MembersPage() {
     ),
   ];
 
-  let profiles: any[] = [];
+  let profiles: MemberProfile[] = [];
 
   if (userIds.length) {
     const { data } = await supabase
@@ -58,7 +62,7 @@ export default async function MembersPage() {
       )
       .in("id", userIds);
 
-    profiles = data ?? [];
+    profiles = (data ?? []) as MemberProfile[];
   }
 
   const profileMap = new Map(

@@ -1,6 +1,7 @@
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
+import { createAdminClient } from "@/lib/supabase/admin-client";
 import { createClient } from "@/lib/supabase/server";
 
 import type {
@@ -108,7 +109,7 @@ export type RequestAccessResult = {
 /* ------------------------------------------------------------------ */
 
 const PROFILE_FIELDS =
-  "id, full_name, role, email, phone, home_jurisdiction_id, created_at";
+  "id, full_name, role, email, phone, jurisdiction_id, area, address, created_at";
 
 const ORGANIZATION_FIELDS =
   "id, name, slug, description, logo_url, primary_color, secondary_color, whatsapp_number, email, phone, website, is_active, created_at";
@@ -370,12 +371,6 @@ export const getSuperadminAccess = cache(
      */
     if (!profile) {
       try {
-        const {
-          createAdminClient,
-        } = await import(
-          "@/lib/supabase/admin-client"
-        );
-
         const admin =
           createAdminClient();
 
@@ -1055,7 +1050,7 @@ export async function getResidentRequest(
 export async function getPlatformStats(): Promise<PlatformStats> {
   await requireSuperadmin();
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const counts = await Promise.all(
     COUNTED_TABLES.map(
@@ -1101,7 +1096,7 @@ export async function getPlatformStats(): Promise<PlatformStats> {
 export async function getOrganizations() {
   await requireSuperadmin();
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const {
     data,
@@ -1122,7 +1117,7 @@ export async function getOrganization(
 ) {
   await requireSuperadmin();
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const {
     data,
@@ -1148,7 +1143,7 @@ export async function getOrganization(
 export async function getJurisdictions() {
   await requireSuperadmin();
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const {
     data,
@@ -1183,7 +1178,7 @@ export async function getJurisdictions() {
 export async function getOffices() {
   await requireSuperadmin();
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const {
     data,
@@ -1216,7 +1211,7 @@ export async function getOffices() {
 export async function getOfficeMembers() {
   await requireSuperadmin();
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const {
     data,
@@ -1248,7 +1243,7 @@ export async function getOfficeMembers() {
 export async function getOrganizationMembers() {
   await requireSuperadmin();
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const {
     data,
@@ -1279,7 +1274,7 @@ export async function getOrganizationMembers() {
 export async function getServiceRoutes() {
   await requireSuperadmin();
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const {
     data,
@@ -1318,7 +1313,9 @@ export async function getProfilesByIds(
     return new Map<string, Profile>();
   }
 
-  const supabase = await createClient();
+  await requireSuperadmin();
+
+  const supabase = createAdminClient();
 
   const {
     data,
@@ -1343,7 +1340,13 @@ export async function getProfilesByIds(
 export async function getProfileByEmail(
   email: string,
 ) {
-  const supabase = await createClient();
+  const access = await getSuperadminAccess();
+
+  if (!access.allowed) {
+    throw new Error("You do not have permission to look up accounts.");
+  }
+
+  const supabase = createAdminClient();
 
   const {
     data,
@@ -1374,7 +1377,7 @@ export async function getAllRequests(
 ) {
   await requireSuperadmin();
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const {
     data,
@@ -1402,7 +1405,7 @@ export async function getContentCounts(
 ) {
   await requireSuperadmin();
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const tables = [
     "programmes",
@@ -1477,7 +1480,7 @@ export async function getAdminLeaders(): Promise<
 > {
   await requireSuperadmin();
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const {
     data,
@@ -1651,7 +1654,7 @@ export async function getContentLinks(): Promise<
 > {
   await requireSuperadmin();
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const {
     data,
@@ -1697,7 +1700,7 @@ export async function getAdminContent(): Promise<
 > {
   await requireSuperadmin();
 
-  const supabase = await createClient();
+  const supabase = createAdminClient();
 
   const tables: {
     type: ContentType;

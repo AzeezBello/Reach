@@ -34,6 +34,8 @@ export async function POST(
     const next =
       safeNext(body.next);
 
+    const remember = body.remember === true;
+
     if (!email || !password) {
       return NextResponse.json(
         {
@@ -44,8 +46,13 @@ export async function POST(
       );
     }
 
-    const supabase =
-      await createClient();
+    /*
+     * "Remember me" keeps the session cookie for 30 days;
+     * otherwise it expires after 24 hours.
+     */
+    const supabase = await createClient({
+      cookieMaxAge: remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24,
+    });
 
     const {
       data,

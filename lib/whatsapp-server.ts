@@ -1,30 +1,17 @@
 import "server-only";
 
-import { createClient } from "@supabase/supabase-js";
-
 import { sendWhatsAppText } from "@/lib/whatsapp";
 
-const supabaseUrl = process.env.SUPABASE_URL;
-const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+import { createAdminClient } from "@/lib/supabase/admin-client";
 
-if (!supabaseUrl) {
-  throw new Error("SUPABASE_URL is missing");
+/**
+ * Service-role client for webhook processing. Created lazily so that a
+ * missing environment variable surfaces as a request-time error instead of
+ * crashing every route that imports this module at build time.
+ */
+export function adminSupabase() {
+  return createAdminClient();
 }
-
-if (!serviceRoleKey) {
-  throw new Error("SUPABASE_SERVICE_ROLE_KEY is missing");
-}
-
-export const adminSupabase = createClient(
-  supabaseUrl,
-  serviceRoleKey,
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  },
-);
 
 export type IncomingWhatsAppMessage = {
   messageId: string;
@@ -53,7 +40,7 @@ function formatPhoneForStorage(phone: string) {
 async function resolveOrganization(
   phoneNumberId: string,
 ) {
-  const { data, error } = await adminSupabase
+  const { data, error } = await adminSupabase()
     .from("organizations")
     .select(
       `
@@ -89,7 +76,7 @@ async function resolveOrganization(
   const {
     data: fallback,
     error: fallbackError,
-  } = await adminSupabase
+  } = await adminSupabase()
     .from("organizations")
     .select(
       `
@@ -121,7 +108,7 @@ async function findResidentByPhone(
       : `+${normalized}`,
   ];
 
-  const { data, error } = await adminSupabase
+  const { data, error } = await adminSupabase()
     .from("profiles")
     .select(
       `
@@ -158,7 +145,7 @@ async function getOrCreateConversation({
   const {
     data: existing,
     error,
-  } = await adminSupabase
+  } = await adminSupabase()
     .from("whatsapp_conversations")
     .select("*")
     .eq(
@@ -182,7 +169,7 @@ async function getOrCreateConversation({
       residentId &&
       existing.resident_id !== residentId
     ) {
-      await adminSupabase
+      await adminSupabase()
         .from("whatsapp_conversations")
         .update({
           resident_id: residentId,
@@ -200,7 +187,7 @@ async function getOrCreateConversation({
   const {
     data,
     error: insertError,
-  } = await adminSupabase
+  } = await adminSupabase()
     .from("whatsapp_conversations")
     .insert({
       organization_id: organizationId,
@@ -228,7 +215,7 @@ async function storeIncomingMessage({
   message: IncomingWhatsAppMessage;
 }) {
   const { data: existing } =
-    await adminSupabase
+    await adminSupabase()
       .from("whatsapp_messages")
       .select("id")
       .eq(
@@ -247,7 +234,7 @@ async function storeIncomingMessage({
   const {
     data,
     error,
-  } = await adminSupabase
+  } = await adminSupabase()
     .from("whatsapp_messages")
     .insert({
       conversation_id: conversationId,
@@ -284,7 +271,7 @@ async function findRoute({
   const {
     data,
     error,
-  } = await adminSupabase
+  } = await adminSupabase()
     .from("service_routes")
     .select(
       `
@@ -433,7 +420,7 @@ async function createReachRequest({
   const {
     data: request,
     error,
-  } = await adminSupabase
+  } = await adminSupabase()
     .from("requests")
     .insert({
       organization_id: organizationId,
@@ -485,7 +472,7 @@ async function createNotification({
   const {
     data,
     error,
-  } = await adminSupabase
+  } = await adminSupabase()
     .from("notifications")
     .insert({
       organization_id: organizationId,
@@ -528,7 +515,7 @@ async function sendAndRecordWhatsApp({
   const {
     data: stored,
     error,
-  } = await adminSupabase
+  } = await adminSupabase()
     .from("whatsapp_messages")
     .insert({
       conversation_id: conversationId,
@@ -568,7 +555,7 @@ async function statusLookup({
     return null;
   }
 
-  let query = adminSupabase
+  let query = adminSupabase()
     .from("requests")
     .select(
       `
@@ -667,7 +654,7 @@ export async function processIncomingWhatsAppMessage(
     };
   }
 
-  await adminSupabase
+  await adminSupabase()
     .from("whatsapp_conversations")
     .update({
       last_message_at:
@@ -820,7 +807,7 @@ export async function processIncomingWhatsAppMessage(
           message: `Your request ${request.reference_no} has been received.`,
         });
 
-      await adminSupabase
+      await adminSupabase()
         .from("notification_deliveries")
         .insert({
           notification_id:

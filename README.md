@@ -777,17 +777,64 @@ The platform administration area is available under:
 Current administration areas include:
 
 ```text
-/superadmin
+/superadmin                      Overview and platform stats
+/superadmin/content              Programmes, opportunities, projects, events (CRUD)
+/superadmin/content/[kind]/new   Create an item
+/superadmin/content/[kind]/[id]  Edit, publish, unpublish, archive, delete, preview
+/superadmin/events               Event list with RSVP counts and capacity
+/superadmin/events/[id]          Attendee list, capacity, registration status, CSV export
+/superadmin/leaders
+/superadmin/leader-accounts
 /superadmin/organizations
 /superadmin/jurisdictions
 /superadmin/offices
-/superadmin/leaders
-/superadmin/leader-accounts
-/superadmin/members
-/superadmin/routing
+/superadmin/members              Organization members
+/superadmin/staff                Office staff
 /superadmin/requests
+/superadmin/routing
 /superadmin/whatsapp
 ```
+
+## Signing in as a superadmin
+
+1. Create a resident account at `/login` (or use an existing one).
+2. Set the profile role in Supabase: `update public.profiles set role = 'superadmin' where email = 'you@example.com';`
+   (`admin` also grants console access).
+3. Sign in at `/login`; the console is at `/superadmin`. A non-admin account is sent to `/dashboard?denied=superadmin`.
+
+The console checks the role in the application (`requireSuperadmin`) and then
+reads and writes through the server-only service role (`SUPABASE_SERVICE_ROLE_KEY`),
+so it works even before the database policies below are applied.
+
+## Content management
+
+Every content kind shares one editor (`components/content-editor.tsx`) driven by
+`lib/content-admin.ts`, which defines the table, statuses and extra fields per kind:
+
+| Kind | Published when | Unpublish | Archive |
+| --- | --- | --- | --- |
+| Programme | `open`, `ongoing` | `draft` | `archived` |
+| Opportunity | `active` | `draft` | `archived` |
+| Project | `planned`, `ongoing`, `completed` | – | – |
+| Event | `published` | `draft` | `cancelled` |
+
+Each item is assigned an organization (required), a jurisdiction (optional), an
+image (uploaded to the public `media` storage bucket or referenced by URL) and
+leader credits. One lead makes it an individual initiative; adding partners makes
+it a joint collaboration. Saving revalidates the public listing, detail page,
+homepage and sitemap.
+
+Attendee exports are served by `GET /api/superadmin/events/[id]/attendees` as CSV
+and require a signed-in admin.
+
+## Database policies for admin sessions
+
+`supabase/migrations/20261006000000_platform_admin_access.sql` adds an
+`is_platform_admin()` helper and policies that let `admin`/`superadmin` sessions
+read every profile and manage content, leaders, members and routing directly. It
+also fixes the recursive `organization_members` policy and grants execute on
+`event_rsvp_count` and `find_service_for_request`. Apply it from the Supabase SQL
+editor or with `supabase db push`.
 
 The resident workspace is:
 
@@ -1489,52 +1536,19 @@ routing_rules
 
 ---
 
-# 37. Next Step — Programme Administration
+# 37. Done — Content Administration
 
-Build complete CRUD for:
+Programmes, opportunities, projects and events are managed from
+`/superadmin/content` (see section 19). Each kind supports create, edit,
+publish, unpublish, archive/cancel, delete, image upload, organization and
+jurisdiction assignment, leader credits and a preview link to the public page.
 
-```text
-Programmes
-```
+Still to build for programmes:
 
-Admin functionality:
+* Eligibility rules
+* Application review (approve/reject) from the console
 
-* Create programme
-* Edit programme
-* Publish programme
-* Archive programme
-* Upload image
-* Set registration deadline
-* Set capacity
-* Set eligibility
-* View applications
-* Review applications
-* Approve/reject applications
-
----
-
-# 38. Next Step — Opportunity Administration
-
-Build:
-
-```text
-/superadmin/opportunities
-```
-
-with:
-
-* Create
-* Edit
-* Publish
-* Archive
-* Application URL
-* Deadline
-* Category
-* Organization
-* Location
-* Status
-
-Then add resident:
+Still to build for opportunities on the resident side:
 
 ```text
 Save opportunity
@@ -1708,26 +1722,17 @@ Also verify:
 
 ---
 
-# 44. Next Step — Notifications Route
+# 44. Done — Notifications Route
 
-The dashboard currently references notification functionality.
+`/dashboard/notifications` lists every notification sent to the signed-in
+resident, newest first, and is linked from the dashboard sidebar, the mobile
+navigation and the dashboard notifications panel.
 
-Create:
+Still to build:
 
-```text
-/dashboard/notifications
-```
-
-with:
-
-* Notification list
-* Read/unread state
-* Mark as read
-* Mark all as read
-* Notification filtering
-* Request links
-* Event links
-* Programme links
+* Read/unread state and "mark all as read"
+* Filtering by type
+* Deep links to the related request, event or programme
 
 ---
 
