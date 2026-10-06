@@ -1,8 +1,11 @@
 /*
  * Curated media from /public.
  *
- * The photo and video files keep their original export names, so this module
- * gives each one a meaningful role and alt text in one place.
+ * Photos live under /public/images grouped by purpose:
+ *   programmes/   one image per programme, named by slug
+ *   community/    photo albums named by activity, numbered in posting order
+ *   leaders/      leader portraits named by slug
+ * This module gives each photo used in the UI a role and alt text in one place.
  */
 
 const image = (file: string) => `/images/${file}`;
@@ -28,54 +31,99 @@ export const brand = {
 
 export const photos = {
   fitnessWarmUp: {
-    src: image("731417453_18606717733056110_2647227045067538133_n.webp"),
+    src: image("community/fkl-sports-fitness-01.webp"),
     alt: "Residents in FKL Sports shirts warming up on an outdoor court under a dramatic sky",
   },
   crowdStretching: {
-    src: image("764389101_18616171024056110_4426544888644110476_n.webp"),
+    src: image("community/community-fitness-day-02.webp"),
     alt: "A large group of residents stretching together at a community fitness session",
   },
   crowdEnergy: {
-    src: image("763193152_18616171075056110_2261348050912676223_n.webp"),
+    src: image("community/community-fitness-day-06.webp"),
     alt: "Residents of all ages taking part in an outdoor community exercise class",
   },
   summerGroup: {
-    src: image("764806809_18616848676056110_5652537284398789248_n.webp"),
+    src: image("community/summer-with-fkl-02.webp"),
     alt: "Participants and organisers gathered for the Summer with FKL programme",
   },
   classroom: {
-    src: image("765176279_18616848703056110_7215976529452645267_n.webp"),
+    src: image("community/summer-with-fkl-04.webp"),
     alt: "Students in a classroom with visiting officials during an education outreach",
   },
   skillsWorkshop: {
-    src: image("772854417_18619324672056110_604157651536873616_n.webp"),
+    src: image("community/summer-skills-workshop-03.webp"),
     alt: "Young people learning practical craft and tailoring skills at a workshop",
   },
   basketball: {
-    src: image("774362714_18619324738056110_4818283269890857604_n.webp"),
+    src: image("community/youth-sports-court-02.webp"),
     alt: "Young players in green and yellow kits shooting hoops on a community basketball court",
   },
   volleyball: {
-    src: image("774508929_18619339627056110_5505896012715458287_n.webp"),
+    src: image("community/youth-sports-court-04.webp"),
     alt: "A volleyball match on a community court with players in FKL kits",
   },
   houseOfReps: {
-    src: image("734872109_18606327304056110_293967060693877602_n.webp"),
+    src: image("community/house-of-representatives-02.webp"),
     alt: "Officials and community representatives at the House of Representatives",
   },
   officeMeeting: {
-    src: image("786492805_18624344809056110_2886554270919108580_n.webp"),
+    src: image("community/constituency-office-01.webp"),
     alt: "Residents meeting with the representative at the constituency office",
   },
   officeVisit: {
-    src: image("784351021_18624345022056110_2168373051325284284_n.webp"),
+    src: image("community/constituency-office-08.webp"),
     alt: "Community members visiting the constituency office",
   },
   brandBanner: {
-    src: image("786914244_18624344941056110_8337671485434867584_n.webp"),
+    src: image("community/constituency-office-04.webp"),
     alt: "Community leaders in front of the FKL banner at the constituency office",
   },
+  fitnessRun: {
+    src: image("community/fkl-fitness-run.webp"),
+    alt: "Residents on a community fitness run in FKL Sports shirts",
+  },
+  summerCourt: {
+    src: image("community/fkl-summer-court.webp"),
+    alt: "Children in yellow and green kits on the court during Summer with FKL",
+  },
+  summerSkills: {
+    src: image("community/fkl-summer-skills.webp"),
+    alt: "Young people practising craft skills at the summer skills workshop",
+  },
+  officeDesk: {
+    src: image("community/fkl-office-desk.webp"),
+    alt: "The representative at his desk receiving residents at the constituency office",
+  },
+  radioStudio: {
+    src: image("community/yanga-fm-radio-visit-01.jpg"),
+    alt: "The representative speaking on air during a visit to Yanga FM",
+  },
+  radioTeam: {
+    src: image("community/yanga-fm-radio-visit-02.jpg"),
+    alt: "The representative with the Yanga FM presenting team in the studio",
+  },
+  roadsDrainage: {
+    src: image("programmes/lagos-community-roads-drainage-services.jpeg"),
+    alt: "Road resurfacing work under way on a community street in Lagos",
+  },
 } satisfies Record<string, Photo>;
+
+/** Programme images keyed by programme slug, used when a row has no image. */
+export const programmeArt: Record<string, Photo> = {
+  "ekoexcel-digital-learning-resources": {
+    src: image("programmes/ekoexcel-digital-learning-resources.jpg"),
+    alt: "Pupils gathered outside a school building for the EKOEXCEL programme",
+  },
+  "eko-learners-support-programme": {
+    src: image("programmes/eko-learners-support-programme.jpeg"),
+    alt: "Students and teachers at an Eko Learners' Support Programme session",
+  },
+  "lagos-cares-community-support-information": {
+    src: image("programmes/lagos-cares-community-support-information.jpeg"),
+    alt: "Lagos CARES programme information poster",
+  },
+  "lagos-community-roads-drainage-services": photos.roadsDrainage,
+};
 
 /** Hero: an ambient portrait video with a poster from the same activity. */
 export const hero = {
@@ -92,7 +140,7 @@ export const stories: Story[] = [
     src: video(
       "AQOllxCfWQGfcileKSZ8WoVgKE-_-K9lC15BVbQJmOV9ch2iiiYFcw_HeR7iAuIyTeiDWeNY092RX2maK3jmsWi_dyXbgKfc5q2R9JU.mp4"
     ),
-    poster: photos.basketball.src,
+    poster: photos.summerCourt.src,
     title: "On the court",
     caption: "Sports and youth activities across the constituency.",
   },
@@ -117,19 +165,20 @@ export const stories: Story[] = [
 /** Homepage mosaic. The first photo spans the full width. */
 export const gallery: Photo[] = [
   photos.crowdStretching,
-  photos.skillsWorkshop,
-  photos.basketball,
-  photos.classroom,
-  photos.officeMeeting,
+  photos.summerSkills,
+  photos.summerCourt,
+  photos.radioStudio,
+  photos.fitnessRun,
+  photos.officeDesk,
 ];
 
 /** Page hero backgrounds. */
 export const pageArt = {
   programmes: photos.summerGroup,
-  opportunities: photos.skillsWorkshop,
-  projects: photos.volleyball,
-  events: photos.basketball,
+  opportunities: photos.summerSkills,
+  projects: photos.roadsDrainage,
+  events: photos.summerCourt,
   leadership: photos.houseOfReps,
-  requests: photos.officeMeeting,
+  requests: photos.officeDesk,
   login: photos.brandBanner,
 };

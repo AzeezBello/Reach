@@ -8,10 +8,9 @@ import {
   Wrench,
 } from "lucide-react";
 
-import { CtaBand, DetailBody, DetailHero } from "@/components/detail";
-import { LeadersInvolved } from "@/components/leaders-panel";
+import { ContentDetailHeader } from "@/components/content/content-detail-header";
+import { CtaBand, DetailBody } from "@/components/detail";
 import { Badge, ButtonLink, FactRow } from "@/components/ui";
-import { getContentLeaders } from "@/lib/leaders";
 import { formatDate, formatNumber, humanize, statusTone } from "@/lib/format";
 import { getProject } from "@/lib/reach";
 
@@ -43,8 +42,6 @@ export default async function ProjectDetailPage({ params }: Params) {
     notFound();
   }
 
-  const credits = await getContentLeaders("project", project.id);
-
   const facts = [
     project.location && {
       icon: <MapPin size={18} />,
@@ -70,7 +67,8 @@ export default async function ProjectDetailPage({ params }: Params) {
 
   return (
     <>
-      <DetailHero
+      <ContentDetailHeader
+        attribution={project.attribution}
         breadcrumbs={[
           { label: "Projects", href: "/projects" },
           { label: project.title, href: `/projects/${project.slug}` },
@@ -135,7 +133,6 @@ export default async function ProjectDetailPage({ params }: Params) {
           </div>
         )}
 
-        <LeadersInvolved credits={credits} itemLabel="project" />
       </DetailBody>
 
       <CtaBand

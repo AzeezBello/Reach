@@ -4,7 +4,7 @@ import { notFound } from "next/navigation";
 import { AdminHeader } from "@/components/admin";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ContentEditor } from "@/components/content-editor";
-import { getAdminLeaders, getJurisdictions, getOrganizations, requireSuperadmin } from "@/lib/admin";
+import { getAdminLeaders, getJurisdictions, getOffices, getOrganizations, requireSuperadmin } from "@/lib/admin";
 import { CONTENT_KINDS, isContentKind } from "@/lib/content-admin";
 import { DEFAULT_TENANT_SLUG } from "@/lib/config";
 
@@ -25,9 +25,10 @@ export default async function NewContentPage({
 
   const config = CONTENT_KINDS[kind];
 
-  const [organizations, jurisdictions, leaders] = await Promise.all([
+  const [organizations, jurisdictions, offices, leaders] = await Promise.all([
     getOrganizations(),
     getJurisdictions(),
+    getOffices(),
     getAdminLeaders(),
   ]);
 
@@ -54,6 +55,7 @@ export default async function NewContentPage({
         item={null}
         organizations={organizations}
         jurisdictions={jurisdictions}
+        offices={offices}
         leaders={leaders.filter((leader) => leader.is_active !== false)}
         credits={new Map()}
         defaultOrganizationId={defaultOrganization?.id ?? null}

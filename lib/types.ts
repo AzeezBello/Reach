@@ -25,6 +25,7 @@ export type Jurisdiction = {
 
 export type Programme = {
   id: string;
+  attribution?: ContentAttribution;
   title: string;
   slug: string;
   summary: string | null;
@@ -41,6 +42,7 @@ export type Programme = {
 
 export type Opportunity = {
   id: string;
+  attribution?: ContentAttribution;
   title: string;
   slug: string;
   organization: string | null;
@@ -56,6 +58,7 @@ export type Opportunity = {
 
 export type Project = {
   id: string;
+  attribution?: ContentAttribution;
   title: string;
   slug: string;
   category: string | null;
@@ -166,6 +169,7 @@ export type AdminRequest = ResidentRequest & {
 
 export type Event = {
   id: string;
+  attribution?: ContentAttribution;
   title: string;
   slug: string;
   summary: string | null;
@@ -222,3 +226,45 @@ export type ContentLeader = {
 };
 
 export type LeaderCredit = { leader: Leader; role: CollaborationRole };
+
+/* ------------------------------------------------------------------ */
+/* Content attribution: Organization → Jurisdiction → Office → Leaders */
+/* ------------------------------------------------------------------ */
+
+export type ContentOrganization = Pick<Tenant, "id" | "name" | "slug" | "logo_url">;
+
+export type ContentOffice = {
+  id: string;
+  name: string;
+  type: string | null;
+  description: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+};
+
+/** The leader fields needed to credit someone on a piece of content. */
+export type ContentLeaderRef = {
+  id: string;
+  slug: string;
+  name: string;
+  role: string;
+  level: LeadershipLevel | null;
+  level_label: string | null;
+  office: string | null;
+  constituency: string | null;
+  image_url: string | null;
+  summary: string | null;
+};
+
+export type ContentCredit = { role: CollaborationRole; leader: ContentLeaderRef };
+
+/**
+ * Who is responsible for an item. Leaders come only from explicit
+ * content_leaders rows, never from rank or organization membership.
+ */
+export type ContentAttribution = {
+  organization: ContentOrganization | null;
+  jurisdiction: Jurisdiction | null;
+  office: ContentOffice | null;
+  leaders: ContentCredit[];
+};

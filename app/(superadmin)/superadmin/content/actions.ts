@@ -129,6 +129,7 @@ function buildPayload(kind: ContentKind, formData: FormData, slug: string) {
     description: optional(formData, "description"),
     organization_id: required(formData, "organization_id", "Organization"),
     jurisdiction_id: optional(formData, "jurisdiction_id"),
+    office_id: optional(formData, "office_id"),
   };
 
   if (hasSummary(kind)) {

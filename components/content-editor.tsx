@@ -21,7 +21,7 @@ import {
   type FieldDef,
 } from "@/lib/content-admin";
 import { humanize } from "@/lib/format";
-import type { Leader, Organization, JurisdictionRecord } from "@/lib/types";
+import type { Leader, Office, Organization, JurisdictionRecord } from "@/lib/types";
 
 import { deleteContent, saveContent } from "@/app/(superadmin)/superadmin/content/actions";
 
@@ -30,6 +30,7 @@ type Props = {
   item: ContentRow | null;
   organizations: Organization[];
   jurisdictions: JurisdictionRecord[];
+  offices: Office[];
   leaders: Leader[];
   credits: Map<string, string>;
   defaultOrganizationId?: string | null;
@@ -113,6 +114,7 @@ export function ContentEditor({
   item,
   organizations,
   jurisdictions,
+  offices,
   leaders,
   credits,
   defaultOrganizationId,
@@ -185,7 +187,7 @@ export function ContentEditor({
 
         <Panel
           title="Ownership"
-          text="Every item belongs to one organization and, where relevant, the jurisdiction it serves."
+          text="Every item belongs to one organization, the jurisdiction it serves and the office responsible for it. This is shown to residents as the accountability panel."
         >
           <div className="grid gap-5 sm:grid-cols-2">
             <SelectField
@@ -206,6 +208,21 @@ export function ContentEditor({
                 label: `${j.name}${j.type ? ` · ${humanize(j.type)}` : ""}`,
               }))}
             />
+            <div className="sm:col-span-2">
+              <SelectField
+                label="Responsible office"
+                name="office_id"
+                defaultValue={(item?.office_id as string | null) ?? ""}
+                placeholder="No specific office"
+                options={offices
+                  .filter((office) => office.is_active || office.id === item?.office_id)
+                  .map((office) => ({
+                    value: office.id,
+                    label: `${organizations.find((org) => org.id === office.organization_id)?.name ?? "Unknown organization"} · ${office.name}`,
+                  }))}
+                hint="The office residents should contact about this item. Choose one that belongs to the selected organization."
+              />
+            </div>
           </div>
         </Panel>
 

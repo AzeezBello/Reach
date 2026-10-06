@@ -860,241 +860,33 @@ applies that split to organizations, offices and leaders; run it immediately
 after the hardening migration or public pages fail with "permission denied for
 function is_platform_admin".
 
-## Leader credits on content
+## Content attribution (accountability)
 
-Every programme, opportunity, project and event can credit leaders as lead or
-partner (`content_leaders`). Listing cards show stacked avatars under "Led by"
-or "Joint collaboration", detail pages have a "Leaders involved" section, and
-each credit links to the leader's profile, which lists their initiatives in
-return. `supabase/seed/content_leaders.sql` holds the initial credits applied
-on 2026-10-06; edit them from the content editor under "Leaders".
+Every programme, opportunity, project and event is attributed along one
+hierarchy: **Organization → Jurisdiction → Responsible office → Leadership**.
+The first three come from the item's `organization_id`, `jurisdiction_id` and
+`office_id` columns and are embedded in the same query (`lib/reach.ts`,
+`ATTRIBUTION_SELECT`). Leaders come only from explicit `content_leaders`
+rows, so a senior office holder is never attached by rank alone.
 
-The resident workspace is:
+Content is published platform-wide: the public pages list items from every
+organization, and each item carries its own attribution. The home
+organization (`DEFAULT_TENANT_SLUG`) is still used for site chrome, contact
+details and structured data.
 
-```text
-/dashboard
-```
+The shared components live in `components/content/`:
 
-The office workspace is:
+| Component | Used for |
+| --- | --- |
+| `content-card.tsx` | Listing cards, with the compressed attribution row |
+| `content-accountability.tsx` | `AttributionRow` (cards) and `ContentAccountability` (detail panel) |
+| `content-leaders.tsx` | Portraits, avatar stack and the leader list, all linking to profiles |
+| `content-detail-header.tsx` | Hero + title + accountability panel at the top of detail pages |
+| `content-meta.tsx` | Icon + text facts on cards |
 
-```text
-/office
-```
-
-The leadership workspace is:
-
-```text
-/leader
-```
-
----
-
-# 20. Multi-Tenant Architecture
-
-REACH is designed as a multi-tenant platform.
-
-Conceptually:
-
-```text
-REACH
- │
- ├── Organization A
- │     ├── Offices
- │     ├── Jurisdictions
- │     ├── Programmes
- │     ├── Opportunities
- │     ├── Projects
- │     └── Requests
- │
- ├── Organization B
- │     ├── Offices
- │     ├── Jurisdictions
- │     ├── Programmes
- │     ├── Opportunities
- │     ├── Projects
- │     └── Requests
- │
- └── Organization C
-```
-
-Tenant-owned data should be scoped using:
-
-```text
-organization_id
-```
-
-Geographic responsibility should be scoped using:
-
-```text
-jurisdiction_id
-```
-
-This allows multiple civic offices to operate on the same platform architecture.
-
----
-
-# 21. FKL Connect
-
-The first REACH deployment is:
-
-```text
-Organization:
-FKL Connect
-
-Slug:
-fkl-connect
-
-Jurisdiction:
-Surulere Federal Constituency
-
-Office:
-FKL Connect Digital Constituency Office
-```
-
-REACH remains the underlying platform.
-
-FKL Connect is the first tenant/deployment.
-
-This distinction allows future organizations to use the same application without turning REACH into a single-office product.
-
----
-
-# 22. Security & RLS
-
-REACH uses Supabase PostgreSQL Row Level Security.
-
-Security principles:
-
-* Residents can access their own protected records.
-* Staff can access records assigned to their authorized offices.
-* Organization administrators are scoped to their organization.
-* Platform administrators have broader access.
-* Public content is readable only where appropriate.
-* Tenant boundaries must be enforced through organization ownership.
-* Service-role credentials must never reach client-side code.
-* Protected server actions must authenticate the user.
-* Database functions must use explicit authorization checks.
-* Security-definer functions must use a controlled `search_path`.
-
-Important protected database functions currently include:
-
-```text
-find_service_for_request()
-create_routed_request()
-update_request_status()
-```
-
-These functions are restricted from anonymous/public execution and are available to authenticated users where appropriate.
-
----
-
-# 23. Database
-
-REACH uses:
-
-```text
-PostgreSQL
-+
-Supabase
-+
-Supabase Auth
-+
-Row Level Security
-```
-
-Major entities include:
-
-```text
-profiles
-organizations
-jurisdictions
-offices
-office_members
-
-requests
-request_updates
-service_directory
-service_routes
-
-programmes
-programme_applications
-
-opportunities
-
-projects
-project_updates
-
-events
-event_rsvps
-
-leaders
-content_leaders
-leader_account_provisioning
-
-notifications
-audit_logs
-```
-
----
-
-# 24. Database Relationships
-
-High-level relationship:
-
-```text
-organizations
-      │
-      ├── offices
-      │      │
-      │      └── office_members
-      │
-      ├── jurisdictions
-      │
-      ├── programmes
-      │
-      ├── opportunities
-      │
-      ├── projects
-      │
-      ├── events
-      │
-      ├── leaders
-      │
-      └── requests
-              │
-              └── profiles
-```
-
-Leadership:
-
-```text
-leaders
-   │
-   └── content_leaders
-          │
-          ├── programmes
-          ├── opportunities
-          ├── projects
-          └── events
-```
-
-Leader authentication:
-
-```text
-profiles
-   │
-   │ email
-   ▼
-leader_account_provisioning
-   │
-   │ leader_id
-   ▼
-leaders
-```
-
----
-
-# 25. Technology Stack
+`supabase/seed/content_leaders.sql` holds the initial leader credits; the
+responsible office and credits are edited from the content editor under
+"Ownership" and "Leaders".
 
 ## Frontend
 
@@ -1199,7 +991,9 @@ reach/
 ├── public/
 │   ├── brand/
 │   ├── images/
-│   │   └── leaders/
+│   │   ├── community/      photo albums by activity, numbered in posting order
+│   │   ├── leaders/        leader portraits named by slug
+│   │   └── programmes/     one image per programme, named by slug
 │   └── videos/
 │
 ├── supabase/

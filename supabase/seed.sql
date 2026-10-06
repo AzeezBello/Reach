@@ -277,7 +277,7 @@ select
   '2026-12-12 17:00:00+01',
   3000,
   'published',
-  '/images/765176279_18616848703056110_7215976529452645267_n.webp',
+  '/images/community/summer-with-fkl-04.webp',
   true
 from public.organizations o
 where o.slug = 'fkl-connect'
@@ -297,7 +297,7 @@ select
   '2026-10-24 11:00:00+01',
   null,
   'published',
-  '/images/731417453_18606717733056110_2647227045067538133_n.webp',
+  '/images/community/fkl-sports-fitness-01.webp',
   false
 from public.organizations o
 where o.slug = 'fkl-connect'
@@ -317,7 +317,7 @@ select
   '2026-11-14 13:00:00+01',
   250,
   'published',
-  '/images/786492805_18624344809056110_2886554270919108580_n.webp',
+  '/images/community/constituency-office-01.webp',
   false
 from public.organizations o
 where o.slug = 'fkl-connect'

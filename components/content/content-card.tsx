@@ -2,18 +2,20 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 import { ArrowRight } from "lucide-react";
 
-import { LeaderAvatars } from "@/components/leaders-panel";
-import { Badge } from "@/components/ui";
+import { AttributionRow } from "@/components/content/content-accountability";
+import { ContentMeta, type CardMeta } from "@/components/content/content-meta";
 import { Photo } from "@/components/media";
+import { Badge } from "@/components/ui";
 import type { Tone } from "@/lib/format";
-import type { LeaderCredit } from "@/lib/types";
+import type { ContentAttribution } from "@/lib/types";
 
 export type CardBadge = { label: string; tone?: Tone };
-export type CardMeta = { icon: ReactNode; text: string };
+export type { CardMeta };
 
 /**
- * One card design shared by programmes, opportunities and projects.
- * The whole card is clickable through the stretched title link.
+ * One card design shared by programmes, opportunities, projects and events.
+ * The whole card is clickable through the stretched title link; the
+ * attribution row carries its own links to the leader profiles.
  */
 export function ContentCard({
   href,
@@ -23,7 +25,7 @@ export function ContentCard({
   fallbackIcon,
   badges = [],
   meta = [],
-  leaders = [],
+  attribution,
   cta,
   priority = false,
 }: {
@@ -34,11 +36,18 @@ export function ContentCard({
   fallbackIcon: ReactNode;
   badges?: CardBadge[];
   meta?: CardMeta[];
-  /** Leaders credited on the item; each avatar links to the profile. */
-  leaders?: LeaderCredit[];
+  /** Organization → office → credited leaders for the item. */
+  attribution?: ContentAttribution;
   cta: string;
   priority?: boolean;
 }) {
+  const allBadges = [
+    ...badges,
+    ...(attribution?.jurisdiction
+      ? [{ label: attribution.jurisdiction.name, tone: "slate" as const }]
+      : []),
+  ];
+
   return (
     <article className="group relative flex flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:shadow-xl hover:shadow-brand-900/10">
       <div className="relative aspect-[16/10] overflow-hidden bg-slate-100">
@@ -60,9 +69,9 @@ export function ContentCard({
       </div>
 
       <div className="flex flex-1 flex-col p-5 sm:p-6">
-        {badges.length > 0 && (
+        {allBadges.length > 0 && (
           <div className="flex flex-wrap gap-2">
-            {badges.map((badge) => (
+            {allBadges.map((badge) => (
               <Badge key={badge.label} tone={badge.tone}>
                 {badge.label}
               </Badge>
@@ -80,33 +89,16 @@ export function ContentCard({
         </h3>
 
         {summary && (
-          <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">
-            {summary}
-          </p>
+          <p className="mt-2 line-clamp-3 text-sm leading-6 text-slate-600">{summary}</p>
         )}
 
-        {meta.length > 0 && (
-          <div className="mt-4 flex flex-wrap gap-x-4 gap-y-2">
-            {meta.map((item) => (
-              <span
-                key={item.text}
-                className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-500"
-              >
-                <span className="text-brand-700">{item.icon}</span>
-                {item.text}
-              </span>
-            ))}
-          </div>
-        )}
+        <ContentMeta items={meta} />
 
-        <LeaderAvatars credits={leaders} />
+        {attribution && <AttributionRow {...attribution} />}
 
         <span className="mt-auto inline-flex items-center gap-2 pt-5 text-sm font-bold text-brand-700">
           {cta}
-          <ArrowRight
-            size={16}
-            className="transition group-hover:translate-x-0.5"
-          />
+          <ArrowRight size={16} className="transition group-hover:translate-x-0.5" />
         </span>
       </div>
     </article>

@@ -5,7 +5,7 @@ import { AdminHeader, StatusBadge } from "@/components/admin";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ContentEditor } from "@/components/content-editor";
 import { ButtonLink } from "@/components/ui";
-import { getAdminLeaders, getJurisdictions, getOrganizations, requireSuperadmin } from "@/lib/admin";
+import { getAdminLeaders, getJurisdictions, getOffices, getOrganizations, requireSuperadmin } from "@/lib/admin";
 import { CONTENT_KINDS, getContent, getContentCredits, isContentKind } from "@/lib/content-admin";
 
 export const metadata: Metadata = { title: "Edit content" };
@@ -32,9 +32,10 @@ export default async function EditContentPage({
     notFound();
   }
 
-  const [organizations, jurisdictions, leaders, credits] = await Promise.all([
+  const [organizations, jurisdictions, offices, leaders, credits] = await Promise.all([
     getOrganizations(),
     getJurisdictions(),
+    getOffices(),
     getAdminLeaders(),
     getContentCredits(kind, id),
   ]);
@@ -76,6 +77,7 @@ export default async function EditContentPage({
         item={item}
         organizations={organizations}
         jurisdictions={jurisdictions}
+        offices={offices}
         leaders={leaders.filter((leader) => leader.is_active !== false || credits.has(leader.id ?? ""))}
         credits={credits}
       />

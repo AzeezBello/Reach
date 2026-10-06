@@ -10,12 +10,11 @@ import {
 } from "lucide-react";
 
 import { ActionForm } from "@/components/action-form";
-import { CtaBand, DetailBody, DetailHero } from "@/components/detail";
+import { ContentDetailHeader } from "@/components/content/content-detail-header";
+import { CtaBand, DetailBody } from "@/components/detail";
 import { JsonLd } from "@/components/json-ld";
-import { LeadersInvolved } from "@/components/leaders-panel";
 import { Badge, ButtonLink, FactRow } from "@/components/ui";
 import { formatDate, formatNumber, formatTime } from "@/lib/format";
-import { getContentLeaders } from "@/lib/leaders";
 import { getCurrentUser, getEvent, getTenant } from "@/lib/reach";
 import { eventSchema } from "@/lib/seo";
 import { createClient } from "@/lib/supabase/server";
@@ -74,10 +73,7 @@ export default async function EventDetailPage({ params }: Params) {
     notFound();
   }
 
-  const [credits, rsvp] = await Promise.all([
-    getContentLeaders("event", event.id),
-    getRsvpState(event.id, user?.id ?? null),
-  ]);
+  const rsvp = await getRsvpState(event.id, user?.id ?? null);
 
   const isPast = new Date(event.ends_at ?? event.starts_at) < new Date();
   const sameDay =
@@ -115,7 +111,8 @@ export default async function EventDetailPage({ params }: Params) {
     <>
       <JsonLd data={eventSchema(event, tenant, jurisdiction)} />
 
-      <DetailHero
+      <ContentDetailHeader
+        attribution={event.attribution}
         breadcrumbs={[
           { label: "Events", href: "/events" },
           { label: event.title, href: `/events/${event.slug}` },
@@ -199,7 +196,6 @@ export default async function EventDetailPage({ params }: Params) {
           </>
         }
       >
-        <LeadersInvolved credits={credits} itemLabel="event" />
       </DetailBody>
 
       <CtaBand

@@ -18,7 +18,7 @@ import {
   Users,
 } from "lucide-react";
 
-import { ContentCard } from "@/components/content-card";
+import { ContentCard } from "@/components/content/content-card";
 import { Photo, PhotoFrame } from "@/components/media";
 import {
   Badge,
@@ -496,6 +496,7 @@ export default async function HomePage() {
                   title={programme.title}
                   summary={programme.summary}
                   image={programme.image_url}
+                  attribution={programme.attribution}
                   fallbackIcon={
                     <ClipboardList size={28} />
                   }
@@ -727,6 +728,7 @@ export default async function HomePage() {
                   title={event.title}
                   summary={event.summary}
                   image={event.image_url}
+                  attribution={event.attribution}
                   fallbackIcon={
                     <CalendarDays size={28} />
                   }

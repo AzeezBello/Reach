@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import { CalendarDays, MapPin, Users, Wrench } from "lucide-react";
 
-import { ContentCard } from "@/components/content-card";
+import { ContentCard } from "@/components/content/content-card";
 import { CtaBand } from "@/components/detail";
 import { ButtonLink, Container, EmptyState } from "@/components/ui";
 import { PageHero } from "@/components/page-hero";
 import { formatDate, formatNumber, humanize, statusTone } from "@/lib/format";
 import { pageArt } from "@/lib/media";
-import { getContentLeadersMap } from "@/lib/leaders";
 import { getPublicData } from "@/lib/reach";
 
 export const metadata: Metadata = {
@@ -19,7 +18,6 @@ export const metadata: Metadata = {
 
 export default async function ProjectsPage() {
   const { projects } = await getPublicData();
-  const leaders = await getContentLeadersMap("project", projects.map((item) => item.id));
 
   return (
     <>
@@ -69,7 +67,7 @@ export default async function ProjectsPage() {
                     text: `Started ${formatDate(project.start_date)}`,
                   },
                 ].filter(Boolean) as { icon: React.ReactNode; text: string }[]}
-                leaders={leaders.get(project.id) ?? []}
+                attribution={project.attribution}
                 cta="View project"
               />
             ))}

@@ -8,10 +8,9 @@ import {
   Sparkles,
 } from "lucide-react";
 
-import { CtaBand, DetailBody, DetailHero } from "@/components/detail";
-import { LeadersInvolved } from "@/components/leaders-panel";
+import { ContentDetailHeader } from "@/components/content/content-detail-header";
+import { CtaBand, DetailBody } from "@/components/detail";
 import { Badge, ButtonLink, FactRow } from "@/components/ui";
-import { getContentLeaders } from "@/lib/leaders";
 import { formatDate, humanize } from "@/lib/format";
 import { getOpportunity } from "@/lib/reach";
 
@@ -43,8 +42,6 @@ export default async function OpportunityDetailPage({ params }: Params) {
     notFound();
   }
 
-  const credits = await getContentLeaders("opportunity", opportunity.id);
-
   const isExternal = Boolean(opportunity.application_url?.startsWith("http"));
 
   const facts = [
@@ -67,7 +64,8 @@ export default async function OpportunityDetailPage({ params }: Params) {
 
   return (
     <>
-      <DetailHero
+      <ContentDetailHeader
+        attribution={opportunity.attribution}
         breadcrumbs={[
           { label: "Opportunities", href: "/opportunities" },
           {
@@ -133,7 +131,6 @@ export default async function OpportunityDetailPage({ params }: Params) {
           </>
         }
       >
-        <LeadersInvolved credits={credits} itemLabel="opportunity" />
       </DetailBody>
 
       <CtaBand

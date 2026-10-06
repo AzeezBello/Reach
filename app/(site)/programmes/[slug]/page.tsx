@@ -7,11 +7,10 @@ import {
   Users,
 } from "lucide-react";
 
-import { CtaBand, DetailBody, DetailHero } from "@/components/detail";
+import { ContentDetailHeader } from "@/components/content/content-detail-header";
+import { CtaBand, DetailBody } from "@/components/detail";
 import { JsonLd } from "@/components/json-ld";
-import { LeadersInvolved } from "@/components/leaders-panel";
 import { Badge, ButtonLink, FactRow } from "@/components/ui";
-import { getContentLeaders } from "@/lib/leaders";
 import { formatDate, formatNumber, humanize, statusTone } from "@/lib/format";
 import { getProgramme, getTenant } from "@/lib/reach";
 import { programmeSchema } from "@/lib/seo";
@@ -47,8 +46,6 @@ export default async function ProgrammeDetailPage({ params }: Params) {
     notFound();
   }
 
-  const credits = await getContentLeaders("programme", programme.id);
-
   const eventSchema = programmeSchema(programme, tenant, jurisdiction);
 
   const facts = [
@@ -83,7 +80,8 @@ export default async function ProgrammeDetailPage({ params }: Params) {
     <>
       {eventSchema && <JsonLd data={eventSchema} />}
 
-      <DetailHero
+      <ContentDetailHeader
+        attribution={programme.attribution}
         breadcrumbs={[
           { label: "Programmes", href: "/programmes" },
           { label: programme.title, href: `/programmes/${programme.slug}` },
@@ -136,7 +134,6 @@ export default async function ProgrammeDetailPage({ params }: Params) {
           </>
         }
       >
-        <LeadersInvolved credits={credits} itemLabel="programme" />
       </DetailBody>
 
       <CtaBand

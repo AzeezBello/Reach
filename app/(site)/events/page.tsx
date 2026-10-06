@@ -1,13 +1,12 @@
 import type { Metadata } from "next";
 import { CalendarDays, Clock, MapPin } from "lucide-react";
 
-import { ContentCard } from "@/components/content-card";
+import { ContentCard } from "@/components/content/content-card";
 import { CtaBand } from "@/components/detail";
 import { PageHero } from "@/components/page-hero";
 import { ButtonLink, Container, EmptyState, SectionHeader } from "@/components/ui";
 import { formatDate, formatTime } from "@/lib/format";
 import { pageArt } from "@/lib/media";
-import { getContentLeadersMap } from "@/lib/leaders";
 import { getPublicData, splitEvents } from "@/lib/reach";
 import type { Event } from "@/lib/types";
 
@@ -37,7 +36,6 @@ function eventMeta(event: Event) {
 export default async function EventsPage() {
   const { events } = await getPublicData();
   const { upcoming, past } = splitEvents(events);
-  const leaders = await getContentLeadersMap("event", events.map((item) => item.id));
 
   return (
     <>
@@ -73,7 +71,7 @@ export default async function EventsPage() {
                   ...(event.is_featured ? [{ label: "Featured", tone: "gold" as const }] : []),
                 ]}
                 meta={eventMeta(event)}
-                leaders={leaders.get(event.id) ?? []}
+                attribution={event.attribution}
                 cta="Event details"
               />
             ))}
@@ -106,7 +104,7 @@ export default async function EventsPage() {
                   fallbackIcon={<CalendarDays size={28} />}
                   badges={[{ label: "Past event", tone: "slate" }]}
                   meta={eventMeta(event)}
-                  leaders={leaders.get(event.id) ?? []}
+                  attribution={event.attribution}
                   cta="See details"
                 />
               ))}

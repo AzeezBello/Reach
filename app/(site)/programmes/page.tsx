@@ -1,12 +1,11 @@
 import type { Metadata } from "next";
 import { CalendarDays, ClipboardList, MapPin } from "lucide-react";
 
-import { ContentCard } from "@/components/content-card";
+import { ContentCard } from "@/components/content/content-card";
 import { ButtonLink, Container, EmptyState } from "@/components/ui";
 import { PageHero } from "@/components/page-hero";
 import { formatDate } from "@/lib/format";
 import { pageArt } from "@/lib/media";
-import { getContentLeadersMap } from "@/lib/leaders";
 import { getPublicData } from "@/lib/reach";
 
 export const metadata: Metadata = {
@@ -18,7 +17,6 @@ export const metadata: Metadata = {
 
 export default async function ProgrammesPage() {
   const { programmes } = await getPublicData();
-  const leaders = await getContentLeadersMap("programme", programmes.map((item) => item.id));
 
   return (
     <>
@@ -58,7 +56,7 @@ export default async function ProgrammesPage() {
                     text: `Apply by ${formatDate(programme.registration_deadline)}`,
                   },
                 ].filter(Boolean) as { icon: React.ReactNode; text: string }[]}
-                leaders={leaders.get(programme.id) ?? []}
+                attribution={programme.attribution}
                 cta="View programme"
               />
             ))}
