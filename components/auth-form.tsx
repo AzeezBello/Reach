@@ -18,7 +18,8 @@ export function AuthForm({ next, initialError }: { next: string; initialError?: 
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [homeJurisdictionId, setHomeJurisdictionId] = useState("");
+  const [jurisdictionId, setJurisdictionId] = useState("");
+  const [address, setAddress] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -51,8 +52,13 @@ export function AuthForm({ next, initialError }: { next: string; initialError?: 
       return;
     }
 
-    if (mode === "signup" && !homeJurisdictionId) {
+    if (mode === "signup" && !jurisdictionId) {
       setError("Select your home area to continue.");
+      return;
+    }
+
+    if (mode === "signup" && address.trim().length < 5) {
+      setError("Enter your residential address.");
       return;
     }
 
@@ -137,7 +143,9 @@ export function AuthForm({ next, initialError }: { next: string; initialError?: 
             full_name:
               name.trim(),
             jurisdiction_id:
-              homeJurisdictionId,
+              jurisdictionId,
+            address:
+              address.trim(),
           },
         },
       });
@@ -161,7 +169,8 @@ export function AuthForm({ next, initialError }: { next: string; initialError?: 
     setMode("signin");
     setSignupStep(1);
     setPassword("");
-    setHomeJurisdictionId("");
+    setJurisdictionId("");
+    setAddress("");
     setNotice("Account created. Check your email to confirm your address, then sign in.");
   }
 
@@ -299,15 +308,29 @@ export function AuthForm({ next, initialError }: { next: string; initialError?: 
               Creating an account for <span className="font-bold text-ink">{name}</span> · {email}
             </div>
             <JurisdictionSelector
-              id="home-jurisdiction"
-              name="home_jurisdiction_id"
+              id="jurisdiction"
+              name="jurisdiction_id"
               label="Home area"
               required
-              value={homeJurisdictionId}
-              onChange={setHomeJurisdictionId}
+              value={jurisdictionId}
+              onChange={setJurisdictionId}
             />
+            <div>
+              <label htmlFor="address" className="mb-2 block text-sm font-bold text-ink">Residential address</label>
+              <input
+                id="address"
+                name="address"
+                type="text"
+                autoComplete="street-address"
+                required
+                value={address}
+                onChange={(event) => setAddress(event.target.value)}
+                placeholder="e.g. 12 Adeniran Ogunsanya Street, Surulere"
+                className="w-full rounded-xl border border-slate-300 bg-white px-3.5 py-3 text-sm text-ink placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200"
+              />
+            </div>
             <p className="text-xs leading-5 text-slate-500">
-              Your home area helps show local updates and requests. You can change it later in your profile.
+              Your home area and address help the office route requests to the right team. You can change them later in your profile.
             </p>
           </>
         )}

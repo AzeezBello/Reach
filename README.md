@@ -827,6 +827,13 @@ homepage and sitemap.
 Attendee exports are served by `GET /api/superadmin/events/[id]/attendees` as CSV
 and require a signed-in admin.
 
+## Sign-up data
+
+Sign-up is two steps: name, email and password, then home area and residential
+address. The form sends `full_name`, `jurisdiction_id` and `address` as user
+metadata and the `handle_new_user` trigger copies them onto `profiles`, so the
+values are stored even when email confirmation delays the first session.
+
 ## Database policies for admin sessions
 
 `supabase/migrations/20261006000000_platform_admin_access.sql` adds an
@@ -835,6 +842,15 @@ read every profile and manage content, leaders, members and routing directly. It
 also fixes the recursive `organization_members` policy and grants execute on
 `event_rsvp_count` and `find_service_for_request`. Apply it from the Supabase SQL
 editor or with `supabase db push`.
+
+`supabase/migrations/20261006120000_security_hardening.sql` follows up on the
+Supabase advisor: it limits `is_platform_admin()` to authenticated users,
+replaces every policy on requests, offices and organizations with one
+canonical set that evaluates `auth.uid()` once per statement (review that
+block before applying if you added custom policies to those tables), updates the sign-up trigger to store the address, and adds indexes on
+every foreign key the app filters by. `event_rsvp_count` and
+`find_service_for_request` intentionally remain callable by anonymous users
+because the public event page and request form use them.
 
 The resident workspace is:
 
