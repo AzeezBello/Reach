@@ -3,6 +3,8 @@
  *
  * Photos live under /public/images grouped by purpose:
  *   programmes/   one image per programme, named by slug
+ *   projects/     one image per project, named by slug
+ *   events/       one image per event, named by slug
  *   community/    photo albums named by activity, numbered in posting order
  *   leaders/      leader portraits named by slug
  * This module gives each photo used in the UI a role and alt text in one place.

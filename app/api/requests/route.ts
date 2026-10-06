@@ -8,6 +8,7 @@ export async function POST(request: NextRequest) {
     const subject = String(body.subject ?? "").trim();
     const description = String(body.description ?? "").trim();
     const jurisdictionId = body.jurisdictionId || null;
+    const isPublic = body.isPublic === true;
 
     if (subject.length < 3) {
       return NextResponse.json(
@@ -50,6 +51,17 @@ export async function POST(request: NextRequest) {
     }
 
     const result = Array.isArray(data) ? data[0] : data;
+
+    if (isPublic && result?.request_id) {
+      const { error: shareError } = await supabase.rpc("set_request_visibility", {
+        target_request: result.request_id,
+        make_public: true,
+      });
+
+      if (shareError) {
+        console.error("Share request error:", shareError);
+      }
+    }
 
     return NextResponse.json({
       success: true,

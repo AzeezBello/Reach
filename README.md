@@ -785,6 +785,9 @@ Current administration areas include:
 /superadmin/events/[id]          Attendee list, capacity, registration status, CSV export
 /superadmin/leaders
 /superadmin/leader-accounts
+/superadmin/residents            Search, create, edit, suspend or delete resident accounts
+/superadmin/residents/new
+/superadmin/residents/[id]       Profile, activity, suspend/reinstate, delete
 /superadmin/organizations
 /superadmin/jurisdictions
 /superadmin/offices
@@ -794,6 +797,17 @@ Current administration areas include:
 /superadmin/routing
 /superadmin/whatsapp
 ```
+
+## Resident accounts
+
+`/superadmin/residents` lists every account with its role, home area, sign-in
+status and last sign-in. Admins can create accounts (invitation email or
+temporary password), edit profile details and roles, suspend and reinstate
+access, and delete accounts. Suspension bans the user in Supabase Auth and
+ends their sessions; their requests and history are kept. Deletion removes
+the auth user, which cascades to the profile, requests, RSVPs and supports.
+Admins cannot act on their own account, and only a superadmin can edit,
+suspend or delete another admin or grant admin roles.
 
 ## Signing in as a superadmin
 
@@ -859,6 +873,21 @@ anonymous visitors hit may call it. Public reads are therefore split into a
 applies that split to organizations, offices and leaders; run it immediately
 after the hardening migration or public pages fail with "permission denied for
 function is_platform_admin".
+
+## Community requests
+
+Residents can share a request publicly (a checkbox on the request form, or
+"Share with the community" on their request page). Shared requests appear at
+`/requests/community` with their subject, description, area, status and a
+support count; the resident's name is never shown. Signed-in residents add or
+withdraw support with one click, and the "Most supported" sort shows the office
+which issues affect the most people. Residents cannot support their own request.
+
+`supabase/migrations/20261006140000_public_requests.sql` adds `requests.is_public`,
+the `request_supports` table, the `public_requests` view and the
+`set_request_visibility`, `toggle_request_support` and `request_support_count`
+functions. Until it is applied the community page shows a "not available yet"
+state and the rest of the site is unaffected.
 
 ## Content attribution (accountability)
 
@@ -992,8 +1021,10 @@ reach/
 │   ├── brand/
 │   ├── images/
 │   │   ├── community/      photo albums by activity, numbered in posting order
+│   │   ├── events/         one image per event, named by slug
 │   │   ├── leaders/        leader portraits named by slug
-│   │   └── programmes/     one image per programme, named by slug
+│   │   ├── programmes/     one image per programme, named by slug
+│   │   └── projects/       one image per project, named by slug
 │   └── videos/
 │
 ├── supabase/

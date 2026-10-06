@@ -28,6 +28,7 @@ export default function RequestForm() {
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
   const [jurisdictionId, setJurisdictionId] = useState("");
+  const [isPublic, setIsPublic] = useState(false);
 
   const [matches, setMatches] = useState<ServiceMatch[]>([]);
   const [selectedMatch, setSelectedMatch] =
@@ -123,6 +124,7 @@ export default function RequestForm() {
           subject: subject.trim(),
           description: description.trim(),
           jurisdictionId: jurisdictionId || null,
+          isPublic,
           serviceMatchId: selectedMatch?.id ?? null,
           officeId: selectedMatch?.office_id ?? null,
         }),
@@ -292,6 +294,24 @@ export default function RequestForm() {
           onChange={setJurisdictionId}
         />
       </div>
+
+      <label className="flex items-start gap-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
+        <input
+          type="checkbox"
+          checked={isPublic}
+          onChange={(event) => setIsPublic(event.target.checked)}
+          disabled={submitting || checking}
+          className="mt-0.5 size-4 rounded border-slate-300 accent-brand-600"
+        />
+        <span>
+          <span className="block font-bold text-ink">Share with the community</span>
+          <span className="block text-xs leading-5 text-slate-500">
+            Other residents can see the subject, description, area and status on the
+            community requests page and add their support. Your name is never shown.
+            You can change this later from the request page.
+          </span>
+        </span>
+      </label>
 
       {error && (
         <div

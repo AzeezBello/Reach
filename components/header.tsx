@@ -29,7 +29,7 @@ export function Header({ signedIn }: { signedIn: boolean }) {
                   Dashboard
                 </Link>
               </div>
-              <form action="/auth/signout" method="post" className="hidden lg:block">
+              <form action="/auth/signout" method="post" className="hidden xl:block">
                 <button
                   type="submit"
                   className={buttonClasses("ghost", "sm")}

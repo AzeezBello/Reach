@@ -16,7 +16,7 @@ export function DesktopNav() {
   const pathname = usePathname();
 
   return (
-    <nav aria-label="Primary" className="hidden items-center gap-1 lg:flex">
+    <nav aria-label="Primary" className="hidden items-center gap-0.5 lg:flex xl:gap-1">
       {NAV_LINKS.map((link) => {
         const active = isActive(pathname, link.href);
 
@@ -25,7 +25,7 @@ export function DesktopNav() {
             key={link.href}
             href={link.href}
             aria-current={active ? "page" : undefined}
-            className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
+            className={`whitespace-nowrap rounded-lg px-2 py-2 text-[13px] font-semibold transition xl:px-3 xl:text-sm ${
               active
                 ? "bg-brand-50 text-brand-800"
                 : "text-slate-600 hover:bg-slate-50 hover:text-ink"

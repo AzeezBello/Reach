@@ -1033,9 +1033,21 @@ export async function getResidentRequest(
       ascending: true,
     });
 
+  /*
+   * Sharing is a later addition (20261006140000_public_requests). Read the
+   * flag separately so the page still works before that migration runs.
+   */
+  const { data: visibility } = await supabase
+    .from("requests")
+    .select("is_public")
+    .eq("id", id)
+    .maybeSingle();
+
   return {
-    request:
-      request as ResidentRequest,
+    request: {
+      ...(request as ResidentRequest),
+      is_public: Boolean((visibility as { is_public?: boolean } | null)?.is_public),
+    },
 
     updates: updatesError
       ? []

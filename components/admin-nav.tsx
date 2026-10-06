@@ -32,13 +32,19 @@ const GROUPS = [
     ],
   },
   {
+    title: "People",
+    links: [
+      { href: "/superadmin/residents", label: "Residents", icon: UserRound },
+      { href: "/superadmin/members", label: "Organization members", icon: Users },
+      { href: "/superadmin/staff", label: "Office staff", icon: Users },
+    ],
+  },
+  {
     title: "Organization",
     links: [
       { href: "/superadmin/organizations", label: "Organizations", icon: Landmark },
       { href: "/superadmin/jurisdictions", label: "Jurisdictions", icon: MapPinned },
       { href: "/superadmin/offices", label: "Offices", icon: Building2 },
-      { href: "/superadmin/members", label: "Organization members", icon: Users },
-      { href: "/superadmin/staff", label: "Office staff", icon: Users },
     ],
   },
   {

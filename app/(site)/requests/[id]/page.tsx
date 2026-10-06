@@ -1,11 +1,15 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
-import { CalendarDays, Clock, MessageSquareText, Tag } from "lucide-react";
+import { CalendarDays, Clock, Globe, Lock, MessageSquareText, Tag, ThumbsUp } from "lucide-react";
 
+import { ActionForm } from "@/components/action-form";
 import { StatusBadge } from "@/components/admin";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ButtonLink, Container, Eyebrow } from "@/components/ui";
 import { getResidentRequest, requireUser } from "@/lib/admin";
+import { getRequestSupportCount } from "@/lib/community";
+
+import { setRequestVisibility } from "../community/actions";
 import { formatDate, humanize } from "@/lib/format";
 
 type Params = { params: Promise<{ id: string }> };
@@ -27,6 +31,7 @@ export default async function RequestDetailPage({ params }: Params) {
   }
 
   const { request, updates } = result;
+  const supportCount = request.is_public ? await getRequestSupportCount(request.id) : 0;
   const status = request.status ?? "submitted";
   const stepIndex = status === "closed" ? STEPS.length - 1 : STEPS.indexOf(status);
 
@@ -110,6 +115,50 @@ export default async function RequestDetailPage({ params }: Params) {
             </div>
           )}
         </div>
+
+        {/* Sharing */}
+        <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">
+          <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex gap-4">
+              <span className="flex size-11 shrink-0 items-center justify-center rounded-xl bg-brand-50 text-brand-700">
+                {request.is_public ? <Globe size={20} /> : <Lock size={20} />}
+              </span>
+              <div>
+                <h2 className="text-base font-extrabold text-ink">
+                  {request.is_public ? "Shared with the community" : "Private request"}
+                </h2>
+                <p className="mt-1 max-w-xl text-sm leading-6 text-slate-600">
+                  {request.is_public
+                    ? "Other residents can see the subject, description, area and status on the community requests page and add their support. Your name is never shown."
+                    : "Only you and the office can see this request. Share it so residents affected by the same issue can add their support and the office can see how many people it matters to."}
+                </p>
+                {request.is_public && (
+                  <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-800">
+                    <ThumbsUp size={14} />
+                    {supportCount} resident{supportCount === 1 ? "" : "s"} support this request
+                  </p>
+                )}
+              </div>
+            </div>
+
+            <ActionForm
+              action={setRequestVisibility}
+              inline
+              variant={request.is_public ? "outline" : "primary"}
+              submitLabel={request.is_public ? "Make private" : "Share with the community"}
+              pendingLabel="Saving…"
+            >
+              <input type="hidden" name="id" value={request.id} />
+              <input type="hidden" name="make_public" value={request.is_public ? "false" : "true"} />
+            </ActionForm>
+          </div>
+
+          {request.is_public && (
+            <ButtonLink href={`/requests/community/${request.id}`} variant="ghost" size="sm" className="mt-4">
+              View the public page
+            </ButtonLink>
+          )}
+        </section>
 
         {/* Timeline */}
         <section className="mt-6 rounded-3xl border border-slate-200 bg-white p-6 shadow-sm sm:p-8">

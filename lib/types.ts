@@ -80,6 +80,24 @@ export type ResidentRequest = {
   status: string | null;
   created_at: string;
   updated_at: string | null;
+  /** Shared with other residents on /requests/community. */
+  is_public?: boolean;
+};
+
+/** A request a resident chose to share; read from the public_requests view. */
+export type PublicRequest = {
+  id: string;
+  reference_no: string | null;
+  category: string | null;
+  subject: string;
+  description: string | null;
+  status: string | null;
+  created_at: string;
+  updated_at: string | null;
+  jurisdiction_id: string | null;
+  jurisdiction_name: string | null;
+  jurisdiction_type: string | null;
+  support_count: number;
 };
 
 /* ------------------------------------------------------------------ */
