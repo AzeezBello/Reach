@@ -208,23 +208,6 @@ export const getPublicData = cache(async (slug: string = DEFAULT_TENANT_SLUG) =>
   } catch (e) {
     console.error("Failed to fetch public data:", e);
   }
-    supabase
-      .from("programmes")
-      .select(PROGRAMME_FIELDS)
-      .in("status", OPEN_PROGRAMME_STATUSES)
-      .order("created_at", { ascending: false }),
-    supabase
-      .from("opportunities")
-      .select(OPPORTUNITY_FIELDS)
-      .eq("status", "active")
-      .order("created_at", { ascending: false }),
-    supabase.from("projects").select(PROJECT_FIELDS).order("created_at", { ascending: false }),
-    supabase
-      .from("events")
-      .select(EVENT_FIELDS)
-      .eq("status", "published")
-      .order("starts_at", { ascending: true }),
-  ]);
 
   assertOk(programmes.error);
   assertOk(opportunities.error);
