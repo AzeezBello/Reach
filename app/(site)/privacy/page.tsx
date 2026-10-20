@@ -50,7 +50,7 @@ const SECTIONS = [
   {
     title: "Security and retention",
     body: [
-      "Data is stored with Supabase in encrypted databases and only reachable through authenticated, role-based access.",
+      "Data is stored in encrypted PostgreSQL databases on Neon and only reachable through authenticated, role-based access.",
       "Request records are kept for as long as the office needs them to provide and report on the service, after which they are deleted or anonymised.",
     ],
   },

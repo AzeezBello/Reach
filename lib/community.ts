@@ -85,7 +85,16 @@ export async function getPublicRequest(id: string): Promise<PublicRequest | null
 /** Ids of the public requests the signed-in resident has supported. */
 export async function getMySupportedRequestIds(): Promise<Set<string>> {
   const supabase = await createClient();
-  const { data } = await supabase.from("request_supports").select("request_id");
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) return new Set();
+
+  const { data } = await supabase
+    .from("request_supports")
+    .select("request_id")
+    .eq("resident_id", user.id);
 
   return new Set(((data ?? []) as { request_id: string }[]).map((row) => row.request_id));
 }

@@ -77,7 +77,6 @@ export async function neonSql<T = Record<string, any>>(
       "Neon-Connection-String": connStr,
     },
     body: JSON.stringify({ query, params }),
-    cache: "no-store",
   });
 
   if (!response.ok) {
@@ -591,6 +590,9 @@ class NeonQueryBuilder<T = any[]> implements PromiseLike<PostgrestResponse<T>> {
 
       return { data: null as unknown as T, error: null, count: null };
     } catch (err: any) {
+      if (err?.digest === "DYNAMIC_SERVER_USAGE") {
+        throw err;
+      }
       return {
         data: null as unknown as T,
         error: {
@@ -648,10 +650,10 @@ export async function executeNeonRpc<T = any>(
     const entries = Object.entries(args).filter(([, v]) => v !== undefined);
     const params: unknown[] = [];
 
-    let claimPrefix = "";
+    let claimFrom = "";
     if (userId) {
       params.push(userId);
-      claimPrefix = `WITH _claims AS (SELECT set_config('request.jwt.claim.sub', $${params.length}, true)) `;
+      claimFrom = `(SELECT set_config('request.jwt.claim.sub', $${params.length}, true)) _claims`;
     }
 
     const namedArgs = entries.map(([k, v]) => {
@@ -659,10 +661,12 @@ export async function executeNeonRpc<T = any>(
       return `${quoteIdent(k)} := $${params.length}`;
     });
 
+    const fnCall = `public.${quoteIdent(fnName)}(${namedArgs.join(", ")})`;
+
     if (SCALAR_RPCS.has(fnName)) {
-      const sql = `${claimPrefix}SELECT public.${quoteIdent(fnName)}(${namedArgs.join(
-        ", "
-      )}) AS result`;
+      const sql = claimFrom
+        ? `SELECT ${fnCall} AS result FROM ${claimFrom}`
+        : `SELECT ${fnCall} AS result`;
       const { rows } = await neonSql<{ result: T }>(sql, params);
       return {
         data: (rows[0]?.result ?? null) as T,
@@ -671,9 +675,9 @@ export async function executeNeonRpc<T = any>(
       };
     }
 
-    const sql = `${claimPrefix}SELECT * FROM public.${quoteIdent(fnName)}(${namedArgs.join(
-      ", "
-    )})`;
+    const sql = claimFrom
+      ? `SELECT _r.* FROM ${claimFrom} CROSS JOIN LATERAL ${fnCall} _r`
+      : `SELECT * FROM ${fnCall}`;
     const { rows } = await neonSql<any>(sql, params);
     return {
       data: rows as unknown as T,
@@ -681,6 +685,9 @@ export async function executeNeonRpc<T = any>(
       count: rows.length,
     };
   } catch (err: any) {
+    if (err?.digest === "DYNAMIC_SERVER_USAGE") {
+      throw err;
+    }
     return {
       data: null as unknown as T,
       error: {

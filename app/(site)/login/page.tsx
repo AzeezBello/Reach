@@ -6,7 +6,7 @@ import { AuthForm } from "@/components/auth-form";
 import { Photo } from "@/components/media";
 import { Eyebrow } from "@/components/ui";
 import { pageArt } from "@/lib/media";
-import { getCurrentUser, getTenant } from "@/lib/reach";
+import { getCurrentUser } from "@/lib/reach";
 
 export const metadata: Metadata = {
   title: "Sign in",
@@ -39,10 +39,9 @@ export default async function LoginPage({
 }: {
   searchParams: Promise<{ next?: string; error?: string }>;
 }) {
-  const [{ next, error }, user, { tenant }] = await Promise.all([
+  const [{ next, error }, user] = await Promise.all([
     searchParams,
-    getCurrentUser(),
-    getTenant(),
+    getCurrentUser().catch(() => null),
   ]);
 
   const target = safeNext(next);
