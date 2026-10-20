@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import type { ActionState } from "@/components/action-form";
 import { getCurrentUser } from "@/lib/reach";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/neon/server";
 
 /** Toggle the signed-in resident's RSVP for an event. */
 export async function toggleRsvp(
@@ -25,15 +25,15 @@ export async function toggleRsvp(
     return { ok: false, message: "This event could not be found." };
   }
 
-  const supabase = await createClient();
+  const db = await createClient();
 
   const { error } = attending
-    ? await supabase
+    ? await db
         .from("event_rsvps")
         .delete()
         .eq("event_id", eventId)
         .eq("resident_id", user.id)
-    : await supabase
+    : await db
         .from("event_rsvps")
         .upsert({ event_id: eventId, resident_id: user.id }, { onConflict: "event_id,resident_id" });
 

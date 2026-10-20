@@ -5,7 +5,7 @@ import { AdminHeader, Panel, StatCard, StatusBadge, Table, cell } from "@/compon
 import { Badge, ButtonLink } from "@/components/ui";
 import { requireSuperadmin } from "@/lib/admin";
 import { formatDateTime } from "@/lib/format";
-import { createAdminClient } from "@/lib/supabase/admin-client";
+import { createAdminClient } from "@/lib/neon/admin-client";
 
 export const metadata: Metadata = { title: "WhatsApp" };
 
@@ -29,25 +29,25 @@ type Message = {
 export default async function WhatsAppAdminPage() {
   await requireSuperadmin();
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
 
   const [conversationsResult, messagesResult, failedResult, queuedResult] = await Promise.all([
-    supabase
+    db
       .from("whatsapp_conversations")
       .select("id, phone_number, status, last_message_at, created_at", { count: "exact" })
       .order("last_message_at", { ascending: false, nullsFirst: false })
       .limit(15),
-    supabase
+    db
       .from("whatsapp_messages")
       .select("id, direction, message_type, body, status, created_at", { count: "exact" })
       .order("created_at", { ascending: false })
       .limit(15),
-    supabase
+    db
       .from("notification_deliveries")
       .select("id", { count: "exact", head: true })
       .eq("channel", "whatsapp")
       .eq("status", "failed"),
-    supabase
+    db
       .from("notification_deliveries")
       .select("id", { count: "exact", head: true })
       .eq("channel", "whatsapp")

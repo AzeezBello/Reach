@@ -17,7 +17,7 @@ import { Badge, ButtonLink, FactRow } from "@/components/ui";
 import { formatDate, formatNumber, formatTime } from "@/lib/format";
 import { getCurrentUser, getEvent, getTenant } from "@/lib/reach";
 import { eventSchema } from "@/lib/seo";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/neon/server";
 
 import { toggleRsvp } from "../actions";
 
@@ -41,12 +41,12 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
 }
 
 async function getRsvpState(eventId: string, userId: string | null) {
-  const supabase = await createClient();
+  const db = await createClient();
 
   const [{ data: count }, attending] = await Promise.all([
-    supabase.rpc("event_rsvp_count", { target_event: eventId }),
+    db.rpc("event_rsvp_count", { target_event: eventId }),
     userId
-      ? supabase
+      ? db
           .from("event_rsvps")
           .select("event_id")
           .eq("event_id", eventId)

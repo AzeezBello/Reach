@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 
 import type { ActionState } from "@/components/action-form";
 import { getCurrentUser } from "@/lib/reach";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/neon/server";
 
 function text(formData: FormData, name: string) {
   const value = formData.get(name);
@@ -29,9 +29,9 @@ export async function updateProfile(
     return { ok: false, message: "Please enter your full name." };
   }
 
-  const supabase = await createClient();
+  const db = await createClient();
 
-  const { error } = await supabase.from("profiles").upsert(
+  const { error } = await db.from("profiles").upsert(
     {
       id: user.id,
       full_name: fullName,

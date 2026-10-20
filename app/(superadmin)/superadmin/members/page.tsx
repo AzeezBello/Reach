@@ -16,7 +16,7 @@ import {
 } from "@/components/admin";
 
 import { getOrganizations, requireSuperadmin } from "@/lib/admin";
-import { createAdminClient } from "@/lib/supabase/admin-client";
+import { createAdminClient } from "@/lib/neon/admin-client";
 import type { Profile } from "@/lib/types";
 import { assignOrganizationRole, removeOrganizationRole } from "../actions";
 
@@ -28,9 +28,9 @@ export default async function MembersPage() {
   await requireSuperadmin("/superadmin/members");
 
   const organizations = await getOrganizations();
-  const supabase = createAdminClient();
+  const db = createAdminClient();
 
-  const { data: members } = await supabase
+  const { data: members } = await db
     .from("organization_members")
     .select(
       `
@@ -55,7 +55,7 @@ export default async function MembersPage() {
   let profiles: MemberProfile[] = [];
 
   if (userIds.length) {
-    const { data } = await supabase
+    const { data } = await db
       .from("profiles")
       .select(
         "id, full_name, email, role",

@@ -5,7 +5,7 @@ import { AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
 
 import JurisdictionSelector from "@/components/jurisdiction-selector";
 import { buttonClasses } from "@/components/ui";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/neon/browser";
 
 const inputClasses =
   "w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-ink placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200";
@@ -63,10 +63,10 @@ export function AuthForm({ next, initialError }: { next: string; initialError?: 
     }
 
     setLoading(true);
-    const supabase = createClient();
+    const db = createClient();
 
     if (mode === "recovery") {
-      const { error: recoveryError } = await supabase.auth.resetPasswordForEmail(email, {
+      const { error: recoveryError } = await db.auth.resetPasswordForEmail(email, {
         redirectTo: `${window.location.origin}/auth/callback?next=/auth/set-password`,
       });
       setLoading(false);
@@ -117,7 +117,7 @@ export function AuthForm({ next, initialError }: { next: string; initialError?: 
 
       /*
       * Force a real browser navigation after the
-      * server has established the Supabase SSR cookie.
+      * server has established the Neon SSR cookie.
       *
       * This guarantees /superadmin receives the new
       * authentication cookie on the next request.
@@ -130,12 +130,12 @@ export function AuthForm({ next, initialError }: { next: string; initialError?: 
     }
 
     /*
-    * Signup continues to use the browser Supabase
+    * Signup continues to use the browser Neon
     * client because it is not the protected-admin
     * authentication path.
     */
     const result =
-      await supabase.auth.signUp({
+      await db.auth.signUp({
         email,
         password,
         options: {

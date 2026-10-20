@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/neon/server";
 
 function safeNext(value: unknown) {
   if (
@@ -50,7 +50,7 @@ export async function POST(
      * "Remember me" keeps the session cookie for 30 days;
      * otherwise it expires after 24 hours.
      */
-    const supabase = await createClient({
+    const db = await createClient({
       cookieMaxAge: remember ? 60 * 60 * 24 * 30 : 60 * 60 * 24,
     });
 
@@ -58,7 +58,7 @@ export async function POST(
       data,
       error,
     } =
-      await supabase.auth.signInWithPassword(
+      await db.auth.signInWithPassword(
         {
           email,
           password,
@@ -67,7 +67,7 @@ export async function POST(
 
     if (error) {
       console.error(
-        "[REACH][sign-in] Supabase sign-in failed",
+        "[REACH][sign-in] Neon sign-in failed",
         {
           message: error.message,
           code: error.code,
@@ -94,7 +94,7 @@ export async function POST(
     }
 
     /*
-     * The Supabase server client writes the authenticated
+     * The Neon server client writes the authenticated
      * session into the SSR cookies.
      *
      * Return the target only after the session has been

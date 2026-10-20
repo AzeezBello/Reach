@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/neon/server";
 
 export async function GET() {
   try {
-    const supabase = await createClient();
-    const res = await supabase.auth.getSession();
+    const db = await createClient();
+    const res = await db.auth.getSession();
     return NextResponse.json(res);
   } catch (err: any) {
     return NextResponse.json(
@@ -22,10 +22,10 @@ export async function POST(request: Request) {
   try {
     const body = await request.json();
     const action = body?.action;
-    const supabase = await createClient();
+    const db = await createClient();
 
     if (action === "signUp") {
-      const res = await supabase.auth.signUp({
+      const res = await db.auth.signUp({
         email: String(body.email ?? ""),
         password: String(body.password ?? ""),
         options: body.options,
@@ -34,7 +34,7 @@ export async function POST(request: Request) {
     }
 
     if (action === "resetPasswordForEmail") {
-      const res = await supabase.auth.resetPasswordForEmail(
+      const res = await db.auth.resetPasswordForEmail(
         String(body.email ?? ""),
         body.options
       );
@@ -42,14 +42,14 @@ export async function POST(request: Request) {
     }
 
     if (action === "updateUser") {
-      const res = await supabase.auth.updateUser({
+      const res = await db.auth.updateUser({
         password: body.password ? String(body.password) : undefined,
       });
       return NextResponse.json(res, { status: res.error ? 400 : 200 });
     }
 
     if (action === "signOut") {
-      const res = await supabase.auth.signOut();
+      const res = await db.auth.signOut();
       return NextResponse.json(res);
     }
 

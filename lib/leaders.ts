@@ -2,8 +2,8 @@ import { cache } from "react";
 import { redirect } from "next/navigation";
 
 import { requireUser } from "@/lib/admin";
-import { createPublicClient } from "@/lib/supabase/public";
-import { createClient as createServerClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/neon/public";
+import { createClient as createServerClient } from "@/lib/neon/server";
 
 import type {
   CollaborationRole,
@@ -125,14 +125,14 @@ function normalize(
 /**
  * Load all active public leadership profiles.
  *
- * Supabase is the single source of truth.
+ * Neon is the single source of truth.
  */
 export const getLeaders = cache(
   async (): Promise<Leader[]> => {
     try {
-      const supabase = createPublicClient();
+      const db = createPublicClient();
 
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from("leaders")
         .select(LEADER_FIELDS)
         .eq("is_active", true)
@@ -186,7 +186,7 @@ export const getLeaders = cache(
         const {
           data: jurisdictions,
           error: jurisdictionError,
-        } = await supabase
+        } = await db
           .from("jurisdictions")
           .select("id, name")
           .in("id", jurisdictionIds);
@@ -299,7 +299,7 @@ const EMPTY_CONTENT: LeaderContent = {
 export async function getLinkedLeaders(
   userId: string,
 ): Promise<Leader[]> {
-  const supabase = await createServerClient();
+  const db = await createServerClient();
 
   /**
    * 1. Get the authenticated user's profile email.
@@ -307,7 +307,7 @@ export async function getLinkedLeaders(
   const {
     data: profile,
     error: profileError,
-  } = await supabase
+  } = await db
     .from("profiles")
     .select("email")
     .eq("id", userId)
@@ -331,7 +331,7 @@ export async function getLinkedLeaders(
   const {
     data: provisioning,
     error: provisioningError,
-  } = await supabase
+  } = await db
     .from("leader_account_provisioning")
     .select("leader_id")
     .eq("email", profile.email)
@@ -368,7 +368,7 @@ export async function getLinkedLeaders(
   const {
     data,
     error,
-  } = await supabase
+  } = await db
     .from("leaders")
     .select(LEADER_FIELDS)
     .in("id", leaderIds)
@@ -413,7 +413,7 @@ export async function getLinkedLeaders(
     const {
       data: jurisdictions,
       error: jurisdictionError,
-    } = await supabase
+    } = await db
       .from("jurisdictions")
       .select("id, name")
       .in("id", jurisdictionIds);
@@ -488,12 +488,12 @@ export async function getLeaderContent(
   }
 
   try {
-    const supabase = createPublicClient();
+    const db = createPublicClient();
 
     const {
       data: links,
       error,
-    } = await supabase
+    } = await db
       .from("content_leaders")
       .select(
         "content_type, content_id, leader_id, role",
@@ -538,7 +538,7 @@ export async function getLeaderContent(
       const {
         data,
         error,
-      } = await supabase
+      } = await db
         .from(CONTENT_TABLE[type])
         .select(
           CONTENT_FIELDS[type],

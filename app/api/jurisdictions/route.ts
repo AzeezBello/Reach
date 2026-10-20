@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/neon/server";
 
 export async function GET() {
   try {
-    const supabase = await createClient();
+    const db = await createClient();
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("jurisdictions")
       .select(
         `

@@ -31,7 +31,7 @@ import {
 } from "@/lib/admin";
 import { formatDate, formatTime, humanize, initials } from "@/lib/format";
 import { getLinkedLeaders } from "@/lib/leaders";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/neon/server";
 
 import { updateProfile } from "./actions";
 
@@ -86,12 +86,12 @@ export default async function DashboardPage({
     searchParams,
   ]);
 
-  const supabase = await createClient();
+  const db = await createClient();
 
   const [residentDashboard, linkedLeaders, jurisdictionsResult] = await Promise.all([
     getResidentDashboard(user.id),
     getLinkedLeaders(user.id),
-    supabase.from("jurisdictions").select("id, name, type").order("type").order("name"),
+    db.from("jurisdictions").select("id, name, type").order("type").order("name"),
   ]);
   const jurisdictions = (jurisdictionsResult.data ?? []) as {
     id: string;

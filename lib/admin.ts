@@ -1,8 +1,8 @@
 import { redirect } from "next/navigation";
 import { cache } from "react";
 
-import { createAdminClient } from "@/lib/supabase/admin-client";
-import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/neon/admin-client";
+import { createClient } from "@/lib/neon/server";
 
 import type {
   AdminRequest,
@@ -179,9 +179,9 @@ function isStaffRole(
 /* ------------------------------------------------------------------ */
 
 export const getProfile = cache(async (userId: string) => {
-  const supabase = await createClient();
+  const db = await createClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("profiles")
     .select(PROFILE_FIELDS)
     .eq("id", userId)
@@ -218,12 +218,12 @@ export const getProfile = cache(async (userId: string) => {
 export async function requireUser(
   next = "/dashboard",
 ) {
-  const supabase = await createClient();
+  const db = await createClient();
 
   const {
     data: claimsData,
     error: claimsError,
-  } = await supabase.auth.getClaims();
+  } = await db.auth.getClaims();
 
   if (
     claimsError ||
@@ -240,7 +240,7 @@ export async function requireUser(
   const {
     data: userData,
     error: userError,
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
 
   if (
     userError ||
@@ -263,7 +263,7 @@ export async function requireUser(
  * Resolve platform-admin access.
  *
  * Authentication:
- *   - Supabase Auth JWT must be valid.
+ *   - Neon Auth JWT must be valid.
  *   - Auth user must still exist.
  *
  * Authorization:
@@ -275,7 +275,7 @@ export async function requireUser(
  */
 export const getSuperadminAccess = cache(
   async () => {
-    const supabase =
+    const db =
       await createClient();
 
     /*
@@ -286,7 +286,7 @@ export const getSuperadminAccess = cache(
     const {
       data: claimsData,
       error: claimsError,
-    } = await supabase.auth.getClaims();
+    } = await db.auth.getClaims();
 
     if (
       claimsError ||
@@ -321,7 +321,7 @@ export const getSuperadminAccess = cache(
     const {
       data: userData,
       error: userError,
-    } = await supabase.auth.getUser();
+    } = await db.auth.getUser();
 
     if (
       userError ||
@@ -515,12 +515,12 @@ export async function requireSuperadmin(
 export async function requireStaff(
   next = "/office",
 ) {
-  const supabase = await createClient();
+  const db = await createClient();
 
   const {
     data: claimsData,
     error: claimsError,
-  } = await supabase.auth.getClaims();
+  } = await db.auth.getClaims();
 
   if (
     claimsError ||
@@ -536,7 +536,7 @@ export async function requireStaff(
   const {
     data: userData,
     error: userError,
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
 
   if (
     userError ||
@@ -592,12 +592,12 @@ export async function requireOfficeAccess(
     return access;
   }
 
-  const supabase = await createClient();
+  const db = await createClient();
 
   const {
     data: membership,
     error,
-  } = await supabase
+  } = await db
     .from("office_members")
     .select(
       "office_id, user_id, role, created_at",
@@ -652,12 +652,12 @@ export async function requireRequestAccess(
   requestId: string,
   next = `/dashboard/requests/${requestId}`,
 ): Promise<RequestAccessResult | null> {
-  const supabase = await createClient();
+  const db = await createClient();
 
   const {
     data: claimsData,
     error: claimsError,
-  } = await supabase.auth.getClaims();
+  } = await db.auth.getClaims();
 
   if (
     claimsError ||
@@ -673,7 +673,7 @@ export async function requireRequestAccess(
   const {
     data: userData,
     error: userError,
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
 
   if (
     userError ||
@@ -696,7 +696,7 @@ export async function requireRequestAccess(
   const {
     data: request,
     error: requestError,
-  } = await supabase
+  } = await db
     .from("requests")
     .select(ADMIN_REQUEST_FIELDS)
     .eq("id", requestId)
@@ -750,7 +750,7 @@ export async function requireRequestAccess(
     const {
       data: membership,
       error: membershipError,
-    } = await supabase
+    } = await db
       .from("office_members")
       .select(
         "office_id, user_id, role, created_at",
@@ -798,7 +798,7 @@ export async function requireRequestAccess(
 export async function getResidentDashboard(
   userId: string,
 ) {
-  const supabase = await createClient();
+  const db = await createClient();
 
   const [
     profile,
@@ -809,7 +809,7 @@ export async function getResidentDashboard(
   ] = await Promise.all([
     getProfile(userId),
 
-    supabase
+    db
       .from("requests")
       .select(REQUEST_FIELDS)
       .eq("resident_id", userId)
@@ -817,7 +817,7 @@ export async function getResidentDashboard(
         ascending: false,
       }),
 
-    supabase
+    db
       .from("programme_applications")
       .select(
         "id, programme_id, status, notes, created_at",
@@ -827,7 +827,7 @@ export async function getResidentDashboard(
         ascending: false,
       }),
 
-    supabase
+    db
       .from("notifications")
       .select(
         "id, title, message, created_at, sent_at",
@@ -838,7 +838,7 @@ export async function getResidentDashboard(
       })
       .limit(8),
 
-    supabase
+    db
       .from("event_rsvps")
       .select("event_id")
       .eq("resident_id", userId),
@@ -860,7 +860,7 @@ export async function getResidentDashboard(
   );
 
   if (eventIds.length > 0) {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("events")
       .select(
         `
@@ -925,7 +925,7 @@ export async function getResidentDashboard(
   >();
 
   if (programmeIds.length > 0) {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("programmes")
       .select(
         "id, title, slug",
@@ -1001,12 +1001,12 @@ export async function getResidentRequest(
   userId: string,
   id: string,
 ) {
-  const supabase = await createClient();
+  const db = await createClient();
 
   const {
     data: request,
     error: requestError,
-  } = await supabase
+  } = await db
     .from("requests")
     .select(REQUEST_FIELDS)
     .eq("id", id)
@@ -1023,7 +1023,7 @@ export async function getResidentRequest(
   const {
     data: updates,
     error: updatesError,
-  } = await supabase
+  } = await db
     .from("request_updates")
     .select(
       "id, request_id, status, message, author_id, created_at",
@@ -1037,7 +1037,7 @@ export async function getResidentRequest(
    * Sharing is a later addition (20261006140000_public_requests). Read the
    * flag separately so the page still works before that migration runs.
    */
-  const { data: visibility } = await supabase
+  const { data: visibility } = await db
     .from("requests")
     .select("is_public")
     .eq("id", id)
@@ -1062,7 +1062,7 @@ export async function getResidentRequest(
 export async function getPlatformStats(): Promise<PlatformStats> {
   await requireSuperadmin();
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
 
   const counts = await Promise.all(
     COUNTED_TABLES.map(
@@ -1070,7 +1070,7 @@ export async function getPlatformStats(): Promise<PlatformStats> {
         const {
           count,
           error,
-        } = await supabase
+        } = await db
           .from(table)
           .select("id", {
             count: "exact",
@@ -1108,12 +1108,12 @@ export async function getPlatformStats(): Promise<PlatformStats> {
 export async function getOrganizations() {
   await requireSuperadmin();
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
 
   const {
     data,
     error,
-  } = await supabase
+  } = await db
     .from("organizations")
     .select(ORGANIZATION_FIELDS)
     .order("name");
@@ -1129,12 +1129,12 @@ export async function getOrganization(
 ) {
   await requireSuperadmin();
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
 
   const {
     data,
     error,
-  } = await supabase
+  } = await db
     .from("organizations")
     .select(ORGANIZATION_FIELDS)
     .eq("id", id)
@@ -1155,12 +1155,12 @@ export async function getOrganization(
 export async function getJurisdictions() {
   await requireSuperadmin();
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
 
   const {
     data,
     error,
-  } = await supabase
+  } = await db
     .from("jurisdictions")
     .select(
       `
@@ -1190,12 +1190,12 @@ export async function getJurisdictions() {
 export async function getOffices() {
   await requireSuperadmin();
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
 
   const {
     data,
     error,
-  } = await supabase
+  } = await db
     .from("offices")
     .select(
       `
@@ -1223,12 +1223,12 @@ export async function getOffices() {
 export async function getOfficeMembers() {
   await requireSuperadmin();
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
 
   const {
     data,
     error,
-  } = await supabase
+  } = await db
     .from("office_members")
     .select(
       `
@@ -1255,12 +1255,12 @@ export async function getOfficeMembers() {
 export async function getOrganizationMembers() {
   await requireSuperadmin();
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
 
   const {
     data,
     error,
-  } = await supabase
+  } = await db
     .from("organization_members")
     .select(
       `
@@ -1286,12 +1286,12 @@ export async function getOrganizationMembers() {
 export async function getServiceRoutes() {
   await requireSuperadmin();
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
 
   const {
     data,
     error,
-  } = await supabase
+  } = await db
     .from("service_routes")
     .select(
       `
@@ -1327,12 +1327,12 @@ export async function getProfilesByIds(
 
   await requireSuperadmin();
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
 
   const {
     data,
     error,
-  } = await supabase
+  } = await db
     .from("profiles")
     .select(PROFILE_FIELDS)
     .in("id", ids);
@@ -1358,12 +1358,12 @@ export async function getProfileByEmail(
     throw new Error("You do not have permission to look up accounts.");
   }
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
 
   const {
     data,
     error,
-  } = await supabase
+  } = await db
     .from("profiles")
     .select(PROFILE_FIELDS)
     .ilike("email", email)
@@ -1389,12 +1389,12 @@ export async function getAllRequests(
 ) {
   await requireSuperadmin();
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
 
   const {
     data,
     error,
-  } = await supabase
+  } = await db
     .from("requests")
     .select(ADMIN_REQUEST_FIELDS)
     .order("created_at", {
@@ -1417,7 +1417,7 @@ export async function getContentCounts(
 ) {
   await requireSuperadmin();
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
 
   const tables = [
     "programmes",
@@ -1432,7 +1432,7 @@ export async function getContentCounts(
         const {
           count,
           error,
-        } = await supabase
+        } = await db
           .from(table)
           .select("id", {
             count: "exact",
@@ -1492,12 +1492,12 @@ export async function getAdminLeaders(): Promise<
 > {
   await requireSuperadmin();
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
 
   const {
     data,
     error,
-  } = await supabase
+  } = await db
     .from("leaders")
     .select(
       `
@@ -1591,7 +1591,7 @@ export async function getAdminLeaders(): Promise<
       data: jurisdictions,
       error:
         jurisdictionError,
-    } = await supabase
+    } = await db
       .from("jurisdictions")
       .select("id, name")
       .in(
@@ -1666,12 +1666,12 @@ export async function getContentLinks(): Promise<
 > {
   await requireSuperadmin();
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
 
   const {
     data,
     error,
-  } = await supabase
+  } = await db
     .from("content_leaders")
     .select(
       `
@@ -1712,7 +1712,7 @@ export async function getAdminContent(): Promise<
 > {
   await requireSuperadmin();
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
 
   const tables: {
     type: ContentType;
@@ -1749,7 +1749,7 @@ export async function getAdminContent(): Promise<
         const {
           data,
           error,
-        } = await supabase
+        } = await db
           .from(table)
           .select(
             "id, title",

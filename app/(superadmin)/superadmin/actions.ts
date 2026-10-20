@@ -11,8 +11,8 @@ import {
   getProfileByEmail,
   getSuperadminAccess,
 } from "@/lib/admin";
-import { createClient } from "@/lib/supabase/server";
-import { createAdminClient } from "@/lib/supabase/admin-client";
+import { createClient } from "@/lib/neon/server";
+import { createAdminClient } from "@/lib/neon/admin-client";
 import { SITE_URL } from "@/lib/config";
 
 /* ------------------------------------------------------------------ */
@@ -122,9 +122,9 @@ export async function createOrganization(
     await guard();
 
     const input = organizationInput(formData);
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
-    const { error } = await supabase.from("organizations").insert(input);
+    const { error } = await db.from("organizations").insert(input);
     if (error) throw new Error(error.message);
 
     revalidatePath("/superadmin");
@@ -143,9 +143,9 @@ export async function updateOrganization(
 
     const id = required(formData, "id", "Organization");
     const input = organizationInput(formData);
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
-    const { error } = await supabase
+    const { error } = await db
       .from("organizations")
       .update(input)
       .eq("id", id);
@@ -168,9 +168,9 @@ export async function setOrganizationActive(
 
     const id = required(formData, "id", "Organization");
     const isActive = text(formData, "is_active") === "true";
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
-    const { error } = await supabase
+    const { error } = await db
       .from("organizations")
       .update({ is_active: isActive })
       .eq("id", id);
@@ -205,8 +205,8 @@ export async function createJurisdiction(
       parent_id: optional(formData, "parent_id"),
     };
 
-    const supabase = createAdminClient();
-    const { error } = await supabase.from("jurisdictions").insert(input);
+    const db = createAdminClient();
+    const { error } = await db.from("jurisdictions").insert(input);
     if (error) throw new Error(error.message);
 
     revalidatePath("/superadmin");
@@ -237,8 +237,8 @@ export async function createOffice(
       is_active: checked(formData, "is_active"),
     };
 
-    const supabase = createAdminClient();
-    const { error } = await supabase.from("offices").insert(input);
+    const db = createAdminClient();
+    const { error } = await db.from("offices").insert(input);
     if (error) throw new Error(error.message);
 
     revalidatePath("/superadmin");
@@ -257,9 +257,9 @@ export async function setOfficeActive(
 
     const id = required(formData, "id", "Office");
     const isActive = text(formData, "is_active") === "true";
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
-    const { error } = await supabase
+    const { error } = await db
       .from("offices")
       .update({ is_active: isActive })
       .eq("id", id);
@@ -294,8 +294,8 @@ export async function addOfficeMember(
       );
     }
 
-    const supabase = createAdminClient();
-    const { error } = await supabase
+    const db = createAdminClient();
+    const { error } = await db
       .from("office_members")
       .upsert(
         { office_id: officeId, user_id: profile.id, role },
@@ -319,8 +319,8 @@ export async function removeOfficeMember(
     const officeId = required(formData, "office_id", "Office");
     const userId = required(formData, "user_id", "User");
 
-    const supabase = createAdminClient();
-    const { error } = await supabase
+    const db = createAdminClient();
+    const { error } = await db
       .from("office_members")
       .delete()
       .eq("office_id", officeId)
@@ -579,9 +579,9 @@ export async function createLeader(
     const input =
       leaderProfileInput(formData);
 
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
-    const { error } = await supabase
+    const { error } = await db
       .from("leaders")
       .insert({
         ...input,
@@ -631,9 +631,9 @@ export async function updateLeaderProfile(
     const input =
       leaderProfileInput(formData);
 
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
-    const { error } = await supabase
+    const { error } = await db
       .from("leaders")
       .update({
         ...input,
@@ -689,9 +689,9 @@ export async function setLeaderActive(
         "is_active"
       ) === "true";
 
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
-    const { error } = await supabase
+    const { error } = await db
       .from("leaders")
       .update({
         is_active: isActive,
@@ -738,11 +738,11 @@ export async function unlinkLeaderAccount(
       "Leader"
     );
 
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
     const {
       error,
-    } = await supabase
+    } = await db
       .from(
         "leader_account_provisioning"
       )
@@ -841,11 +841,11 @@ export async function linkLeaderAccount(
      * The account already exists, so mark the leader
      * provisioning record as active.
      */
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
     const {
       error,
-    } = await supabase
+    } = await db
       .from(
         "leader_account_provisioning"
       )
@@ -940,7 +940,7 @@ export async function inviteLeaderAccount(
       );
     }
 
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
     /*
      * Existing REACH account:
@@ -949,7 +949,7 @@ export async function inviteLeaderAccount(
     if (existingProfile) {
       const {
         error,
-      } = await supabase
+      } = await db
         .from(
           "leader_account_provisioning"
         )
@@ -989,7 +989,7 @@ export async function inviteLeaderAccount(
 
     /*
      * New account:
-     * send the Supabase Auth invitation using
+     * send the Neon Auth invitation using
      * the trusted server-side admin client.
      */
     const {
@@ -1016,7 +1016,7 @@ export async function inviteLeaderAccount(
 
     if (!invited.user) {
       throw new Error(
-        "Supabase did not return the invited user."
+        "Neon did not return the invited user."
       );
     }
 
@@ -1029,7 +1029,7 @@ export async function inviteLeaderAccount(
     const {
       error:
         provisioningError,
-    } = await supabase
+    } = await db
       .from(
         "leader_account_provisioning"
       )
@@ -1113,10 +1113,10 @@ export async function linkContentToLeader(
       );
     }
 
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
     const { error } =
-      await supabase
+      await db
         .from(
           "content_leaders"
         )
@@ -1191,10 +1191,10 @@ export async function unlinkContentFromLeader(
       "Leader"
     );
 
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
     const { error } =
-      await supabase
+      await db
         .from(
           "content_leaders"
         )
@@ -1282,9 +1282,9 @@ export async function assignOrganizationRole(
       );
     }
 
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
-    const { error } = await supabase
+    const { error } = await db
       .from("organization_members")
       .upsert(
         {
@@ -1347,9 +1347,9 @@ export async function assignOfficeRole(
       );
     }
 
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
-    const { error } = await supabase
+    const { error } = await db
       .from("office_members")
       .upsert(
         {
@@ -1394,9 +1394,9 @@ export async function removeOrganizationRole(
       "User"
     );
 
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
-    const { error } = await supabase
+    const { error } = await db
       .from("organization_members")
       .delete()
       .eq(
@@ -1470,10 +1470,10 @@ export async function createServiceRoute(
         10
       );
 
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
     const { error } =
-      await supabase
+      await db
         .from("service_routes")
         .insert({
           organization_id:
@@ -1522,10 +1522,10 @@ export async function setServiceRouteActive(
       text(formData, "is_active") ===
       "true";
 
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
     const { error } =
-      await supabase
+      await db
         .from("service_routes")
         .update({
           is_active: isActive,

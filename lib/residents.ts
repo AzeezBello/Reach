@@ -20,7 +20,7 @@ export type ResidentAccount = Profile & {
   email_confirmed_at: string | null;
   last_sign_in_at: string | null;
   banned_until: string | null;
-  /** True while the account is suspended (banned in Supabase Auth). */
+  /** True while the account is suspended (banned in Neon Auth). */
   suspended: boolean;
   /** False when the profile exists without a matching auth user. */
   has_auth: boolean;

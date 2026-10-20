@@ -1,5 +1,5 @@
-import { createPublicClient } from "@/lib/supabase/public";
-import { createClient } from "@/lib/supabase/server";
+import { createPublicClient } from "@/lib/neon/public";
+import { createClient } from "@/lib/neon/server";
 import type { PublicRequest } from "@/lib/types";
 
 /*
@@ -26,9 +26,9 @@ export type CommunityResult = {
 };
 
 export async function getPublicRequests(filters: CommunityFilters = {}): Promise<CommunityResult> {
-  const supabase = createPublicClient();
+  const db = createPublicClient();
 
-  let query = supabase.from("public_requests").select(PUBLIC_REQUEST_FIELDS).limit(200);
+  let query = db.from("public_requests").select(PUBLIC_REQUEST_FIELDS).limit(200);
 
   if (filters.category) query = query.eq("category", filters.category);
   if (filters.jurisdiction) query = query.eq("jurisdiction_id", filters.jurisdiction);
@@ -40,7 +40,7 @@ export async function getPublicRequests(filters: CommunityFilters = {}): Promise
 
   const [{ data, error }, facets] = await Promise.all([
     query,
-    supabase
+    db
       .from("public_requests")
       .select("category, jurisdiction_id, jurisdiction_name")
       .limit(1000),
@@ -70,8 +70,8 @@ export async function getPublicRequests(filters: CommunityFilters = {}): Promise
 export async function getPublicRequest(id: string): Promise<PublicRequest | null> {
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
 
-  const supabase = createPublicClient();
-  const { data, error } = await supabase
+  const db = createPublicClient();
+  const { data, error } = await db
     .from("public_requests")
     .select(PUBLIC_REQUEST_FIELDS)
     .eq("id", id)
@@ -84,14 +84,14 @@ export async function getPublicRequest(id: string): Promise<PublicRequest | null
 
 /** Ids of the public requests the signed-in resident has supported. */
 export async function getMySupportedRequestIds(): Promise<Set<string>> {
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
 
   if (!user) return new Set();
 
-  const { data } = await supabase
+  const { data } = await db
     .from("request_supports")
     .select("request_id")
     .eq("resident_id", user.id);
@@ -101,8 +101,8 @@ export async function getMySupportedRequestIds(): Promise<Set<string>> {
 
 /** Support count for one request, including the owner's private view. */
 export async function getRequestSupportCount(id: string): Promise<number> {
-  const supabase = await createClient();
-  const { data, error } = await supabase.rpc("request_support_count", { target_request: id });
+  const db = await createClient();
+  const { data, error } = await db.rpc("request_support_count", { target_request: id });
 
   return error || typeof data !== "number" ? 0 : data;
 }

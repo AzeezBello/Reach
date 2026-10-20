@@ -1,4 +1,4 @@
-import { createAdminClient } from "@/lib/supabase/admin-client";
+import { createAdminClient } from "@/lib/neon/admin-client";
 import { requireSuperadmin } from "@/lib/admin";
 import type { ContentType, Profile } from "@/lib/types";
 
@@ -167,8 +167,8 @@ export type ContentRow = {
 export async function listContent(kind: ContentKind): Promise<ContentRow[]> {
   await requireSuperadmin();
 
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
+  const db = createAdminClient();
+  const { data, error } = await db
     .from(CONTENT_KINDS[kind].table)
     .select("*")
     .order("updated_at", { ascending: false, nullsFirst: false })
@@ -188,8 +188,8 @@ export async function getContent(kind: ContentKind, id: string): Promise<Content
 
   if (!UUID.test(id)) return null;
 
-  const supabase = createAdminClient();
-  const { data, error } = await supabase
+  const db = createAdminClient();
+  const { data, error } = await db
     .from(CONTENT_KINDS[kind].table)
     .select("*")
     .eq("id", id)
@@ -206,8 +206,8 @@ export async function getContent(kind: ContentKind, id: string): Promise<Content
 export async function getContentCredits(kind: ContentKind, id: string) {
   await requireSuperadmin();
 
-  const supabase = createAdminClient();
-  const { data } = await supabase
+  const db = createAdminClient();
+  const { data } = await db
     .from("content_leaders")
     .select("leader_id, role")
     .eq("content_type", kind)
@@ -220,8 +220,8 @@ export async function getContentCredits(kind: ContentKind, id: string) {
 export async function getRsvpCounts() {
   await requireSuperadmin();
 
-  const supabase = createAdminClient();
-  const { data } = await supabase.from("event_rsvps").select("event_id");
+  const db = createAdminClient();
+  const { data } = await db.from("event_rsvps").select("event_id");
 
   const counts = new Map<string, number>();
   for (const row of (data ?? []) as { event_id: string }[]) {
@@ -239,8 +239,8 @@ export type Attendee = Pick<Profile, "id" | "full_name" | "email" | "phone"> & {
 export async function getEventAttendees(eventId: string): Promise<Attendee[]> {
   await requireSuperadmin();
 
-  const supabase = createAdminClient();
-  const { data: rsvps, error } = await supabase
+  const db = createAdminClient();
+  const { data: rsvps, error } = await db
     .from("event_rsvps")
     .select("resident_id, created_at")
     .eq("event_id", eventId)
@@ -253,7 +253,7 @@ export async function getEventAttendees(eventId: string): Promise<Attendee[]> {
   const rows = (rsvps ?? []) as { resident_id: string; created_at: string }[];
   if (rows.length === 0) return [];
 
-  const { data: profiles } = await supabase
+  const { data: profiles } = await db
     .from("profiles")
     .select("id, full_name, email, phone")
     .in("id", rows.map((row) => row.resident_id));

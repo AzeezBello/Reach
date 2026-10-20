@@ -1,7 +1,7 @@
 import { cache } from "react";
 
-import { createClient } from "@/lib/supabase/server";
-import { createPublicClient } from "@/lib/supabase/public";
+import { createClient } from "@/lib/neon/server";
+import { createPublicClient } from "@/lib/neon/public";
 import type {
   ContentAttribution,
   ContentCredit,
@@ -86,8 +86,8 @@ async function withAttribution<T extends { id: string }>(
   const credits = new Map<string, ContentCredit[]>();
 
   if (rows.length > 0) {
-    const supabase = createPublicClient();
-    const { data } = await supabase
+    const db = createPublicClient();
+    const { data } = await db
       .from("content_leaders")
       .select(CREDIT_SELECT)
       .eq("content_type", type)
@@ -131,9 +131,9 @@ async function withAttribution<T extends { id: string }>(
  * published platform-wide, so this does not scope the listings.
  */
 export const getTenant = cache(async (slug: string = DEFAULT_TENANT_SLUG) => {
-  const supabase = createPublicClient();
+  const db = createPublicClient();
 
-  const { data: tenant, error: tenantError } = await supabase
+  const { data: tenant, error: tenantError } = await db
     .from("organizations")
     .select(TENANT_FIELDS)
     .eq("slug", slug)
@@ -146,7 +146,7 @@ export const getTenant = cache(async (slug: string = DEFAULT_TENANT_SLUG) => {
     throw new Error(`No active organization found for slug "${slug}".`);
   }
 
-  const { data: office, error: officeError } = await supabase
+  const { data: office, error: officeError } = await db
     .from("offices")
     .select("jurisdiction_id")
     .eq("organization_id", tenant.id)
@@ -159,7 +159,7 @@ export const getTenant = cache(async (slug: string = DEFAULT_TENANT_SLUG) => {
   let jurisdiction: Jurisdiction | null = null;
 
   if (office?.jurisdiction_id) {
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from("jurisdictions")
       .select(JURISDICTION_FIELDS)
       .eq("id", office.jurisdiction_id)
@@ -179,7 +179,7 @@ export const getTenant = cache(async (slug: string = DEFAULT_TENANT_SLUG) => {
  */
 export const getPublicData = cache(async (slug: string = DEFAULT_TENANT_SLUG) => {
   const { tenant, jurisdiction } = await getTenant(slug);
-  const supabase = createPublicClient();
+  const db = createPublicClient();
 
   // Safely fetch public data; on failure return empty arrays to avoid build crash
   let programmes: any = { data: [], error: null },
@@ -188,18 +188,18 @@ export const getPublicData = cache(async (slug: string = DEFAULT_TENANT_SLUG) =>
       events: any = { data: [], error: null };
   try {
     [programmes, opportunities, projects, events] = await Promise.all([
-      supabase
+      db
         .from("programmes")
         .select(PROGRAMME_FIELDS)
         .in("status", OPEN_PROGRAMME_STATUSES)
         .order("created_at", { ascending: false }),
-      supabase
+      db
         .from("opportunities")
         .select(OPPORTUNITY_FIELDS)
         .eq("status", "active")
         .order("created_at", { ascending: false }),
-      supabase.from("projects").select(PROJECT_FIELDS).order("created_at", { ascending: false }),
-      supabase
+      db.from("projects").select(PROJECT_FIELDS).order("created_at", { ascending: false }),
+      db
         .from("events")
         .select(EVENT_FIELDS)
         .eq("status", "published")
@@ -250,11 +250,11 @@ async function findOne<T extends { id: string }>(
 }
 
 export async function getProgramme(slug: string) {
-  const supabase = createPublicClient();
+  const db = createPublicClient();
 
   return findOne<Programme>(
     "programme",
-    supabase
+    db
       .from("programmes")
       .select(PROGRAMME_FIELDS)
       .eq("slug", slug)
@@ -266,11 +266,11 @@ export async function getProgramme(slug: string) {
 }
 
 export async function getOpportunity(slug: string) {
-  const supabase = createPublicClient();
+  const db = createPublicClient();
 
   return findOne<Opportunity>(
     "opportunity",
-    supabase
+    db
       .from("opportunities")
       .select(OPPORTUNITY_FIELDS)
       .eq("slug", slug)
@@ -282,11 +282,11 @@ export async function getOpportunity(slug: string) {
 }
 
 export async function getProject(slug: string) {
-  const supabase = createPublicClient();
+  const db = createPublicClient();
 
   return findOne<Project>(
     "project",
-    supabase
+    db
       .from("projects")
       .select(PROJECT_FIELDS)
       .eq("slug", slug)
@@ -297,11 +297,11 @@ export async function getProject(slug: string) {
 }
 
 export async function getEvent(slug: string) {
-  const supabase = createPublicClient();
+  const db = createPublicClient();
 
   return findOne<Event>(
     "event",
-    supabase
+    db
       .from("events")
       .select(EVENT_FIELDS)
       .eq("slug", slug)
@@ -329,20 +329,20 @@ export function splitEvents(events: Event[], now = new Date()) {
  */
 
 export const getCurrentUser = cache(async () => {
-  const supabase = await createClient();
+  const db = await createClient();
 
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
 
   return user;
 });
 
 /** Requests owned by the signed-in resident (enforced by RLS). */
 export async function getMyRequests(userId: string) {
-  const supabase = await createClient();
+  const db = await createClient();
 
-  const { data, error } = await supabase
+  const { data, error } = await db
     .from("requests")
     .select(REQUEST_FIELDS)
     .eq("resident_id", userId)

@@ -12,7 +12,7 @@ import {
   isContentKind,
   type ContentKind,
 } from "@/lib/content-admin";
-import { createAdminClient } from "@/lib/supabase/admin-client";
+import { createAdminClient } from "@/lib/neon/admin-client";
 
 const MAX_IMAGE_BYTES = 10 * 1024 * 1024;
 const IMAGE_TYPES: Record<string, string> = {
@@ -99,10 +99,10 @@ async function uploadImage(file: File, kind: ContentKind, slug: string) {
     throw new Error("Upload a JPEG, PNG, WebP or GIF image.");
   }
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
   const path = `${CONTENT_KINDS[kind].table}/${slug}-${Date.now()}.${extension}`;
 
-  const { error } = await supabase.storage
+  const { error } = await db.storage
     .from("media")
     .upload(path, file, { contentType: file.type, upsert: false });
 
@@ -110,7 +110,7 @@ async function uploadImage(file: File, kind: ContentKind, slug: string) {
     throw new Error(`Image upload failed: ${error.message}`);
   }
 
-  return supabase.storage.from("media").getPublicUrl(path).data.publicUrl;
+  return db.storage.from("media").getPublicUrl(path).data.publicUrl;
 }
 
 /** Builds the row payload for a kind from the submitted form. */
@@ -200,7 +200,7 @@ function buildPayload(kind: ContentKind, formData: FormData, slug: string) {
 
 /** Replaces the leader credits for one item. Values are "leaderId:role". */
 async function saveCredits(kind: ContentKind, id: string, formData: FormData) {
-  const supabase = createAdminClient();
+  const db = createAdminClient();
 
   const credits = formData
     .getAll("leaders")
@@ -210,7 +210,7 @@ async function saveCredits(kind: ContentKind, id: string, formData: FormData) {
       return { leader_id: leaderId, role: role === "partner" ? "partner" : "lead" };
     });
 
-  const { error: clearError } = await supabase
+  const { error: clearError } = await db
     .from("content_leaders")
     .delete()
     .eq("content_type", kind)
@@ -221,7 +221,7 @@ async function saveCredits(kind: ContentKind, id: string, formData: FormData) {
   }
 
   if (credits.length > 0) {
-    const { error } = await supabase.from("content_leaders").insert(
+    const { error } = await db.from("content_leaders").insert(
       credits.map((credit) => ({ content_type: kind, content_id: id, ...credit }))
     );
 
@@ -267,10 +267,10 @@ export async function saveContent(
       payload.image_url = optional(formData, "image_url");
     }
 
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
     if (id) {
-      const { error } = await supabase
+      const { error } = await db
         .from(config.table)
         .update({ ...payload, updated_at: new Date().toISOString() })
         .eq("id", id);
@@ -283,7 +283,7 @@ export async function saveContent(
       return { ok: true, message: `${config.label} saved.` };
     }
 
-    const { data, error } = await supabase
+    const { data, error } = await db
       .from(config.table)
       .insert(payload)
       .select("id")
@@ -320,8 +320,8 @@ export async function setContentStatus(
       throw new Error("Status is not a valid choice.");
     }
 
-    const supabase = createAdminClient();
-    const { data, error } = await supabase
+    const db = createAdminClient();
+    const { data, error } = await db
       .from(config.table)
       .update({ status, updated_at: new Date().toISOString() })
       .eq("id", id)
@@ -354,11 +354,11 @@ export async function deleteContent(
     const config = CONTENT_KINDS[kind];
     const id = required(formData, "id", "Item");
 
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
-    await supabase.from("content_leaders").delete().eq("content_type", kind).eq("content_id", id);
+    await db.from("content_leaders").delete().eq("content_type", kind).eq("content_id", id);
 
-    const { error } = await supabase.from(config.table).delete().eq("id", id);
+    const { error } = await db.from(config.table).delete().eq("id", id);
 
     if (error) {
       throw new Error(

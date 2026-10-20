@@ -10,7 +10,7 @@ import {
 import RequestStatusForm from "@/components/office/request-status-form";
 
 import { requireUser } from "@/lib/admin";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/neon/server";
 import { formatDate } from "@/lib/format";
 
 type Props = {
@@ -26,9 +26,9 @@ export default async function OfficeRequestDetailPage({
 
   const { id } = await params;
 
-  const supabase = await createClient();
+  const db = await createClient();
 
-  const { data: memberships } = await supabase
+  const { data: memberships } = await db
     .from("office_members")
     .select("office_id, role")
     .eq("user_id", user.id);
@@ -41,7 +41,7 @@ export default async function OfficeRequestDetailPage({
     (item) => item.office_id,
   );
 
-  const { data: request, error } = await supabase
+  const { data: request, error } = await db
     .from("requests")
     .select(
       `
@@ -66,7 +66,7 @@ export default async function OfficeRequestDetailPage({
     notFound();
   }
 
-  const { data: updates } = await supabase
+  const { data: updates } = await db
     .from("request_updates")
     .select(
       `

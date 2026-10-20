@@ -7,7 +7,7 @@ import type { ActionState } from "@/components/action-form";
 import { getSuperadminAccess } from "@/lib/admin";
 import { SITE_URL } from "@/lib/config";
 import { LIMITED_ROLES, RESIDENT_ROLES, type ResidentRole } from "@/lib/residents";
-import { createAdminClient } from "@/lib/supabase/admin-client";
+import { createAdminClient } from "@/lib/neon/admin-client";
 
 /* ------------------------------------------------------------------ */
 /* Helpers                                                             */
@@ -71,7 +71,7 @@ function fail(error: unknown): ActionState {
 /* ------------------------------------------------------------------ */
 
 /**
- * Creates a resident account. Either sends a Supabase invitation (the
+ * Creates a resident account. Either sends a Neon invitation (the
  * resident sets their own password from the email) or creates the account
  * immediately with a temporary password the admin passes on.
  */
@@ -94,9 +94,9 @@ export async function createResident(_state: ActionState, formData: FormData): P
       throw new Error("Temporary passwords must be at least 8 characters.");
     }
 
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
-    const { data: existing } = await supabase.from("profiles").select("id").ilike("email", address).maybeSingle();
+    const { data: existing } = await db.from("profiles").select("id").ilike("email", address).maybeSingle();
     if (existing) {
       throw new Error("An account with this email already exists.");
     }
@@ -105,24 +105,24 @@ export async function createResident(_state: ActionState, formData: FormData): P
 
     const result =
       mode === "password"
-        ? await supabase.auth.admin.createUser({
+        ? await db.auth.admin.createUser({
             email: address,
             password,
             email_confirm: true,
             user_metadata: metadata,
           })
-        : await supabase.auth.admin.inviteUserByEmail(address, {
+        : await db.auth.admin.inviteUserByEmail(address, {
             data: metadata,
             redirectTo: `${SITE_URL}/auth/callback?next=/auth/set-password`,
           });
 
     if (result.error) throw new Error(result.error.message);
-    if (!result.data.user) throw new Error("Supabase did not return the new user.");
+    if (!result.data.user) throw new Error("Neon did not return the new user.");
 
     createdId = result.data.user.id;
 
     /* The sign-up trigger creates the profile; make sure every field is set. */
-    const { error: profileError } = await supabase.from("profiles").upsert(
+    const { error: profileError } = await db.from("profiles").upsert(
       {
         id: createdId,
         email: address,
@@ -164,9 +164,9 @@ export async function updateResident(_state: ActionState, formData: FormData): P
       throw new Error("You cannot change your own role.");
     }
 
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
-    const { data: current } = await supabase.from("profiles").select("email, role").eq("id", id).maybeSingle();
+    const { data: current } = await db.from("profiles").select("email, role").eq("id", id).maybeSingle();
     if (!current) throw new Error("Resident not found.");
 
     if (actorRole !== "superadmin" && (current.role === "admin" || current.role === "superadmin") && id !== actorId) {
@@ -174,11 +174,11 @@ export async function updateResident(_state: ActionState, formData: FormData): P
     }
 
     if (current.email?.toLowerCase() !== address) {
-      const { error: authError } = await supabase.auth.admin.updateUserById(id, { email: address, email_confirm: true });
+      const { error: authError } = await db.auth.admin.updateUserById(id, { email: address, email_confirm: true });
       if (authError) throw new Error(authError.message);
     }
 
-    const { error } = await supabase
+    const { error } = await db
       .from("profiles")
       .update({
         full_name: fullName,
@@ -217,16 +217,16 @@ export async function setResidentSuspended(_state: ActionState, formData: FormDa
 
     if (id === actorId) throw new Error("You cannot suspend your own account.");
 
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
-    const { data: target } = await supabase.from("profiles").select("role, full_name").eq("id", id).maybeSingle();
+    const { data: target } = await db.from("profiles").select("role, full_name").eq("id", id).maybeSingle();
     if (!target) throw new Error("Resident not found.");
 
     if (actorRole !== "superadmin" && (target.role === "admin" || target.role === "superadmin")) {
       throw new Error("Only a superadmin can suspend an admin.");
     }
 
-    const { error } = await supabase.auth.admin.updateUserById(id, {
+    const { error } = await db.auth.admin.updateUserById(id, {
       ban_duration: suspend ? SUSPEND_DURATION : "none",
     });
 
@@ -234,7 +234,7 @@ export async function setResidentSuspended(_state: ActionState, formData: FormDa
 
     if (suspend) {
       /* End any open sessions so the suspension takes effect immediately. */
-      await supabase.auth.admin.signOut(id, "global").catch(() => undefined);
+      await db.auth.admin.signOut(id, "global").catch(() => undefined);
     }
 
     revalidatePath("/superadmin/residents");
@@ -266,20 +266,20 @@ export async function deleteResident(_state: ActionState, formData: FormData): P
       throw new Error("Tick the confirmation box to delete this resident.");
     }
 
-    const supabase = createAdminClient();
+    const db = createAdminClient();
 
-    const { data: target } = await supabase.from("profiles").select("role").eq("id", id).maybeSingle();
+    const { data: target } = await db.from("profiles").select("role").eq("id", id).maybeSingle();
 
     if (target && actorRole !== "superadmin" && (target.role === "admin" || target.role === "superadmin")) {
       throw new Error("Only a superadmin can delete an admin.");
     }
 
     /* Deleting the auth user cascades to the profile, requests, RSVPs and supports. */
-    const { error } = await supabase.auth.admin.deleteUser(id);
+    const { error } = await db.auth.admin.deleteUser(id);
 
     if (error && !/not found/i.test(error.message)) throw new Error(error.message);
 
-    await supabase.from("profiles").delete().eq("id", id);
+    await db.from("profiles").delete().eq("id", id);
 
     revalidatePath("/superadmin/residents");
     revalidatePath("/superadmin");

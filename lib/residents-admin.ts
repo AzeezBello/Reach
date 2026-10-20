@@ -1,13 +1,13 @@
 import "server-only";
 
 import { requireSuperadmin } from "@/lib/admin";
-import { createAdminClient } from "@/lib/supabase/admin-client";
+import { createAdminClient } from "@/lib/neon/admin-client";
 import { RESIDENT_ROLES, type ResidentAccount } from "@/lib/residents";
 import type { Profile } from "@/lib/types";
 
 /*
  * Resident account administration. Profiles live in public.profiles; the
- * sign-in state (confirmation, last sign-in, suspension) lives in Supabase
+ * sign-in state (confirmation, last sign-in, suspension) lives in Neon
  * Auth, so both are read through the service-role client after the
  * platform-admin check.
  */
@@ -44,11 +44,11 @@ function merge(profile: Profile, user: AuthUser | undefined): ResidentAccount {
 
 /** Every auth user, keyed by id. Pages through the Auth admin API. */
 async function listAuthUsers() {
-  const supabase = createAdminClient();
+  const db = createAdminClient();
   const users = new Map<string, AuthUser>();
 
   for (let page = 1; page <= 20; page += 1) {
-    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
+    const { data, error } = await db.auth.admin.listUsers({ page, perPage: 1000 });
 
     if (error) throw new Error(error.message);
 
@@ -69,9 +69,9 @@ export type ResidentFilters = {
 export async function listResidents(filters: ResidentFilters = {}): Promise<ResidentAccount[]> {
   await requireSuperadmin();
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
 
-  let query = supabase.from("profiles").select(PROFILE_FIELDS).order("created_at", { ascending: false }).limit(1000);
+  let query = db.from("profiles").select(PROFILE_FIELDS).order("created_at", { ascending: false }).limit(1000);
 
   if (filters.role && (RESIDENT_ROLES as readonly string[]).includes(filters.role)) {
     query = query.eq("role", filters.role);
@@ -122,27 +122,27 @@ export async function getResident(id: string): Promise<{ account: ResidentAccoun
 
   if (!/^[0-9a-f-]{36}$/i.test(id)) return null;
 
-  const supabase = createAdminClient();
+  const db = createAdminClient();
 
   const [{ data: profile }, { data: userData }] = await Promise.all([
-    supabase.from("profiles").select(PROFILE_FIELDS).eq("id", id).maybeSingle(),
-    supabase.auth.admin.getUserById(id),
+    db.from("profiles").select(PROFILE_FIELDS).eq("id", id).maybeSingle(),
+    db.auth.admin.getUserById(id),
   ]);
 
   if (!profile) return null;
 
   const [requests, rsvps, supports, notifications, offices, organizations] = await Promise.all([
-    supabase
+    db
       .from("requests")
       .select("id, reference_no, subject, status, created_at")
       .eq("resident_id", id)
       .order("created_at", { ascending: false })
       .limit(50),
-    supabase.from("event_rsvps").select("event_id", { count: "exact", head: true }).eq("resident_id", id),
-    supabase.from("request_supports").select("request_id", { count: "exact", head: true }).eq("resident_id", id),
-    supabase.from("notifications").select("id", { count: "exact", head: true }).eq("resident_id", id),
-    supabase.from("office_members").select("office_id, role").eq("user_id", id),
-    supabase.from("organization_members").select("organization_id, role").eq("user_id", id),
+    db.from("event_rsvps").select("event_id", { count: "exact", head: true }).eq("resident_id", id),
+    db.from("request_supports").select("request_id", { count: "exact", head: true }).eq("resident_id", id),
+    db.from("notifications").select("id", { count: "exact", head: true }).eq("resident_id", id),
+    db.from("office_members").select("office_id, role").eq("user_id", id),
+    db.from("organization_members").select("organization_id, role").eq("user_id", id),
   ]);
 
   return {

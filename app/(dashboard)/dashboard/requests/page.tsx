@@ -10,15 +10,15 @@ import {
 } from "@/components/admin";
 
 import { requireUser } from "@/lib/admin";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/neon/server";
 import { formatDate } from "@/lib/format";
 
 export default async function ResidentRequestsPage() {
   const user = await requireUser("/dashboard/requests");
 
-  const supabase = await createClient();
+  const db = await createClient();
 
-  const { data: requests } = await supabase
+  const { data: requests } = await db
     .from("requests")
     .select(
       `

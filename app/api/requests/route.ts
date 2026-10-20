@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/neon/server";
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,9 +28,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
+    const db = await createClient();
 
-    const { data, error } = await supabase.rpc(
+    const { data, error } = await db.rpc(
       "create_routed_request",
       {
         request_subject: subject,
@@ -53,7 +53,7 @@ export async function POST(request: NextRequest) {
     const result = Array.isArray(data) ? data[0] : data;
 
     if (isPublic && result?.request_id) {
-      const { error: shareError } = await supabase.rpc("set_request_visibility", {
+      const { error: shareError } = await db.rpc("set_request_visibility", {
         target_request: result.request_id,
         make_public: true,
       });

@@ -1,6 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/neon/server";
 
 /** Only allow same-site redirect targets. */
 function safeNext(value: string | null) {
@@ -12,8 +12,8 @@ function safeNext(value: string | null) {
 }
 
 /**
- * Completes Supabase email flows (invitations, password recovery, magic
- * links). Supabase redirects here with a one-time `code`, which is exchanged
+ * Completes Neon email flows (invitations, password recovery, magic
+ * links). Neon redirects here with a one-time `code`, which is exchanged
  * for a session cookie before the user is sent on to `next`.
  */
 export async function GET(request: NextRequest) {
@@ -30,8 +30,8 @@ export async function GET(request: NextRequest) {
     return NextResponse.redirect(`${origin}/login?error=auth_callback`);
   }
 
-  const supabase = await createClient();
-  const { error } = await supabase.auth.exchangeCodeForSession(code);
+  const db = await createClient();
+  const { error } = await db.auth.exchangeCodeForSession(code);
 
   if (error) {
     console.error("[REACH][auth-callback] Code exchange failed", {

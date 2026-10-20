@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { type FormEvent, useEffect, useState } from "react";
 
 import { buttonClasses } from "@/components/ui";
-import { createClient } from "@/lib/supabase/client";
+import { createClient } from "@/lib/neon/browser";
 
 const inputClasses =
   "w-full rounded-lg border border-slate-300 bg-white px-4 py-3 text-base text-ink placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200";

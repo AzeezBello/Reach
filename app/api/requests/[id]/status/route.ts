@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/neon/server";
 import {
   notifyResidentRequestStatus,
 } from "@/lib/whatsapp-notifications";
@@ -66,7 +66,7 @@ export async function PATCH(
 
     const nextStatus = status as RequestStatus;
 
-    const supabase = await createClient();
+    const db = await createClient();
 
     /*
      * --------------------------------------------------
@@ -74,10 +74,10 @@ export async function PATCH(
      * --------------------------------------------------
      *
      * getClaims() verifies the JWT and is the recommended
-     * Supabase method for protecting server-side data.
+     * Neon method for protecting server-side data.
      */
     const { data: claimsData, error: claimsError } =
-      await supabase.auth.getClaims();
+      await db.auth.getClaims();
 
     if (
       claimsError ||
@@ -101,7 +101,7 @@ export async function PATCH(
      * --------------------------------------------------
      */
     const { data: profile, error: profileError } =
-      await supabase
+      await db
         .from("profiles")
         .select(
           "id, role, full_name, email",
@@ -169,7 +169,7 @@ export async function PATCH(
     const {
       data: existingRequest,
       error: requestError,
-    } = await supabase
+    } = await db
       .from("requests")
       .select(
         `
@@ -243,7 +243,7 @@ export async function PATCH(
       const {
         data: membership,
         error: membershipError,
-      } = await supabase
+      } = await db
         .from("office_members")
         .select("office_id, user_id, role")
         .eq("user_id", userId)
@@ -300,7 +300,7 @@ export async function PATCH(
     const {
       data: updatedRequest,
       error: updateError,
-    } = await supabase
+    } = await db
       .from("requests")
       .update({
         status: nextStatus,
@@ -362,7 +362,7 @@ export async function PATCH(
 
     const {
       error: timelineError,
-    } = await supabase
+    } = await db
       .from("request_updates")
       .insert({
         request_id: id,

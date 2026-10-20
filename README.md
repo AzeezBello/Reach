@@ -696,7 +696,7 @@ Service-role credentials must remain server-side.
 
 # 17. Authentication
 
-REACH uses Supabase Authentication with the Next.js SSR integration.
+REACH uses Neon Authentication with the Next.js SSR integration.
 
 Residents can:
 
@@ -803,7 +803,7 @@ Current administration areas include:
 `/superadmin/residents` lists every account with its role, home area, sign-in
 status and last sign-in. Admins can create accounts (invitation email or
 temporary password), edit profile details and roles, suspend and reinstate
-access, and delete accounts. Suspension bans the user in Supabase Auth and
+access, and delete accounts. Suspension bans the user in Neon Auth and
 ends their sessions; their requests and history are kept. Deletion removes
 the auth user, which cascades to the profile, requests, RSVPs and supports.
 Admins cannot act on their own account, and only a superadmin can edit,
@@ -812,12 +812,12 @@ suspend or delete another admin or grant admin roles.
 ## Signing in as a superadmin
 
 1. Create a resident account at `/login` (or use an existing one).
-2. Set the profile role in Supabase: `update public.profiles set role = 'superadmin' where email = 'you@example.com';`
+2. Set the profile role in Neon: `update public.profiles set role = 'superadmin' where email = 'you@example.com';`
    (`admin` also grants console access).
 3. Sign in at `/login`; the console is at `/superadmin`. A non-admin account is sent to `/dashboard?denied=superadmin`.
 
 The console checks the role in the application (`requireSuperadmin`) and then
-reads and writes through the server-only service role (`SUPABASE_SERVICE_ROLE_KEY`),
+reads and writes through the server-only Neon database connection (`DATABASE_URL`),
 so it works even before the database policies below are applied.
 
 ## Content management
@@ -850,15 +850,15 @@ values are stored even when email confirmation delays the first session.
 
 ## Database policies for admin sessions
 
-`supabase/migrations/20261006000000_platform_admin_access.sql` adds an
+`db/migrations/20261006000000_platform_admin_access.sql` adds an
 `is_platform_admin()` helper and policies that let `admin`/`superadmin` sessions
 read every profile and manage content, leaders, members and routing directly. It
 also fixes the recursive `organization_members` policy and grants execute on
-`event_rsvp_count` and `find_service_for_request`. Apply it from the Supabase SQL
-editor or with `supabase db push`.
+`event_rsvp_count` and `find_service_for_request`. Apply it from the Neon SQL
+editor or with `db db push`.
 
-`supabase/migrations/20261006120000_security_hardening.sql` follows up on the
-Supabase advisor: it limits `is_platform_admin()` to authenticated users,
+`db/migrations/20261006120000_security_hardening.sql` follows up on the
+Neon advisor: it limits `is_platform_admin()` to authenticated users,
 replaces every policy on requests, offices and organizations with one
 canonical set that evaluates `auth.uid()` once per statement (review that
 block before applying if you added custom policies to those tables), updates the sign-up trigger to store the address, and adds indexes on
@@ -883,7 +883,7 @@ support count; the resident's name is never shown. Signed-in residents add or
 withdraw support with one click, and the "Most supported" sort shows the office
 which issues affect the most people. Residents cannot support their own request.
 
-`supabase/migrations/20261006140000_public_requests.sql` adds `requests.is_public`,
+`db/migrations/20261006140000_public_requests.sql` adds `requests.is_public`,
 the `request_supports` table, the `public_requests` view and the
 `set_request_visibility`, `toggle_request_support` and `request_support_count`
 functions. Until it is applied the community page shows a "not available yet"
@@ -913,7 +913,7 @@ The shared components live in `components/content/`:
 | `content-detail-header.tsx` | Hero + title + accountability panel at the top of detail pages |
 | `content-meta.tsx` | Icon + text facts on cards |
 
-`supabase/seed/content_leaders.sql` holds the initial leader credits; the
+`db/seed/content_leaders.sql` holds the initial leader credits; the
 responsible office and credits are edited from the content editor under
 "Ownership" and "Leaders".
 
@@ -935,9 +935,9 @@ responsible office and credits are edited from the content editor under
 ## Database
 
 * PostgreSQL
-* Supabase
-* Supabase Auth
-* Supabase RLS
+* Neon
+* Neon Auth
+* Neon RLS
 
 ## Deployment
 
@@ -1013,7 +1013,7 @@ reach/
 │   ├── format.ts
 │   ├── config.ts
 │   ├── types.ts
-│   └── supabase/
+│   └── db/
 │       ├── server.ts
 │       └── public.ts
 │
@@ -1027,7 +1027,7 @@ reach/
 │   │   └── projects/       one image per project, named by slug
 │   └── videos/
 │
-├── supabase/
+├── db/
 │   ├── migrations/
 │   ├── seed.sql
 │   └── config.toml
@@ -1046,8 +1046,8 @@ reach/
 Required public configuration:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=
+DATABASE_URL=
+AUTH_SECRET=
 NEXT_PUBLIC_SITE_URL=
 ```
 
@@ -1102,8 +1102,7 @@ Create:
 Add:
 
 ```env
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
+DATABASE_URL=your_neon_database_url
 NEXT_PUBLIC_SITE_URL=http://localhost:3000
 ```
 
@@ -1154,24 +1153,24 @@ git push origin main
 
 ---
 
-# 30. Supabase Development
+# 30. Neon Development
 
 Link the project:
 
 ```bash
-supabase link --project-ref <project-ref>
+db link --project-ref <project-ref>
 ```
 
 Apply migrations:
 
 ```bash
-supabase db push
+db db push
 ```
 
 Run seed data where appropriate:
 
 ```bash
-supabase db execute --file supabase/seed.sql
+db db execute --file db/seed.sql
 ```
 
 Always review migrations before applying destructive schema changes.
@@ -1195,7 +1194,7 @@ Vercel
 Next.js
     │
     ▼
-Supabase
+Neon
     │
     ├── PostgreSQL
     ├── Auth
@@ -1268,7 +1267,7 @@ status = active
 Then verify:
 
 ```text
-Supabase Auth user
+Neon Auth user
         ↓
 profiles.email
         ↓

@@ -13,7 +13,7 @@ import {
 } from "@/components/admin";
 import { Badge } from "@/components/ui";
 import { requireSuperadmin } from "@/lib/admin";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/neon/server";
 
 import {
   inviteLeaderAccount,
@@ -29,7 +29,7 @@ export default async function LeaderAccountsPage() {
     "/superadmin/leader-accounts"
   );
 
-  const supabase = await createClient();
+  const db = await createClient();
 
   /*
    * Load leadership profiles.
@@ -42,7 +42,7 @@ export default async function LeaderAccountsPage() {
   const {
     data: leaders,
     error: leadersError,
-  } = await supabase
+  } = await db
     .from("leaders")
     .select(
       "id, name, role, level_label, office, sort_order, created_at"
@@ -73,7 +73,7 @@ export default async function LeaderAccountsPage() {
     data: provisioning,
     error: provisioningError,
   } = leaderIds.length
-    ? await supabase
+    ? await db
         .from(
           "leader_account_provisioning"
         )

@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
 import type { ActionState } from "@/components/action-form";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/neon/server";
 
 export type SupportState = (ActionState & { supported?: boolean; count?: number }) | null;
 
@@ -20,16 +20,16 @@ export async function toggleRequestSupport(
   const returnTo = String(formData.get("return_to") ?? "/requests/community");
   const current = Number.parseInt(String(formData.get("count") ?? "0"), 10) || 0;
 
-  const supabase = await createClient();
+  const db = await createClient();
   const {
     data: { user },
-  } = await supabase.auth.getUser();
+  } = await db.auth.getUser();
 
   if (!user) {
     redirect(`/login?next=${encodeURIComponent(returnTo)}`);
   }
 
-  const { data, error } = await supabase.rpc("toggle_request_support", { target_request: id });
+  const { data, error } = await db.rpc("toggle_request_support", { target_request: id });
 
   if (error) {
     return { ok: false, message: error.message };
@@ -56,8 +56,8 @@ export async function setRequestVisibility(
   const id = String(formData.get("id") ?? "");
   const makePublic = formData.get("make_public") === "true";
 
-  const supabase = await createClient();
-  const { error } = await supabase.rpc("set_request_visibility", {
+  const db = await createClient();
+  const { error } = await db.rpc("set_request_visibility", {
     target_request: id,
     make_public: makePublic,
   });

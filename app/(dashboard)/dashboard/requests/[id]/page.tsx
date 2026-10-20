@@ -9,7 +9,7 @@ import {
 } from "@/components/admin";
 
 import { requireUser } from "@/lib/admin";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/neon/server";
 import { formatDate } from "@/lib/format";
 
 type Props = {
@@ -27,14 +27,14 @@ export default async function ResidentRequestDetailPage({
 
   const { id } = await params;
 
-  const supabase = await createClient();
+  const db = await createClient();
 
   /*
    * Because this query is performed with the authenticated
-   * Supabase client, the resident can only retrieve their
+   * Neon client, the resident can only retrieve their
    * own request according to RLS.
    */
-  const { data: request, error } = await supabase
+  const { data: request, error } = await db
     .from("requests")
     .select(
       `
@@ -57,7 +57,7 @@ export default async function ResidentRequestDetailPage({
     notFound();
   }
 
-  const { data: updates } = await supabase
+  const { data: updates } = await db
     .from("request_updates")
     .select(
       `

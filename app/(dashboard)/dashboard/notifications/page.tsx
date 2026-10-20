@@ -5,7 +5,7 @@ import { AdminHeader, Panel } from "@/components/admin";
 import { Badge, ButtonLink } from "@/components/ui";
 import { requireUser } from "@/lib/admin";
 import { formatDateTime } from "@/lib/format";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/neon/server";
 
 export const metadata: Metadata = {
   title: "Notifications",
@@ -24,9 +24,9 @@ type NotificationRow = {
 
 export default async function NotificationsPage() {
   const user = await requireUser("/dashboard/notifications");
-  const supabase = await createClient();
+  const db = await createClient();
 
-  const { data } = await supabase
+  const { data } = await db
     .from("notifications")
     .select("id, title, message, channel, status, created_at, sent_at")
     .eq("resident_id", user.id)

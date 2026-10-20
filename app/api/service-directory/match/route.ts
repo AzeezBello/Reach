@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/neon/server";
 
 export async function POST(request: NextRequest) {
   try {
@@ -17,9 +17,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const supabase = await createClient();
+    const db = await createClient();
 
-    const { data, error } = await supabase.rpc(
+    const { data, error } = await db.rpc(
       "find_service_for_request",
       {
         problem_text: problemText,

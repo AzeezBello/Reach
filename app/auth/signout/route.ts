@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
 
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/neon/server";
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
+  const db = await createClient();
 
-  await supabase.auth.signOut();
+  await db.auth.signOut();
 
   return NextResponse.redirect(new URL("/", request.url), { status: 303 });
 }
