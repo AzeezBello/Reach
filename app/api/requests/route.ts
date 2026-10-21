@@ -6,9 +6,13 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     const subject = String(body.subject ?? "").trim();
-    const description = String(body.description ?? "").trim();
+    const rawDescription = String(body.description ?? "").trim();
     const jurisdictionId = body.jurisdictionId || null;
     const isPublic = body.isPublic === true;
+    const postcode =
+      typeof body.postcode === "string" && body.postcode.trim().length > 0
+        ? body.postcode.trim().toUpperCase()
+        : null;
 
     if (subject.length < 3) {
       return NextResponse.json(
@@ -19,7 +23,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    if (description.length < 10) {
+    if (rawDescription.length < 10) {
       return NextResponse.json(
         {
           error: "Please provide more details about your request.",
@@ -27,6 +31,11 @@ export async function POST(request: NextRequest) {
         { status: 400 },
       );
     }
+
+    const description =
+      postcode && !rawDescription.includes(postcode)
+        ? `${rawDescription}\n\n[NIPOST Digital Postcode (L1 Verified): ${postcode}]`
+        : rawDescription;
 
     const db = await createClient();
 
@@ -65,7 +74,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      request: result,
+      request: result ? { ...result, postcode } : result,
     });
   } catch (error) {
     console.error("Request API error:", error);

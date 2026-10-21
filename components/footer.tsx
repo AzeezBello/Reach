@@ -96,6 +96,11 @@ export function Footer({
                   Request assistance
                 </Link>
               </li>
+              <li>
+                <Link href="/postcode" className="transition hover:text-white">
+                  NIPOST Postcode API
+                </Link>
+              </li>
             </ul>
           </div>
 

@@ -11,7 +11,12 @@ export async function GET() {
         `
           id,
           name,
+          slug,
           type,
+          state,
+          lga,
+          lcda,
+          ward,
           parent_id
         `,
       )

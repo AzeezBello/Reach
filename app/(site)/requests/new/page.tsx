@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import RequestForm from "@/components/request-form";
@@ -46,7 +47,15 @@ export default async function NewRequestPage() {
 
             <p className="mt-3 max-w-2xl text-base leading-7 text-slate-600">
               Tell us what you need help with. REACH will help identify the
-              appropriate office and route your request.
+              appropriate office and route your request. You can also verify a
+              5-segment NIPOST postcode below or explore the{" "}
+              <Link
+                href="/postcode"
+                className="font-bold text-brand-700 underline-offset-4 hover:underline"
+              >
+                NIPOST Postcode Integration &amp; 4-Check Live Suite
+              </Link>
+              .
             </p>
 
             {tenant?.name && tenant.name !== "REACH" && (

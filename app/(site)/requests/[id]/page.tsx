@@ -7,7 +7,8 @@ import { StatusBadge } from "@/components/admin";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { ButtonLink, Container, Eyebrow } from "@/components/ui";
 import { getResidentRequest, requireUser } from "@/lib/admin";
-import { getRequestSupportCount } from "@/lib/community";
+import { getPublicRequest, getRequestSupportCount } from "@/lib/community";
+import { PRIORITY_TIER_META } from "@/lib/community-utils";
 
 import { setRequestVisibility } from "../community/actions";
 import { formatDate, humanize } from "@/lib/format";
@@ -31,7 +32,12 @@ export default async function RequestDetailPage({ params }: Params) {
   }
 
   const { request, updates } = result;
-  const supportCount = request.is_public ? await getRequestSupportCount(request.id) : 0;
+  const [supportCount, publicSnapshot] = request.is_public
+    ? await Promise.all([
+        getRequestSupportCount(request.id),
+        getPublicRequest(request.id, user.id),
+      ])
+    : [0, null];
   const status = request.status ?? "submitted";
   const stepIndex = status === "closed" ? STEPS.length - 1 : STEPS.indexOf(status);
 
@@ -133,10 +139,34 @@ export default async function RequestDetailPage({ params }: Params) {
                     : "Only you and the office can see this request. Share it so residents affected by the same issue can add their support and the office can see how many people it matters to."}
                 </p>
                 {request.is_public && (
-                  <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-800">
-                    <ThumbsUp size={14} />
-                    {supportCount} resident{supportCount === 1 ? "" : "s"} support this request
-                  </p>
+                  <div className="mt-3 flex flex-wrap items-center gap-2">
+                    <span className="inline-flex items-center gap-1.5 rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-800">
+                      <ThumbsUp size={14} />
+                      {supportCount} resident{supportCount === 1 ? "" : "s"} support this
+                    </span>
+                    {publicSnapshot && (
+                      <>
+                        <span
+                          className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-extrabold ${
+                            PRIORITY_TIER_META[
+                              publicSnapshot.priority_tier ?? "watch"
+                            ].badgeClass
+                          }`}
+                        >
+                          {publicSnapshot.priority_score ?? 0} Priority Pts ·{" "}
+                          {
+                            PRIORITY_TIER_META[
+                              publicSnapshot.priority_tier ?? "watch"
+                            ].label
+                          }
+                        </span>
+                        <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-bold text-slate-700">
+                          {publicSnapshot.comment_count ?? 0} comment
+                          {publicSnapshot.comment_count === 1 ? "" : "s"}
+                        </span>
+                      </>
+                    )}
+                  </div>
                 )}
               </div>
             </div>

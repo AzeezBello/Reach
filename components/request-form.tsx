@@ -1,9 +1,15 @@
 "use client";
 
 import { FormEvent, useState } from "react";
+import Link from "next/link";
 import { CheckCircle2, Loader2, MapPin, Send } from "lucide-react";
 
 import JurisdictionSelector from "@/components/jurisdiction-selector";
+import NipostPostcodeField, {
+  type VerifiedPostcodePayload,
+} from "@/components/nipost-postcode-field";
+import { matchJurisdictionFromPostcode } from "@/lib/postcode";
+import type { Jurisdiction } from "@/lib/types";
 
 type ServiceMatch = {
   id: string;
@@ -22,13 +28,20 @@ type CreatedRequest = {
   office_id: string;
   office_name: string;
   organization_id: string;
+  postcode?: string | null;
 };
 
 export default function RequestForm() {
   const [subject, setSubject] = useState("");
   const [description, setDescription] = useState("");
   const [jurisdictionId, setJurisdictionId] = useState("");
-  const [isPublic, setIsPublic] = useState(false);
+  const [jurisdictions, setJurisdictions] = useState<Jurisdiction[]>([]);
+  const [verifiedPostcode, setVerifiedPostcode] =
+    useState<VerifiedPostcodePayload | null>(null);
+  const [matchedJurisdictionName, setMatchedJurisdictionName] = useState<
+    string | null
+  >(null);
+  const [isPublic, setIsPublic] = useState(true);
 
   const [matches, setMatches] = useState<ServiceMatch[]>([]);
   const [selectedMatch, setSelectedMatch] =
@@ -124,6 +137,7 @@ export default function RequestForm() {
           subject: subject.trim(),
           description: description.trim(),
           jurisdictionId: jurisdictionId || null,
+          postcode: verifiedPostcode?.postcode ?? null,
           isPublic,
           serviceMatchId: selectedMatch?.id ?? null,
           officeId: selectedMatch?.office_id ?? null,
@@ -143,6 +157,8 @@ export default function RequestForm() {
       setSubject("");
       setDescription("");
       setJurisdictionId("");
+      setVerifiedPostcode(null);
+      setMatchedJurisdictionName(null);
       setMatches([]);
       setSelectedMatch(null);
     } catch (err) {
@@ -162,6 +178,8 @@ export default function RequestForm() {
     setSubject("");
     setDescription("");
     setJurisdictionId("");
+    setVerifiedPostcode(null);
+    setMatchedJurisdictionName(null);
     setMatches([]);
     setSelectedMatch(null);
   }
@@ -212,15 +230,36 @@ export default function RequestForm() {
                   {result.category || "General request"}
                 </p>
               </div>
+
+              {result.postcode && (
+                <div>
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    NIPOST Digital Postcode (L1 Verified)
+                  </p>
+
+                  <p className="mt-1 font-mono font-bold text-emerald-800">
+                    {result.postcode}
+                  </p>
+                </div>
+              )}
             </div>
 
-            <button
-              type="button"
-              onClick={resetForm}
-              className="mt-6 rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2"
-            >
-              Submit another request
-            </button>
+            <div className="mt-6 flex flex-wrap items-center gap-3">
+              <button
+                type="button"
+                onClick={resetForm}
+                className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-slate-800 focus:outline-none focus:ring-2 focus:ring-slate-900 focus:ring-offset-2"
+              >
+                Submit another request
+              </button>
+
+              <Link
+                href="/requests/community"
+                className="rounded-xl border border-emerald-300 bg-white px-5 py-3 text-sm font-bold text-emerald-900 transition hover:bg-emerald-100"
+              >
+                View on Community Priority Feed →
+              </Link>
+            </div>
           </div>
         </div>
       </div>
@@ -283,6 +322,30 @@ export default function RequestForm() {
         </p>
       </div>
 
+      <NipostPostcodeField
+        label="NIPOST Digital Postcode (pinpoint issue location)"
+        hint="Enter or build the 5-segment NIPOST postcode for this street or facility. REACH verifies it at Level 1 (0 credits) and auto-matches the responsible jurisdiction."
+        matchedJurisdictionName={matchedJurisdictionName}
+        onVerified={(payload) => {
+          setVerifiedPostcode(payload);
+          if (!payload) {
+            setMatchedJurisdictionName(null);
+            return;
+          }
+          const matched = matchJurisdictionFromPostcode(
+            jurisdictions,
+            payload.formatted,
+            payload.hints,
+          );
+          if (matched) {
+            setJurisdictionId(matched.id);
+            setMatchedJurisdictionName(matched.name);
+          } else {
+            setMatchedJurisdictionName(null);
+          }
+        }}
+      />
+
       <div>
         <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-900">
           <MapPin className="h-4 w-4" />
@@ -292,6 +355,7 @@ export default function RequestForm() {
         <JurisdictionSelector
           value={jurisdictionId}
           onChange={setJurisdictionId}
+          onLoaded={setJurisdictions}
         />
       </div>
 
@@ -304,11 +368,13 @@ export default function RequestForm() {
           className="mt-0.5 size-4 rounded border-slate-300 accent-brand-600"
         />
         <span>
-          <span className="block font-bold text-ink">Share with the community</span>
+          <span className="block font-bold text-ink">
+            Publish to the Community Priority Feed
+          </span>
           <span className="block text-xs leading-5 text-slate-500">
-            Other residents can see the subject, description, area and status on the
-            community requests page and add their support. Your name is never shown.
-            You can change this later from the request page.
+            Neighbours in your jurisdiction can endorse this request, flag safety
+            hazards, and add street corroboration notes to advance it in the
+            public office dispatch queue. Your name is never shown publicly.
           </span>
         </span>
       </label>

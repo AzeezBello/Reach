@@ -1,12 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import type { Jurisdiction } from "@/lib/types";
 
-type Jurisdiction = {
-  id: string;
-  name: string;
-  type: string;
-  parent_id: string | null;
+type JurisdictionItem = Jurisdiction & {
+  parent_id?: string | null;
 };
 
 type Props = {
@@ -16,6 +14,7 @@ type Props = {
   required?: boolean;
   value?: string;
   onChange: (id: string) => void;
+  onLoaded?: (jurisdictions: JurisdictionItem[]) => void;
 };
 
 export default function JurisdictionSelector({
@@ -25,9 +24,10 @@ export default function JurisdictionSelector({
   required = false,
   value,
   onChange,
+  onLoaded,
 }: Props) {
   const [jurisdictions, setJurisdictions] =
-    useState<Jurisdiction[]>([]);
+    useState<JurisdictionItem[]>([]);
 
   const [loading, setLoading] =
     useState(true);
@@ -51,9 +51,9 @@ export default function JurisdictionSelector({
           );
         }
 
-        setJurisdictions(
-          data.jurisdictions ?? [],
-        );
+        const loaded = (data.jurisdictions ?? []) as JurisdictionItem[];
+        setJurisdictions(loaded);
+        onLoaded?.(loaded);
       } catch (err) {
         setError(
           err instanceof Error

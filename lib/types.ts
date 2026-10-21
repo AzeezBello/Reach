@@ -84,6 +84,24 @@ export type ResidentRequest = {
   is_public?: boolean;
 };
 
+export type ReactionKind = "urgent" | "affected" | "safety" | "resolved_check";
+
+export type ReactionCounts = Record<ReactionKind, number>;
+
+export type RequestComment = {
+  id: string;
+  request_id: string;
+  author_label: string;
+  area_name: string | null;
+  postcode: string | null;
+  body: string;
+  is_me_too: boolean;
+  created_at: string;
+  is_mine?: boolean;
+};
+
+export type PriorityTier = "watch" | "rising" | "high" | "critical";
+
 /** A request a resident chose to share; read from the public_requests view. */
 export type PublicRequest = {
   id: string;
@@ -98,6 +116,12 @@ export type PublicRequest = {
   jurisdiction_name: string | null;
   jurisdiction_type: string | null;
   support_count: number;
+  reactions?: ReactionCounts;
+  my_reactions?: ReactionKind[];
+  comment_count?: number;
+  comments?: RequestComment[];
+  priority_score?: number;
+  priority_tier?: PriorityTier;
 };
 
 /* ------------------------------------------------------------------ */

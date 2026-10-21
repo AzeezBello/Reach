@@ -4,8 +4,13 @@ import { type FormEvent, useState } from "react";
 import { AlertCircle, CheckCircle2, Eye, EyeOff } from "lucide-react";
 
 import JurisdictionSelector from "@/components/jurisdiction-selector";
+import NipostPostcodeField, {
+  type VerifiedPostcodePayload,
+} from "@/components/nipost-postcode-field";
 import { buttonClasses } from "@/components/ui";
 import { createClient } from "@/lib/neon/browser";
+import { matchJurisdictionFromPostcode } from "@/lib/postcode";
+import type { Jurisdiction } from "@/lib/types";
 
 const inputClasses =
   "w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-base text-ink placeholder:text-slate-400 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-200";
@@ -19,6 +24,12 @@ export function AuthForm({ next, initialError }: { next: string; initialError?: 
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [jurisdictionId, setJurisdictionId] = useState("");
+  const [jurisdictions, setJurisdictions] = useState<Jurisdiction[]>([]);
+  const [verifiedPostcode, setVerifiedPostcode] =
+    useState<VerifiedPostcodePayload | null>(null);
+  const [matchedJurisdictionName, setMatchedJurisdictionName] = useState<
+    string | null
+  >(null);
   const [address, setAddress] = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -134,6 +145,12 @@ export function AuthForm({ next, initialError }: { next: string; initialError?: 
     * client because it is not the protected-admin
     * authentication path.
     */
+    const formattedAddress =
+      verifiedPostcode?.postcode &&
+      !address.includes(verifiedPostcode.postcode)
+        ? `${address.trim()} (NIPOST L1: ${verifiedPostcode.postcode})`
+        : address.trim();
+
     const result =
       await db.auth.signUp({
         email,
@@ -144,8 +161,8 @@ export function AuthForm({ next, initialError }: { next: string; initialError?: 
               name.trim(),
             jurisdiction_id:
               jurisdictionId,
-            address:
-              address.trim(),
+            address: formattedAddress,
+            postcode: verifiedPostcode?.postcode ?? null,
           },
         },
       });
@@ -307,6 +324,30 @@ export function AuthForm({ next, initialError }: { next: string; initialError?: 
             <div className="rounded-lg bg-slate-50 p-3 text-sm text-slate-600">
               Creating an account for <span className="font-bold text-ink">{name}</span> · {email}
             </div>
+            <NipostPostcodeField
+              label="NIPOST Digital Postcode (optional)"
+              hint="Verify your 5-segment NIPOST postcode at Level 1 (0 credits) to auto-detect your home area."
+              compact
+              matchedJurisdictionName={matchedJurisdictionName}
+              onVerified={(payload) => {
+                setVerifiedPostcode(payload);
+                if (!payload) {
+                  setMatchedJurisdictionName(null);
+                  return;
+                }
+                const matched = matchJurisdictionFromPostcode(
+                  jurisdictions,
+                  payload.formatted,
+                  payload.hints,
+                );
+                if (matched) {
+                  setJurisdictionId(matched.id);
+                  setMatchedJurisdictionName(matched.name);
+                } else {
+                  setMatchedJurisdictionName(null);
+                }
+              }}
+            />
             <JurisdictionSelector
               id="jurisdiction"
               name="jurisdiction_id"
@@ -314,6 +355,7 @@ export function AuthForm({ next, initialError }: { next: string; initialError?: 
               required
               value={jurisdictionId}
               onChange={setJurisdictionId}
+              onLoaded={setJurisdictions}
             />
             <div>
               <label htmlFor="address" className="mb-2 block text-sm font-bold text-ink">Residential address</label>

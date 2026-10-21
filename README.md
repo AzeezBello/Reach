@@ -874,20 +874,22 @@ applies that split to organizations, offices and leaders; run it immediately
 after the hardening migration or public pages fail with "permission denied for
 function is_platform_admin".
 
-## Community requests
+## Community requests & Civic Priority Social Feed
 
-Residents can share a request publicly (a checkbox on the request form, or
-"Share with the community" on their request page). Shared requests appear at
-`/requests/community` with their subject, description, area, status and a
-support count; the resident's name is never shown. Signed-in residents add or
-withdraw support with one click, and the "Most supported" sort shows the office
-which issues affect the most people. Residents cannot support their own request.
+Residents can share a request publicly (enabled by default on the request form, or toggled via "Share with the community" on `/requests/[id]`). Shared requests appear on the **Community Priority Social Feed** (`/requests/community` and `/requests/community/[id]`) with their subject, description, area, verified NIPOST postcode badge (when present), office resolution stage, and live **Civic Priority Score**. The submitter's full name is never shown publicly.
 
-`db/migrations/20261006140000_public_requests.sql` adds `requests.is_public`,
-the `request_supports` table, the `public_requests` view and the
-`set_request_visibility`, `toggle_request_support` and `request_support_count`
-functions. Until it is applied the community page shows a "not available yet"
-state and the rest of the site is unaffected.
+To help the responsible office prioritize widespread or hazardous issues, signed-in residents can:
+- **👍 Support (`+3 Priority Pts`)**: Endorse the request with one click (`request_supports`).
+- **React with 4 Civic Signals (`request_reactions`)**:
+  - `⚠️ Safety Risk` (`+3 Priority Pts`) — Flags a public safety or health hazard
+  - `🔥 Urgent` (`+2 Priority Pts`) — Signals need for immediate intervention
+  - `🙋 Affects Me Too` (`+2 Priority Pts`) — Confirms multi-household or street-wide impact
+  - `👀 Needs Field Visit` (`+1 Priority Pt`) — Requests on-site inspection by office staff
+- **💬 Comment & Corroborate (`+2 Priority Pts`, `request_comments`)**: Post inline street updates, mark *"🙋 This affects my street/area too"*, and optionally attach a 5-segment NIPOST postcode.
+
+Each request automatically advances through 4 **Priority Escalation Tiers** (`Community Watch` → `Rising Priority` at 8+ pts → `High Civic Priority` at 20+ pts → `Critical Escalation` at 40+ pts) and can be sorted by **Priority Queue**, **Most Supported**, **Most Discussed**, or **Newest**.
+
+`db/migrations/20261006140000_public_requests.sql` adds `requests.is_public`, `request_supports`, `public_requests`, and support RPCs, while `lib/community.ts` automatically ensures `public.request_reactions` and `public.request_comments` exist.
 
 ## Content attribution (accountability)
 
@@ -1606,3 +1608,31 @@ Login
   ↓
 Profile
 ```
+
+---
+
+# 46. Built on Nigeria's Postcode — NIPOST Postcode API Integration
+
+REACH integrates the **NIPOST Digital Postcode API (`https://api.postcode.gov.ng`)** for **Session 3: Public Services, Utilities & Emergency Response** of the NIPOST *"Built on Nigeria's Postcode"* showcase.
+
+## Key Routes & Modules
+
+| Path | Description |
+| --- | --- |
+| `/postcode` | Interactive NIPOST Civic Postcode & Office Routing showcase + 4-Check Live Staging Acceptance Suite |
+| `/requests/new` | Civic service request form (`components/request-form.tsx`) with NIPOST L1 postcode verification and automatic jurisdiction matching |
+| `/login` | Resident sign-up Step 2 (`components/auth-form.tsx`) with NIPOST L1 postcode verification and home-area auto-selection |
+| `/api/postcode` | Server-isolated proxy (`app/api/postcode/route.ts`) to `https://api.postcode.gov.ng` enforcing `level=1` (0 credits, NDPA 2023 data minimization) |
+| `lib/nipost.ts` & `lib/postcode.ts` | NIPOST API client, 5-segment parser (`State-LGA-District-Area-Unit`), 37-state reference catalog, and `matchJurisdictionFromPostcode` helper |
+| `components/nipost-postcode-field.tsx` | Reusable NIPOST postcode autocomplete, L1 verifier, and cascading `State → LGA → District → Area → Unit` reference builder |
+
+## Environment Variable
+
+Add your server-side NIPOST API key to `.env.local` (and Vercel project environment variables):
+
+```env
+NIPOST_API_KEY=nipost_test_your_key_here
+```
+
+`NIPOST_API_KEY` is read strictly on the server in `app/api/postcode/route.ts` and is never exposed to client bundles or API responses.
+
